@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Footer } from "@/components/layout/Footer";
+import { Navigation } from "@/components/layout/Navigation";
 import { firaMono, firaSans } from "@/lib/fonts";
 
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
-
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
-
 export const metadata: Metadata = {
-  title: "Phytertek",
-  description: "",
+  title: "Ryan Lowe | Full-Stack Engineer & Infrastructure Architect",
+  description:
+    "Senior software engineer specializing in TypeScript, React, Next.js, and AWS. Building scalable healthcare technology and developer tools.",
+  openGraph: {
+    title: "Ryan Lowe | Full-Stack Engineer",
+    description:
+      "Senior software engineer specializing in TypeScript, React, Next.js, and AWS.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -25,9 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${firaSans.variable} ${firaMono.variable} antialiased`}
+        className={`${firaSans.variable} ${firaMono.variable} font-sans antialiased`}
       >
-        {children}
+        <Navigation />
+        <main>{children}</main>
+        <Footer />
       </body>
     </html>
   );
