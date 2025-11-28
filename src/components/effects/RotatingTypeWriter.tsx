@@ -64,7 +64,7 @@ export function RotatingTypeWriter({
     // Deletion complete, move to random next word (avoiding current)
     setIsDeleting(false);
     setCurrentWordIndex((prev) => {
-      let nextIndex;
+      let nextIndex: number;
       do {
         nextIndex = Math.floor(Math.random() * words.length);
       } while (nextIndex === prev && words.length > 1);

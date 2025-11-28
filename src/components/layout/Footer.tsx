@@ -1,10 +1,10 @@
+import Link from "next/link";
 import {
   AiOutlineGithub,
   AiOutlineLinkedin,
   AiOutlineMail,
   AiOutlineWhatsApp,
 } from "react-icons/ai";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 

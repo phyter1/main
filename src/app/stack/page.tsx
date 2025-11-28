@@ -60,11 +60,12 @@ export default function StackPage() {
     "infrastructure",
   ];
 
-  const displayStack = viewMode === "personal"
-    ? personalStack
-    : selectedCategory === "all"
-    ? stackItems
-    : stackItems.filter((item) => item.category === selectedCategory);
+  const displayStack =
+    viewMode === "personal"
+      ? personalStack
+      : selectedCategory === "all"
+        ? stackItems
+        : stackItems.filter((item) => item.category === selectedCategory);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -139,9 +140,9 @@ export default function StackPage() {
               {categories.map((category) => (
                 <Button
                   key={category}
-                  variant={selectedCategory === category
-                    ? "default"
-                    : "outline"}
+                  variant={
+                    selectedCategory === category ? "default" : "outline"
+                  }
                   onClick={() => setSelectedCategory(category)}
                   size="sm"
                 >
@@ -230,8 +231,8 @@ export default function StackPage() {
                         {item.context === "both"
                           ? "Professional & Personal"
                           : item.context === "professional"
-                          ? "Professional"
-                          : "Personal"}
+                            ? "Professional"
+                            : "Personal"}
                       </Badge>
                     </div>
                   </CardHeader>

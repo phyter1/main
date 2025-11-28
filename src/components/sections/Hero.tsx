@@ -6,15 +6,15 @@ import { useState } from "react";
 import { RotatingTypeWriter } from "@/components/effects/RotatingTypeWriter";
 import { TypeWriter } from "@/components/effects/TypeWriter";
 import { Button } from "@/components/ui/button";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { stackItems } from "@/data/stack";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
  * Hero - Landing page hero section
  * Features typewriter effect, animated headline, and CTAs
  */
 export function Hero() {
-  const [typewriterComplete, setTypewriterComplete] = useState(false);
+  const [_typewriterComplete, setTypewriterComplete] = useState(false);
   const reducedMotion = useReducedMotion();
 
   // Get expert and proficient technologies for rotating display
@@ -91,7 +91,8 @@ export function Hero() {
           variants={itemVariants}
           className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground md:text-xl"
         >
-          Building scalable applications with Typescript, Node, React, and Tailwind.
+          Building scalable applications with Typescript, Node, React, and
+          Tailwind.
           <br />
           Passionate about developer experience and AI-assisted workflows.
         </motion.p>
@@ -117,12 +118,7 @@ export function Hero() {
           <Button size="lg" className="min-w-[200px]" asChild>
             <a href="/projects">View My Work</a>
           </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="min-w-[200px]"
-            asChild
-          >
+          <Button size="lg" variant="outline" className="min-w-[200px]" asChild>
             <a href="/about">Let's Connect</a>
           </Button>
         </motion.div>

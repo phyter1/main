@@ -23,6 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script defer src="https://umami.phytertek.com/script.js" data-website-id="81d82483-e533-456e-beaa-85e1c2858092"></script>
+      </head>
       <body
         className={`${firaSans.variable} ${firaMono.variable} font-sans antialiased`}
       >

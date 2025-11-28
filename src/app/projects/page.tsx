@@ -17,11 +17,20 @@ import { type Project, projects } from "@/data/projects";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 export default function ProjectsPage() {
-  const [filter, setFilter] = useState<"all" | Project["status"]>("all");
+  const [categoryFilter, setCategoryFilter] = useState<
+    "all" | Project["category"]
+  >("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | Project["status"]>(
+    "all",
+  );
   const reducedMotion = useReducedMotion();
 
-  const filteredProjects =
-    filter === "all" ? projects : projects.filter((p) => p.status === filter);
+  const filteredProjects = projects.filter((p) => {
+    const matchesCategory =
+      categoryFilter === "all" || p.category === categoryFilter;
+    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
+    return matchesCategory && matchesStatus;
+  });
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -65,34 +74,62 @@ export default function ProjectsPage() {
           </motion.div>
 
           {/* Filters */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-wrap justify-center gap-2"
-          >
-            <Button
-              variant={filter === "all" ? "default" : "outline"}
-              onClick={() => setFilter("all")}
-            >
-              All Projects
-            </Button>
-            <Button
-              variant={filter === "live" ? "default" : "outline"}
-              onClick={() => setFilter("live")}
-            >
-              Live
-            </Button>
-            <Button
-              variant={filter === "in-progress" ? "default" : "outline"}
-              onClick={() => setFilter("in-progress")}
-            >
-              In Progress
-            </Button>
-            <Button
-              variant={filter === "archived" ? "default" : "outline"}
-              onClick={() => setFilter("archived")}
-            >
-              Archived
-            </Button>
+          <motion.div variants={itemVariants} className="space-y-4">
+            {/* Category Filters */}
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button
+                variant={categoryFilter === "all" ? "default" : "outline"}
+                onClick={() => setCategoryFilter("all")}
+              >
+                All Projects
+              </Button>
+              <Button
+                variant={
+                  categoryFilter === "professional" ? "default" : "outline"
+                }
+                onClick={() => setCategoryFilter("professional")}
+              >
+                Professional
+              </Button>
+              <Button
+                variant={categoryFilter === "personal" ? "default" : "outline"}
+                onClick={() => setCategoryFilter("personal")}
+              >
+                Personal
+              </Button>
+            </div>
+
+            {/* Status Filters */}
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button
+                variant={statusFilter === "all" ? "default" : "outline"}
+                onClick={() => setStatusFilter("all")}
+                size="sm"
+              >
+                All Status
+              </Button>
+              <Button
+                variant={statusFilter === "live" ? "default" : "outline"}
+                onClick={() => setStatusFilter("live")}
+                size="sm"
+              >
+                Live
+              </Button>
+              <Button
+                variant={statusFilter === "in-progress" ? "default" : "outline"}
+                onClick={() => setStatusFilter("in-progress")}
+                size="sm"
+              >
+                In Progress
+              </Button>
+              <Button
+                variant={statusFilter === "archived" ? "default" : "outline"}
+                onClick={() => setStatusFilter("archived")}
+                size="sm"
+              >
+                Archived
+              </Button>
+            </div>
           </motion.div>
 
           {/* Projects Grid */}
@@ -113,7 +150,16 @@ export default function ProjectsPage() {
                         <CardTitle className="text-xl">
                           {project.title}
                         </CardTitle>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge
+                            variant={
+                              project.category === "personal"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {project.category}
+                          </Badge>
                           <Badge
                             variant={
                               project.status === "live"
@@ -188,15 +234,37 @@ export default function ProjectsPage() {
 
                   <CardFooter className="flex gap-2">
                     {project.links.demo && (
-                      <Button variant="default" size="sm" className="gap-2">
-                        <ExternalLink className="h-4 w-4" />
-                        Live Demo
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="gap-2"
+                        asChild
+                      >
+                        <a
+                          href={project.links.demo}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          Live Demo
+                        </a>
                       </Button>
                     )}
                     {project.links.github && (
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Github className="h-4 w-4" />
-                        Code
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        asChild
+                      >
+                        <a
+                          href={project.links.github}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Github className="h-4 w-4" />
+                          Code
+                        </a>
                       </Button>
                     )}
                     {!project.links.demo && !project.links.github && (

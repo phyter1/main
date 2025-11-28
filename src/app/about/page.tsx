@@ -97,8 +97,8 @@ export default function AboutPage() {
                     type safety, and the TanStack ecosystem for data management.
                     I've adopted Bun and Biome to maximize developer velocity,
                     and prefer PostgreSQL with Redis for production data layers.
-                    This stack represents my vision for sustainable, high-velocity
-                    development.
+                    This stack represents my vision for sustainable,
+                    high-velocity development.
                   </p>
                   <p>
                     AI-assisted development is core to how I work and lead. I've
