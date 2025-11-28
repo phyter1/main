@@ -134,7 +134,10 @@ export default function ProjectsPage() {
 
           {/* Projects Grid */}
           <motion.div
+            key={`${categoryFilter}-${statusFilter}`}
             variants={containerVariants}
+            initial="hidden"
+            animate="visible"
             className="grid gap-6 md:grid-cols-2"
           >
             {filteredProjects.map((project) => (
