@@ -50,8 +50,8 @@ export default function AboutPage() {
               About Me
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Tech Lead at Hugo Health • AI-Assisted Development Champion •
-              Building Healthcare Technology for 30,000+ Users
+              Full-Stack Engineer • AI-Assisted Development Advocate • Building
+              Scalable Systems with Modern Technology
             </p>
           </motion.div>
 
@@ -81,33 +81,36 @@ export default function AboutPage() {
                 </h2>
                 <div className="space-y-4 text-muted-foreground">
                   <p>
-                    I'm a Tech Lead at Hugo Health with 7+ years of experience
-                    building production healthcare systems that serve 30,000+
-                    users. I architect and own the full stack for Hugo
-                    Connect—from Kubernetes clusters and Terraform
-                    infrastructure to Node.js services and React
-                    applications—managing AWS deployments, MongoDB and MySQL
-                    databases, and CI/CD pipelines in a regulated healthcare
-                    environment.
+                    I've spent over a decade building software systems, evolving
+                    from systems administration and Salesforce development into
+                    full-stack engineering and technical leadership. My journey
+                    has taken me through enterprise healthcare applications,
+                    payment processing systems, and complex distributed
+                    architectures. Along the way, I've developed a deep
+                    appreciation for owning the complete stack—from
+                    infrastructure and CI/CD to databases and user interfaces.
                   </p>
                   <p>
-                    My personal approach emphasizes type-first development with
-                    modern tooling: Next.js with React Server Components, Hono
-                    for edge-native APIs, Drizzle ORM and Zod for end-to-end
-                    type safety, and the TanStack ecosystem for data management.
-                    I've adopted Bun and Biome to maximize developer velocity,
-                    and prefer PostgreSQL with Redis for production data layers.
-                    This stack represents my vision for sustainable,
-                    high-velocity development.
+                    I'm passionate about developer experience and modern tooling
+                    that enables teams to move fast without sacrificing quality.
+                    My approach emphasizes type-first development with tools
+                    like Next.js, Drizzle ORM, Zod, and the TanStack ecosystem.
+                    I gravitate toward technologies that provide strong
+                    guarantees and excellent ergonomics: Bun for speed, Biome
+                    for instant feedback, PostgreSQL for reliability, and
+                    TypeScript everywhere for safety. This stack represents my
+                    vision for sustainable, high-velocity development.
                   </p>
                   <p>
-                    AI-assisted development is core to how I work and lead. I've
-                    integrated Claude Code, GitHub Copilot, and specialized AI
-                    tools into our engineering workflows, dramatically
-                    accelerating feature delivery, test coverage, and
-                    documentation quality. I'm pioneering how teams can leverage
-                    AI to ship faster while maintaining the code standards
-                    healthcare demands.
+                    AI-assisted development has fundamentally changed how I
+                    approach building software. I believe AI tools like Claude
+                    Code and GitHub Copilot aren't just productivity
+                    multipliers—they're enablers of a new development paradigm
+                    where developers can focus on architecture and
+                    problem-solving while AI handles the mechanical work. I'm
+                    excited about exploring how teams can leverage these tools
+                    to ship faster, write better tests, and maintain higher code
+                    quality across the board.
                   </p>
                 </div>
               </div>
@@ -133,13 +136,14 @@ export default function AboutPage() {
             <div className="grid gap-6 md:grid-cols-3">
               <Card>
                 <CardHeader>
-                  <CardTitle>AI-Augmented Excellence</CardTitle>
+                  <CardTitle>AI-Augmented Development</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Strategic use of AI tools accelerates delivery without
-                    compromising quality. I select the right AI tool for each
-                    task while maintaining rigorous code standards.
+                    AI tools fundamentally change how we build software. By
+                    handling mechanical work, they free developers to focus on
+                    architecture, problem-solving, and creating better user
+                    experiences without compromising code quality.
                   </p>
                 </CardContent>
               </Card>
@@ -150,22 +154,24 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    From infrastructure as code to user interfaces, I believe in
-                    owning the complete stack. This enables better architectural
-                    decisions and faster iteration.
+                    Understanding the complete stack—from infrastructure and
+                    databases to APIs and user interfaces—enables better
+                    architectural decisions, faster iteration, and more elegant
+                    solutions to complex problems.
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Healthcare-First Mindset</CardTitle>
+                  <CardTitle>Developer Experience First</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Building for healthcare means prioritizing security,
-                    reliability, and user trust. Every line of code impacts
-                    patient care and data privacy.
+                    Great developer tools and ergonomic APIs aren't
+                    luxuries—they're force multipliers. Type safety, instant
+                    feedback, and strong guarantees enable teams to move fast
+                    while maintaining high quality and confidence.
                   </p>
                 </CardContent>
               </Card>

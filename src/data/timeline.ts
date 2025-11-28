@@ -138,8 +138,11 @@ export const getEventsByType = (
 };
 
 export const getSortedTimeline = (): TimelineEvent[] => {
-  // Convert projects to timeline events and merge with other events
-  const projectEvents = projects.map(projectToTimelineEvent);
+  // Convert only professional projects to timeline events and merge with other events
+  const professionalProjects = projects.filter(
+    (p) => p.category === "professional",
+  );
+  const projectEvents = professionalProjects.map(projectToTimelineEvent);
   const allEvents = [...timelineEvents, ...projectEvents];
 
   return allEvents.sort((a, b) => {
