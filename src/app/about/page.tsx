@@ -64,7 +64,7 @@ export default function AboutPage() {
             <div className="flex items-center justify-center">
               <div className="relative h-[400px] w-[320px] overflow-hidden rounded-lg border border-border">
                 <Image
-                  src="/assets/ai-generated-portrait-2.png"
+                  src="/assets/comfortable.jpg"
                   alt="Ryan Lowe"
                   fill
                   className="object-cover"
