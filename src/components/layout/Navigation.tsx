@@ -81,7 +81,7 @@ export function Navigation() {
           {/* CTA Button */}
           <div className="hidden md:block">
             <Button size="sm" variant="outline" asChild>
-              <a href="/assets/ryan_lowe-resume-2025.pdf" download>
+              <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
                 Resume
               </a>
             </Button>
@@ -126,7 +126,7 @@ export function Navigation() {
             })}
             <div className="pt-2">
               <Button size="sm" variant="outline" className="w-full" asChild>
-                <a href="/assets/ryan_lowe-resume-2025.pdf" download>
+                <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
                   Resume
                 </a>
               </Button>

@@ -64,7 +64,7 @@ export default function AboutPage() {
             <div className="flex items-center justify-center">
               <div className="relative h-[400px] w-[320px] overflow-hidden rounded-lg border border-border">
                 <Image
-                  src="/assets/headshot-1.jpg"
+                  src="/assets/comfortable-headshot.jpg"
                   alt="Ryan Lowe"
                   fill
                   className="object-cover"
@@ -117,7 +117,7 @@ export default function AboutPage() {
 
               <div>
                 <Button size="lg" className="gap-2" asChild>
-                  <a href="/assets/ryan_lowe-resume-2025.pdf" download>
+                  <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
                     <Download className="h-4 w-4" />
                     Download Resume
                   </a>
