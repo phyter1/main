@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const dynamic = "force-static";
-export const alt = "Ryan Lowe | Full-Stack Engineer & Infrastructure Architect";
+export const alt = "Ryan Lowe | AI Engineering Leader";
 export const size = {
   width: 1200,
   height: 630,
@@ -56,7 +56,7 @@ export default async function Image() {
               marginBottom: 40,
             }}
           >
-            Full-Stack Engineer & Infrastructure Architect
+            AI Engineering Leader
           </div>
 
           {/* Tags */}
@@ -68,7 +68,7 @@ export default async function Image() {
               justifyContent: "center",
             }}
           >
-            {["TypeScript", "React", "Next.js", "AWS", "PostgreSQL"].map(
+            {["AI Agents", "Claude", "10x Velocity", "TypeScript", "Next.js"].map(
               (tag) => (
                 <div
                   key={tag}

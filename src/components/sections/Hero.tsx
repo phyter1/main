@@ -82,19 +82,19 @@ export function Hero() {
           variants={itemVariants}
           className="mb-6 font-sans text-5xl font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl"
         >
-          Frontend / Backend
+          AI Engineering
           <br />
-          <span className="text-primary">Typescript Engineer</span>
+          <span className="text-primary">Leader</span>
         </motion.h1>
 
         <motion.p
           variants={itemVariants}
           className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground md:text-xl"
         >
-          Building scalable applications with Typescript, Node, React, and
-          Tailwind.
+          Leading teams of AI agents to deliver 10x development velocity.
           <br />
-          Passionate about developer experience and AI-assisted workflows.
+          Pioneering AI-native workflows that combine speed, quality, and cost
+          efficiency.
         </motion.p>
 
         {/* Rotating tech showcase */}

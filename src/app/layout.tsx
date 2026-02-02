@@ -5,9 +5,9 @@ import { Navigation } from "@/components/layout/Navigation";
 import { firaMono, firaSans } from "@/lib/fonts";
 
 const siteUrl = "https://ryn.phytertek.com";
-const siteTitle = "Ryan Lowe | Full-Stack Engineer & Infrastructure Architect";
+const siteTitle = "Ryan Lowe | AI Engineering Leader";
 const siteDescription =
-  "Senior software engineer specializing in TypeScript, React, Next.js, and AWS. Building scalable healthcare technology and developer tools.";
+  "AI Engineering Leader managing teams of AI agents to deliver 10x development velocity. Pioneering AI-native workflows that combine unprecedented speed, quality, and cost efficiency.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -18,16 +18,17 @@ export const metadata: Metadata = {
   description: siteDescription,
   keywords: [
     "Ryan Lowe",
-    "Full-Stack Engineer",
+    "AI Engineering Leader",
+    "AI Agent Teams",
+    "AI-Native Development",
+    "Claude Code",
+    "GitHub Copilot",
+    "10x Development Velocity",
     "TypeScript",
     "React",
     "Next.js",
-    "AWS",
-    "Infrastructure",
-    "Software Engineer",
-    "Developer",
-    "AI-Assisted Development",
-    "Healthcare Technology",
+    "AI-First Developer",
+    "Agent Orchestration",
     "Phytertek",
   ],
   authors: [{ name: "Ryan Lowe" }],
@@ -75,17 +76,19 @@ export default function RootLayout({
     "@type": "Person",
     name: "Ryan Lowe",
     url: siteUrl,
-    jobTitle: "Full-Stack Engineer & Infrastructure Architect",
+    jobTitle: "AI Engineering Leader",
     description: siteDescription,
     knowsAbout: [
+      "AI Agent Teams",
+      "AI-Native Development",
+      "Claude Code",
+      "GitHub Copilot",
       "TypeScript",
       "React",
       "Next.js",
       "AWS",
-      "PostgreSQL",
-      "Full-Stack Development",
-      "Infrastructure",
-      "AI-Assisted Development",
+      "Agent Orchestration",
+      "10x Development Velocity",
     ],
     sameAs: [
       "https://github.com/phytertek",
