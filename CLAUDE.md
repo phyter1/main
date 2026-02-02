@@ -103,3 +103,14 @@ Always use `bun lint` and `bun format` (not `npm run lint` or other package mana
 - TypeScript strict mode enabled
 - Module resolution: bundler
 - Target: ES2017
+
+## Content Writing Guidelines
+
+When writing or editing content for this portfolio:
+
+- **Never use em dashes (—) without spaces** - This is a telltale sign of AI-generated content
+  - ❌ Bad: "AI agents—they're team members"
+  - ✅ Good: "AI agents. They're team members." OR "AI agents are team members."
+  - ✅ Also fine: "AI agents - they're team members" (single dash with spaces is acceptable)
+- Use natural punctuation: periods, commas, single dashes with spaces, or break into separate sentences
+- Write in a direct, human voice without overly formal or AI-typical phrasing
