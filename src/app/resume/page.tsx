@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText, Printer } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -45,6 +46,19 @@ export default function ResumePage() {
 
       {/* Resume content */}
       <div className="container mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 print:py-0">
+        {/* Headshot */}
+        <div className="mb-8 flex justify-center print:hidden">
+          <div className="relative h-32 w-32 overflow-hidden rounded-full border-2 border-border">
+            <Image
+              src="/assets/comfortable-headshot.jpg"
+              alt="Ryan Lowe"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        </div>
+
         <div
           id="resume-content"
           className="prose prose-neutral dark:prose-invert mx-auto max-w-none"
