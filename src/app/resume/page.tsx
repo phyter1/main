@@ -67,7 +67,7 @@ export default function ResumePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header bar - hide when printing */}
-      <div className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden">
+      <div className="sticky top-0 z-50 border-b border-border bg-background print:hidden">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
@@ -110,7 +110,7 @@ export default function ResumePage() {
       <div className="container max-w-4xl py-8 print:py-0">
         <div
           id="resume-content"
-          className="prose prose-neutral dark:prose-invert mx-auto max-w-none print:prose-print"
+          className="prose prose-neutral dark:prose-invert mx-auto max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h1:mb-2 prose-h2:text-xl prose-h2:mt-6 prose-h2:mb-3 prose-h2:border-b prose-h2:border-border prose-h2:pb-2 prose-h3:text-lg prose-h3:mt-4 prose-h3:mb-2 prose-p:my-2 prose-ul:my-2 prose-li:my-1 print:prose-print"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
         </div>
