@@ -1,7 +1,6 @@
 # RYAN LOWE
 **AI Engineering Leader**
-425.320.9221 • ryan.phyter.1@gmail.com
-[LinkedIn](https://linkedin.com/in/ryanlowe) • [ryan.phytertek.com](https://ryan.phytertek.com) • North Port, FL
+425.320.9221 • ryan.phyter.1@gmail.com • [LinkedIn](https://linkedin.com/in/ryanlowe) • [Portfolio](https://ryan.phytertek.com) • North Port, FL
 
 ## SUMMARY
 
