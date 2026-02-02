@@ -82,15 +82,15 @@ export default function AboutPage() {
                 <div className="space-y-4 text-muted-foreground">
                   <p>
                     Over a decade of building software systems taught me
-                    everything about full-stack engineering—from systems
+                    everything about full-stack engineering. From systems
                     administration and Salesforce development through enterprise
                     healthcare applications, payment processing systems, and
-                    complex distributed architectures. I learned to own the
+                    complex distributed architectures, I learned to own the
                     complete stack: infrastructure, CI/CD, databases, and user
                     interfaces. But in 2024, everything changed.
                   </p>
                   <p>
-                    I discovered that AI agents aren't just tools—they're team
+                    I discovered that AI agents aren't just tools. They're team
                     members. Today, I lead a team of AI agents that deliver what
                     used to require entire engineering departments. These agents
                     write code, run tests, review pull requests, debug
@@ -100,14 +100,14 @@ export default function AboutPage() {
                     designing workflows, and ensuring quality at 10x velocity.
                   </p>
                   <p>
-                    This isn't augmentation—it's transformation. Where
+                    This isn't augmentation. It's transformation. Where
                     traditional teams measure velocity in story points per
                     sprint, agent teams measure it in features per day. Where
                     human teams struggle with consistency across codebases,
                     agents maintain perfect adherence to patterns. Where hiring
                     and scaling used to take months, spinning up new agent
                     capabilities takes hours. The economics, the velocity, the
-                    quality—everything is different. And I'm pioneering how to
+                    quality... everything is different. And I'm pioneering how to
                     make this the new standard.
                   </p>
                 </div>
@@ -170,9 +170,9 @@ export default function AboutPage() {
                   <p className="text-sm text-muted-foreground">
                     What used to require a team of 10 engineers over 6 months
                     now takes one engineering leader and agent teams over weeks.
-                    The cost structure, hiring timeline, and scaling
-                    dynamics—everything changes. This isn't incremental
-                    improvement; it's a paradigm shift.
+                    The cost structure, hiring timeline, and scaling dynamics
+                    all change. This isn't incremental improvement; it's a
+                    paradigm shift.
                   </p>
                 </CardContent>
               </Card>
