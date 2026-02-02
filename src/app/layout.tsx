@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Footer } from "@/components/layout/Footer";
-import { Navigation } from "@/components/layout/Navigation";
+import { LayoutContent } from "@/components/layout/LayoutContent";
 import { firaMono, firaSans } from "@/lib/fonts";
 
 const siteUrl = "https://ryn.phytertek.com";
@@ -112,9 +111,7 @@ export default function RootLayout({
       <body
         className={`${firaSans.variable} ${firaMono.variable} font-sans antialiased`}
       >
-        <Navigation />
-        <main>{children}</main>
-        <Footer />
+        <LayoutContent>{children}</LayoutContent>
       </body>
     </html>
   );
