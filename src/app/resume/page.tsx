@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileText, Printer } from "lucide-react";
+import { FileText, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -15,15 +15,6 @@ export default function ResumePage() {
       .then((text) => setMarkdown(text));
   }, []);
 
-  const downloadMarkdown = () => {
-    const blob = new Blob([markdown], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ryan_lowe_resume.md";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
 
   const printPdf = () => {
@@ -40,26 +31,15 @@ export default function ResumePage() {
             <h1 className="text-lg font-semibold">Resume</h1>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={downloadMarkdown}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Markdown
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={printPdf}
-              className="gap-2"
-            >
-              <Printer className="h-4 w-4" />
-              PDF
-            </Button>
-          </div>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={printPdf}
+            className="gap-2"
+          >
+            <Printer className="h-4 w-4" />
+            Download PDF
+          </Button>
         </div>
       </div>
 
