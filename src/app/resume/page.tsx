@@ -110,40 +110,92 @@ export default function ResumePage() {
       <div className="container mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 print:py-0">
         <div
           id="resume-content"
-          className="prose prose-neutral dark:prose-invert mx-auto max-w-none prose-headings:font-bold prose-h1:text-4xl prose-h1:tracking-tight prose-h1:mb-4 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b-2 prose-h2:border-primary/20 prose-h2:pb-3 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-foreground/90 prose-p:my-3 prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-4 prose-ul:space-y-2 prose-li:my-0 prose-li:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline print:prose-print"
+          className="prose prose-neutral dark:prose-invert mx-auto max-w-none"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
         </div>
       </div>
 
-      {/* Print styles */}
+      {/* Custom resume styles */}
       <style jsx global>{`
+        #resume-content h1 {
+          font-size: 2.25rem;
+          font-weight: 700;
+          margin-bottom: 1rem;
+          line-height: 1.2;
+        }
+
+        #resume-content h2 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-top: 2.5rem;
+          margin-bottom: 1rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 2px solid hsl(var(--primary) / 0.2);
+        }
+
+        #resume-content h3 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-top: 1.5rem;
+          margin-bottom: 0.75rem;
+          color: hsl(var(--foreground) / 0.9);
+        }
+
+        #resume-content p {
+          margin: 0.75rem 0;
+          line-height: 1.75;
+        }
+
+        #resume-content strong {
+          font-weight: 600;
+          color: hsl(var(--foreground));
+        }
+
+        #resume-content ul {
+          margin: 1rem 0;
+          padding-left: 1.5rem;
+        }
+
+        #resume-content li {
+          margin: 0.5rem 0;
+          line-height: 1.75;
+        }
+
+        #resume-content a {
+          color: hsl(var(--primary));
+          text-decoration: none;
+        }
+
+        #resume-content a:hover {
+          text-decoration: underline;
+        }
+
         @media print {
           body {
             background: white;
           }
-          .prose {
-            max-width: 100% !important;
+          #resume-content {
             font-size: 10pt;
           }
-          .prose h1 {
+          #resume-content h1 {
             font-size: 18pt;
             margin-bottom: 0.25rem;
           }
-          .prose h2 {
+          #resume-content h2 {
             font-size: 14pt;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
           }
-          .prose h3 {
+          #resume-content h3 {
             font-size: 12pt;
             margin-top: 0.75rem;
             margin-bottom: 0.25rem;
           }
-          .prose p {
+          #resume-content p {
             margin: 0.25rem 0;
           }
-          .prose ul {
+          #resume-content ul {
             margin: 0.25rem 0;
           }
         }
