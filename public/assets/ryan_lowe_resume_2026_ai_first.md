@@ -52,7 +52,7 @@ Provided IT support, systems administration, and network management. Specialized
 
 **TTS CLI** - Text-to-speech command-line tool supporting 200+ voices across 100+ languages with adjustable rate and pitch. Cross-platform standalone executables for macOS, Linux, and Windows.
 
-**Portfolio Site** - Built with Next.js 16 and React 19 with React Compiler enabled. Custom theming using Tailwind CSS 4 with OKLCH color space, animated UI with Framer Motion and reduced motion support.
+**Portfolio** - Built with Next.js 16 and React 19 with React Compiler enabled. Custom theming using Tailwind CSS 4 with OKLCH color space, animated UI with Framer Motion and reduced motion support.
 
 ## PERSONAL INFRASTRUCTURE
 
