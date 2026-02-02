@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileText, FileType, Printer } from "lucide-react";
+import { Download, FileText, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -25,40 +25,6 @@ export default function ResumePage() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadDocx = async () => {
-    // @ts-expect-error - html-docx-js types are incomplete
-    const htmlDocx = (await import("html-docx-js/dist/html-docx")).default;
-    const resumeElement = document.getElementById("resume-content");
-    if (!resumeElement) return;
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; }
-            h1 { font-size: 24pt; margin-bottom: 5pt; }
-            h2 { font-size: 16pt; margin-top: 15pt; margin-bottom: 5pt; }
-            h3 { font-size: 14pt; margin-top: 10pt; margin-bottom: 5pt; }
-            p { margin: 5pt 0; }
-            ul { margin: 5pt 0; padding-left: 20pt; }
-          </style>
-        </head>
-        <body>
-          ${resumeElement.innerHTML}
-        </body>
-      </html>
-    `;
-
-    const docx = htmlDocx.asBlob(html);
-    const url = URL.createObjectURL(docx);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ryan_lowe_resume.docx";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   const printPdf = () => {
     window.print();
@@ -83,15 +49,6 @@ export default function ResumePage() {
             >
               <Download className="h-4 w-4" />
               Markdown
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={downloadDocx}
-              className="gap-2"
-            >
-              <FileType className="h-4 w-4" />
-              DOCX
             </Button>
             <Button
               variant="default"
