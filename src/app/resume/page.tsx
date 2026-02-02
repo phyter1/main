@@ -107,10 +107,10 @@ export default function ResumePage() {
       </div>
 
       {/* Resume content */}
-      <div className="container mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 print:py-0">
+      <div className="container mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 print:py-0">
         <div
           id="resume-content"
-          className="prose prose-neutral dark:prose-invert mx-auto max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h1:mb-2 prose-h2:text-xl prose-h2:mt-6 prose-h2:mb-3 prose-h2:border-b prose-h2:border-border prose-h2:pb-2 prose-h3:text-lg prose-h3:mt-4 prose-h3:mb-2 prose-p:my-2 prose-ul:my-2 prose-li:my-1 print:prose-print"
+          className="prose prose-neutral dark:prose-invert mx-auto max-w-none prose-headings:font-bold prose-h1:text-4xl prose-h1:tracking-tight prose-h1:mb-4 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b-2 prose-h2:border-primary/20 prose-h2:pb-3 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-foreground/90 prose-p:my-3 prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-4 prose-ul:space-y-2 prose-li:my-0 prose-li:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline print:prose-print"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
         </div>
