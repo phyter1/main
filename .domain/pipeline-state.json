@@ -1,0 +1,42 @@
+{
+  "issueRef": "phyter1/main#5",
+  "startedAt": "2026-02-03T21:11:00Z",
+  "currentPhase": "execution",
+  "execution": {
+    "totalTasks": 9,
+    "completedTasks": 0,
+    "parallelGroups": [
+      {
+        "group": 1,
+        "status": "pending",
+        "tasks": ["T001", "T002"]
+      },
+      {
+        "group": 2,
+        "status": "pending",
+        "tasks": ["T003", "T004", "T005"]
+      },
+      {
+        "group": 3,
+        "status": "pending",
+        "tasks": ["T006", "T007"]
+      },
+      {
+        "group": 4,
+        "status": "pending",
+        "tasks": ["T008", "T009"]
+      }
+    ]
+  },
+  "qualityGates": {
+    "codeReview": {
+      "passed": null
+    },
+    "securityScan": {
+      "passed": null
+    }
+  },
+  "pr": {
+    "url": null
+  }
+}

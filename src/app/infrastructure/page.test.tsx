@@ -1,5 +1,5 @@
+import { describe, expect, it } from "bun:test";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "bun:test";
 import InfrastructurePage from "./page";
 
 describe("InfrastructurePage - T006: AI Automation Context", () => {
@@ -26,7 +26,9 @@ describe("InfrastructurePage - T006: AI Automation Context", () => {
 
       // Should mention AI or intelligent automation near deployment content
       const pageContent = document.body.textContent;
-      expect(pageContent).toMatch(/AI-first|intelligent automation|AI-assisted/i);
+      expect(pageContent).toMatch(
+        /AI-first|intelligent automation|AI-assisted/i,
+      );
     });
 
     it("should maintain technical focus while adding AI perspective", () => {
