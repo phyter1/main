@@ -21,27 +21,27 @@ const phoenixPrinciples: Principle[] = [
     id: "first-way",
     title: "The First Way: Systems Thinking",
     description:
-      "[Placeholder: Core concept of flow from left to right, optimizing for global goals]",
+      "Optimize for the entire value stream, not individual silos. Work flows from development through operations to the customer. Understanding the complete system—from infrastructure and CI/CD through application code to user experience—enables better architectural decisions and faster delivery of value.",
     application:
-      "[Placeholder: Personal application in software delivery and system optimization]",
+      "At Hugo Health, I own the complete stack for Hugo Connect, from Terraform infrastructure and Azure DevOps pipelines to Next.js applications serving 30,000+ users. This end-to-end ownership lets me optimize globally rather than locally—whether that means reducing Docker image sizes by 80% to speed up deployments, or consolidating EKS clusters to improve both cost and operational efficiency. I've learned that the fastest way to deliver value is to understand and optimize the entire flow, not just my slice of it.",
     order: 1,
   },
   {
     id: "second-way",
     title: "The Second Way: Amplify Feedback Loops",
     description:
-      "[Placeholder: Creating right-to-left feedback loops for continuous improvement]",
+      "Create fast, continuous feedback from right to left at every stage. Rapid feedback loops—from automated tests and CI/CD pipelines to monitoring and user analytics—enable teams to detect and correct problems quickly, iterate faster, and build higher-quality systems with confidence.",
     application:
-      "[Placeholder: Personal application in monitoring, testing, and iterative development]",
+      "Fast feedback is the foundation of sustainable high-velocity development. I've built this principle into every layer: type-safe APIs with Drizzle ORM and Zod that catch errors at compile time rather than production, comprehensive test suites that run on every commit, and CI/CD pipelines that deploy changes to staging in minutes rather than hours. AI-assisted development with tools like GitHub Copilot and Claude Code creates even tighter feedback loops—instant validation of patterns, real-time suggestions for edge cases, and rapid prototyping that would have taken hours manually. The faster we learn what doesn't work, the faster we can ship what does.",
     order: 2,
   },
   {
     id: "third-way",
     title: "The Third Way: Culture of Experimentation",
     description:
-      "[Placeholder: Continual experimentation, learning from failure, practice and repetition]",
+      "Foster a culture of continual experimentation, learning from both success and failure, and understanding that mastery requires practice and repetition. Innovation requires taking calculated risks, celebrating learning over blame, and creating systems that make it safe to fail fast and iterate quickly.",
     application:
-      "[Placeholder: Personal application in innovation, risk-taking, and growth mindset]",
+      "I champion AI-assisted development not because it's trendy, but because it fundamentally changes how we experiment and learn. With a strategic multi-tool approach using GitHub Copilot, Claude Code, and other AI assistants, we can rapidly prototype solutions, explore alternative architectures, and test new patterns without the traditional cost of experimentation. This lets teams fail fast and iterate quickly. I've also learned that experimentation requires the right foundation—strong types, comprehensive tests, and fast CI/CD pipelines create the safety net that makes bold experiments possible. At Hugo, I mentor the team on modern development practices and lead architecture decisions that enable innovation rather than constrain it.",
     order: 3,
   },
 ];
@@ -149,7 +149,7 @@ export const principleGroups: PrincipleGroup[] = [
     title: "The Three Ways",
     subtitle: "From The Phoenix Project",
     description:
-      "[Placeholder: Introduction to The Three Ways and their significance in DevOps]",
+      "The Three Ways are the foundational principles of DevOps that transformed how software organizations deliver value. These principles emphasize optimizing the entire system, creating fast feedback loops, and fostering continuous experimentation and learning. They've profoundly influenced how I approach full-stack engineering, from infrastructure and CI/CD to application development and team culture.",
     source: "The Phoenix Project by Gene Kim, Kevin Behr, and George Spafford",
     principles: phoenixPrinciples,
   },
