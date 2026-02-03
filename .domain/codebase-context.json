@@ -1,0 +1,122 @@
+{
+  "techStack": {
+    "framework": "Next.js 16 (App Router)",
+    "runtime": "Bun",
+    "language": "TypeScript",
+    "react": "19.2.0 with React Compiler",
+    "styling": "Tailwind CSS 4",
+    "ui": "shadcn/ui (new-york style)",
+    "linter": "Biome (not ESLint)",
+    "fonts": "Fira Sans, Fira Mono (next/font/google)",
+    "packageManager": "Bun"
+  },
+  "projectStructure": {
+    "pages": {
+      "location": "src/app/",
+      "existing": [
+        "page.tsx (homepage with Hero component)",
+        "about/page.tsx",
+        "stack/page.tsx",
+        "projects/page.tsx",
+        "infrastructure/page.tsx",
+        "principles/page.tsx (NEW - just created in issue #3)"
+      ],
+      "pattern": "Each page has layout.tsx and page.tsx, client components use 'use client' directive"
+    },
+    "components": {
+      "location": "src/components/",
+      "structure": {
+        "ui/": "shadcn/ui components",
+        "sections/": "Hero.tsx and other page sections",
+        "effects/": "CursorGlow, GrainOverlay, TypeWriter, RotatingTypeWriter",
+        "layout/": "Navigation, Footer"
+      }
+    },
+    "data": {
+      "location": "src/data/",
+      "pattern": "TypeScript data files (timeline.ts, stack.ts, principles.ts)"
+    }
+  },
+  "issueContext": {
+    "issueNumber": 5,
+    "title": "Realign as being a tech lead for both agentic AI and human employees",
+    "requirements": {
+      "primaryGoal": "Retitle position to 'Tech Lead'",
+      "emphasis": "AI-first development and teams with humans AND agents",
+      "scope": "Update all pages except projects",
+      "guide": "Use principles page as guide for updates",
+      "newSection": "Add skills section for agentic AI creation and leadership"
+    }
+  },
+  "currentPositioning": {
+    "homepage": {
+      "currentTitle": "Frontend / Backend Typescript Engineer",
+      "location": "src/components/sections/Hero.tsx line 85-87",
+      "aiMentions": "Minimal - 'AI-assisted workflows' in subtitle (line 97)",
+      "structure": "Terminal greeting, headline, subtitle (2 lines), rotating tech showcase, 2 CTAs"
+    },
+    "aboutPage": {
+      "currentTitle": "Full-Stack Engineer • AI-Assisted Development Advocate • Building Scalable Systems with Modern Technology",
+      "location": "src/app/about/page.tsx line 52-55",
+      "aiContent": {
+        "section": "Engineering Philosophy with 'AI-Augmented Development' card",
+        "emphasis": "Strong - dedicated philosophy section about AI tools",
+        "quote": "AI tools like Claude Code and GitHub Copilot aren't just productivity multipliers—they're enablers of a new development paradigm"
+      },
+      "structure": "Header, Profile+Bio, Engineering Philosophy (3 cards), Career Timeline, Download Resume"
+    },
+    "stackPage": {
+      "currentTitle": "None (focuses on tech stack)",
+      "location": "src/app/stack/page.tsx",
+      "aiMentions": "None found",
+      "structure": "Header, view toggle, category filters, stack grid, statistics, breakdown by category"
+    },
+    "infrastructurePage": {
+      "currentTitle": "None (focuses on infrastructure)",
+      "location": "src/app/infrastructure/page.tsx",
+      "aiMentions": "None found",
+      "structure": "Header, Architecture Principles, Infrastructure Stack Viz, Core Services, Deployed Apps, Statistics"
+    },
+    "principlesPage": {
+      "currentTitle": "None (focuses on principles)",
+      "location": "src/app/principles/page.tsx",
+      "aiContent": {
+        "emphasis": "VERY STRONG - 'AI-first, agentic LLM coding' prominently featured",
+        "subtitle": "Discusses autonomous agents, rapid iteration, human-AI collaboration",
+        "framework": "Shows how traditional principles apply in AI-first paradigm"
+      },
+      "structure": "Header with AI-first subtitle, Principle Groups (Phoenix/Unicorn/Goal), Cards with personal applications"
+    }
+  },
+  "patternsIdentified": {
+    "pageStructure": "Client components with framer-motion animations",
+    "contentLayout": "Hero/header section, content sections with cards, separators between major sections",
+    "animations": "containerVariants and itemVariants with staggerChildren, useReducedMotion for accessibility",
+    "dataFiles": "Separate TypeScript files in src/data/ for structured content",
+    "heroPattern": "TypeWriter effects, rotating text, gradient backgrounds"
+  },
+  "changesToMake": {
+    "titleUpdates": [
+      "Homepage Hero: Change 'Frontend / Backend Typescript Engineer' to 'Tech Lead'",
+      "About page subtitle: Update to emphasize Tech Lead role",
+      "Consider adding 'Tech Lead' to other pages where relevant"
+    ],
+    "aiEmphasis": [
+      "Homepage: Strengthen AI-first messaging in subtitle",
+      "About page: Enhance AI-Augmented Development section to include agentic teams",
+      "Stack page: Add AI development tools (Claude Code, etc.)",
+      "Infrastructure: Mention AI-powered automation if applicable"
+    ],
+    "newContent": [
+      "Add skills section for agentic AI creation and leadership (location TBD - likely About page)",
+      "Emphasize building teams with both humans and AI agents",
+      "Use principles page tone as guide for AI-first framing"
+    ],
+    "excludePages": ["projects/page.tsx (explicitly excluded by issue)"]
+  },
+  "testingApproach": {
+    "framework": "bun:test",
+    "location": "src/app/*/page.test.tsx pattern",
+    "convention": "Test files alongside page files"
+  }
+}

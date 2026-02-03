@@ -50,8 +50,8 @@ export default function AboutPage() {
               About Me
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Full-Stack Engineer • AI-Assisted Development Advocate • Building
-              Scalable Systems with Modern Technology
+              Tech Lead • AI-First Development • Building Teams of Humans and
+              Agents
             </p>
           </motion.div>
 
@@ -136,14 +136,16 @@ export default function AboutPage() {
             <div className="grid gap-6 md:grid-cols-3">
               <Card>
                 <CardHeader>
-                  <CardTitle>AI-Augmented Development</CardTitle>
+                  <CardTitle>AI-First, Agentic Development</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    AI tools fundamentally change how we build software. By
-                    handling mechanical work, they free developers to focus on
-                    architecture, problem-solving, and creating better user
-                    experiences without compromising code quality.
+                    I build teams with both humans and autonomous AI agents. As
+                    a tech lead in an AI-first world, I leverage agentic LLM
+                    coding to amplify team velocity and capability. Autonomous
+                    agents handle mechanical work, enabling my teams to focus on
+                    architecture, problem-solving, and innovation while
+                    maintaining exceptional code quality.
                   </p>
                 </CardContent>
               </Card>
@@ -181,6 +183,61 @@ export default function AboutPage() {
               <Button size="lg" variant="outline" asChild>
                 <a href="/principles">View My Full Principles</a>
               </Button>
+            </div>
+          </motion.div>
+
+          <Separator />
+
+          {/* Agentic AI Leadership Section */}
+          <motion.div variants={itemVariants}>
+            <h2 className="mb-8 text-3xl font-bold text-foreground">
+              Agentic AI Creation &amp; Leadership
+            </h2>
+            <div className="grid gap-6 md:grid-cols-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI Agent Design &amp; Deployment</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Creating autonomous AI agents that integrate seamlessly into
+                    development workflows. From prompt engineering and context
+                    management to deployment pipelines and monitoring, I
+                    architect agent systems that amplify team capabilities while
+                    maintaining reliability and control.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Hybrid Team Orchestration</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Leading teams where humans and AI agents collaborate
+                    effectively. I establish workflows that leverage AI for code
+                    generation, testing, and documentation while empowering
+                    human developers to focus on architecture, creativity, and
+                    strategic decision-making.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI-First Development Culture</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Building organizational capabilities around AI-augmented
+                    development. I champion best practices for agent
+                    integration, establish quality standards for AI-generated
+                    code, and mentor teams on maximizing productivity through
+                    intelligent tooling and agentic workflows.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </motion.div>
 

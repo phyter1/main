@@ -45,10 +45,14 @@ export default function PrinciplesPage() {
               Engineering Principles
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              How I apply The Three Ways, The Five Ideals, and Theory of Constraints
-              in an <span className="font-semibold text-primary">AI-first, agentic LLM coding</span> world—where
-              autonomous agents, rapid iteration, and human-AI collaboration redefine
-              software engineering, system design, and team productivity.
+              How I apply The Three Ways, The Five Ideals, and Theory of
+              Constraints in an{" "}
+              <span className="font-semibold text-primary">
+                AI-first, agentic LLM coding
+              </span>{" "}
+              world—where autonomous agents, rapid iteration, and human-AI
+              collaboration redefine software engineering, system design, and
+              team productivity.
             </p>
           </motion.div>
 
