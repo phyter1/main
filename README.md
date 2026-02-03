@@ -10,6 +10,7 @@ A modern, high-performance portfolio website showcasing professional and persona
 - **🎯 Project Showcase**: Filterable portfolio with professional and personal projects
 - **📊 Tech Stack Visualization**: Interactive technology stack with categorization
 - **🏗️ Infrastructure Timeline**: Visual representation of infrastructure and DevOps work
+- **📚 Engineering Principles**: Dedicated page showcasing principles from The Phoenix Project, The Unicorn Project, and The Goal
 - **⚡ Performance Optimized**: React 19 with React Compiler enabled
 - **🌓 Modern Design System**: OKLCH color space with custom theming
 - **♿ Accessibility**: Reduced motion support and semantic HTML
@@ -49,6 +50,7 @@ src/
 │   ├── layout.tsx           # Root layout with metadata
 │   ├── page.tsx             # Homepage with hero section
 │   ├── about/               # About page
+│   ├── principles/          # Engineering principles page
 │   ├── projects/            # Projects showcase with filters
 │   ├── stack/               # Tech stack visualization
 │   ├── infrastructure/      # Infrastructure & DevOps timeline
@@ -59,6 +61,7 @@ src/
 │   ├── sections/            # Page sections (Hero, etc.)
 │   └── ui/                  # shadcn/ui components
 ├── data/
+│   ├── principles.ts        # Engineering principles from Phoenix/Unicorn/Goal
 │   ├── projects.ts          # Project data with categories
 │   ├── stack.ts             # Technology stack data
 │   └── timeline.ts          # Infrastructure timeline data
@@ -107,6 +110,29 @@ bun format
 ```
 
 ## 🎯 Key Features Explained
+
+### Engineering Principles Page
+
+A comprehensive page documenting personal engineering principles inspired by foundational software engineering books:
+
+- **The Phoenix Project** (Gene Kim) - The Three Ways
+  - Systems Thinking: Optimize the entire value stream
+  - Amplify Feedback Loops: Fast, continuous feedback
+  - Culture of Experimentation: Learning from failure
+
+- **The Unicorn Project** (Gene Kim) - The Five Ideals
+  - Locality and Simplicity: Independent deployment, minimal dependencies
+  - Focus, Flow, and Joy: Developer happiness and flow state
+  - Improvement of Daily Work: Continuous technical debt reduction
+  - Psychological Safety: Safe experimentation environment
+  - Customer Focus: Distinguish core from context work
+
+- **The Goal** (Eliyahu M. Goldratt) - Theory of Constraints
+  - Five Focusing Steps for identifying and eliminating bottlenecks
+  - Application to software delivery pipelines
+  - Real-world examples from professional experience
+
+Each principle includes personalized descriptions with practical applications from Hugo Health work, AI-assisted development practices, and modern tooling choices (Bun, Biome, TypeScript, Next.js).
 
 ### Project Categories
 Projects are organized into two categories:
