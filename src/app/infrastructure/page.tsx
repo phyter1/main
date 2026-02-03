@@ -2,18 +2,16 @@
 
 import { motion } from "framer-motion";
 import {
-  Cloud,
+  BarChart3,
+  Boxes,
+  Bug,
   Database,
   GitBranch,
   HardDrive,
-  Lock,
+  Package,
   Radio,
   Server,
-  Boxes,
   Workflow,
-  Package,
-  BarChart3,
-  Bug,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,7 +43,8 @@ const infrastructureLayers = [
     title: "Application Platform",
     layer: "Orchestration",
     icon: Workflow,
-    description: "Self-hosted Coolify for container orchestration and deployment",
+    description:
+      "Self-hosted Coolify for container orchestration and deployment",
     technologies: ["Coolify", "Docker", "Nixpacks", "Git Integration"],
     highlights: [
       "Automated deployments from Git repositories",
@@ -105,7 +104,8 @@ const coreServices = [
     id: "gitea",
     title: "Gitea",
     icon: GitBranch,
-    description: "Self-hosted Git service for code repositories",
+    description:
+      "Self-hosted Git service for code repositories with AI-assisted development workflows",
     technologies: ["Gitea", "Git", "CI/CD Webhooks"],
     highlights: [
       "Private Git repositories",
@@ -196,8 +196,8 @@ export default function InfrastructurePage() {
               Infrastructure
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Self-hosted infrastructure for personal projects. Bare metal
-              hosting with automated deployments via Coolify.
+              AI-assisted infrastructure management for personal projects. Bare
+              metal hosting with intelligent automated deployments via Coolify.
             </p>
           </motion.div>
 
@@ -222,14 +222,12 @@ export default function InfrastructurePage() {
                   Automated Deployments
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Git-integrated deployments with Coolify and Nixpacks for
-                  zero-downtime updates.
+                  AI-first deployment automation with Git-integrated Coolify and
+                  Nixpacks for intelligent zero-downtime updates.
                 </p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">
-                  Modern Stack
-                </h3>
+                <h3 className="font-semibold text-foreground">Modern Stack</h3>
                 <p className="text-sm text-muted-foreground">
                   Production-grade services with PostgreSQL, Redis, MinIO,
                   WebSockets, and more.
