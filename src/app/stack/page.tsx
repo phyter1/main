@@ -104,8 +104,8 @@ export default function StackPage() {
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
               Technologies and tools I use to build modern, scalable
-              applications. Highlighting my personal stack preferences for side
-              projects.
+              applications with an AI-first development approach. Highlighting
+              my personal stack preferences for side projects.
             </p>
           </div>
 

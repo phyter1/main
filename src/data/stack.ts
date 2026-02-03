@@ -298,6 +298,27 @@ export const stackItems: StackItem[] = [
     yearsUsed: 1,
   },
   {
+    id: "github-copilot",
+    label: "GitHub Copilot",
+    category: "devtool",
+    proficiency: "expert",
+    context: "both",
+    personalStack: true,
+    description:
+      "AI pair programmer for code completion and suggestion in real-time",
+    yearsUsed: 3,
+  },
+  {
+    id: "chatgpt",
+    label: "ChatGPT",
+    category: "devtool",
+    proficiency: "expert",
+    context: "both",
+    description:
+      "AI assistant for architecture planning, problem-solving, and technical research",
+    yearsUsed: 2,
+  },
+  {
     id: "git",
     label: "Git",
     category: "devtool",
