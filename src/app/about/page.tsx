@@ -50,8 +50,8 @@ export default function AboutPage() {
               About Me
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Full-Stack Engineer • AI-Assisted Development Advocate • Building
-              Scalable Systems with Modern Technology
+              Tech Lead • AI-First Development • Building Teams of Humans and
+              Agents
             </p>
           </motion.div>
 
