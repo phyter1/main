@@ -176,6 +176,12 @@ export default function AboutPage() {
                 </CardContent>
               </Card>
             </div>
+
+            <div className="mt-8 text-center">
+              <Button size="lg" variant="outline" asChild>
+                <a href="/principles">View My Full Principles</a>
+              </Button>
+            </div>
           </motion.div>
 
           <Separator />
