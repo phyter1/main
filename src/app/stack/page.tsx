@@ -103,9 +103,11 @@ export default function StackPage() {
               Tech Stack
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Technologies and tools I use to build modern, scalable
-              applications with an AI-first development approach. Highlighting
-              my personal stack preferences for side projects.
+              Technologies and tools I use as a Tech Lead to build modern,
+              scalable applications with an AI-first development approach.
+              Leading teams of humans and AI agents, I prioritize developer
+              experience, type safety, and velocity—these are my personal stack
+              preferences for side projects.
             </p>
           </div>
 
