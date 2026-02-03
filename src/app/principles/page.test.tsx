@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it, mock } from "bun:test";
+import { render, screen } from "@testing-library/react";
 import PrinciplesPage from "./page";
 
 // Mock framer-motion to avoid animation issues in tests
@@ -30,7 +30,9 @@ describe("T007: Principles Page Component", () => {
       expect(heading.textContent).toContain("Principles");
 
       // Check for subtitle/description text
-      const subtitle = screen.getByText(/Three Ways.*Five Ideals.*Theory of Constraints/i);
+      const subtitle = screen.getByText(
+        /Three Ways.*Five Ideals.*Theory of Constraints/i,
+      );
       expect(subtitle).toBeDefined();
     });
 
