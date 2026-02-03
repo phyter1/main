@@ -136,14 +136,16 @@ export default function AboutPage() {
             <div className="grid gap-6 md:grid-cols-3">
               <Card>
                 <CardHeader>
-                  <CardTitle>AI-Augmented Development</CardTitle>
+                  <CardTitle>AI-First, Agentic Development</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    AI tools fundamentally change how we build software. By
-                    handling mechanical work, they free developers to focus on
-                    architecture, problem-solving, and creating better user
-                    experiences without compromising code quality.
+                    I build teams with both humans and autonomous AI agents. As
+                    a tech lead in an AI-first world, I leverage agentic LLM
+                    coding to amplify team velocity and capability. Autonomous
+                    agents handle mechanical work, enabling my teams to focus on
+                    architecture, problem-solving, and innovation while
+                    maintaining exceptional code quality.
                   </p>
                 </CardContent>
               </Card>
