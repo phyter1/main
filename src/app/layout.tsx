@@ -5,9 +5,9 @@ import { Navigation } from "@/components/layout/Navigation";
 import { firaMono, firaSans } from "@/lib/fonts";
 
 const siteUrl = "https://ryn.phytertek.com";
-const siteTitle = "Ryan Lowe | Full-Stack Engineer & Infrastructure Architect";
+const siteTitle = "Ryan Lowe | Tech Lead • AI-First Development";
 const siteDescription =
-  "Senior software engineer specializing in TypeScript, React, Next.js, and AWS. Building scalable healthcare technology and developer tools.";
+  "Tech lead building teams of humans and AI agents. Championing agentic development, autonomous workflows, and AI-first engineering culture. Expert in TypeScript, React, Next.js, and modern development tooling.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -18,16 +18,17 @@ export const metadata: Metadata = {
   description: siteDescription,
   keywords: [
     "Ryan Lowe",
-    "Full-Stack Engineer",
+    "Tech Lead",
+    "AI-First Development",
+    "Agentic AI",
+    "Autonomous Agents",
+    "AI Development Teams",
     "TypeScript",
     "React",
     "Next.js",
-    "AWS",
-    "Infrastructure",
-    "Software Engineer",
-    "Developer",
-    "AI-Assisted Development",
-    "Healthcare Technology",
+    "Full-Stack Engineer",
+    "Developer Experience",
+    "Engineering Leadership",
     "Phytertek",
   ],
   authors: [{ name: "Ryan Lowe" }],
@@ -75,17 +76,19 @@ export default function RootLayout({
     "@type": "Person",
     name: "Ryan Lowe",
     url: siteUrl,
-    jobTitle: "Full-Stack Engineer & Infrastructure Architect",
+    jobTitle: "Tech Lead - AI-First Development",
     description: siteDescription,
     knowsAbout: [
+      "AI-First Development",
+      "Agentic AI",
+      "Autonomous Agents",
+      "Engineering Leadership",
       "TypeScript",
       "React",
       "Next.js",
-      "AWS",
-      "PostgreSQL",
       "Full-Stack Development",
-      "Infrastructure",
-      "AI-Assisted Development",
+      "Developer Experience",
+      "AI Development Teams",
     ],
     sameAs: [
       "https://github.com/phytertek",
