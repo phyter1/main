@@ -1,6 +1,6 @@
 # Ryan Lowe - Portfolio
 
-A modern, high-performance portfolio website showcasing professional and personal projects, built with cutting-edge web technologies.
+A modern, high-performance portfolio website showcasing professional and personal projects, built with cutting-edge web technologies and developed using AI-first, agentic development practices.
 
 **Live Site:** [ryan.phytertek.com](https://ryan.phytertek.com)
 
@@ -8,9 +8,10 @@ A modern, high-performance portfolio website showcasing professional and persona
 
 - **🎨 Beautiful UI/UX**: Custom animations, grain overlay effects, and cursor glow
 - **🎯 Project Showcase**: Filterable portfolio with professional and personal projects
-- **📊 Tech Stack Visualization**: Interactive technology stack with categorization
-- **🏗️ Infrastructure Timeline**: Visual representation of infrastructure and DevOps work
-- **📚 Engineering Principles**: Dedicated page showcasing principles from The Phoenix Project, The Unicorn Project, and The Goal
+- **📊 Tech Stack Visualization**: Interactive technology stack with AI development tools and categorization
+- **🏗️ Infrastructure Timeline**: Visual representation of infrastructure and AI-powered DevOps automation
+- **📚 Engineering Principles**: Dedicated page showcasing principles from The Phoenix Project, The Unicorn Project, and The Goal, with focus on AI-first development and team leadership
+- **🤖 Agentic AI Leadership**: Showcasing experience leading teams of humans and autonomous AI agents
 - **⚡ Performance Optimized**: React 19 with React Compiler enabled
 - **🌓 Modern Design System**: OKLCH color space with custom theming
 - **♿ Accessibility**: Reduced motion support and semantic HTML
@@ -230,11 +231,13 @@ This project is private and proprietary. All rights reserved.
 
 ## 👤 Author
 
-**Ryan Lowe**
+**Ryan Lowe** - Tech Lead
 - Website: [ryan.phytertek.com](https://ryan.phytertek.com)
 - GitHub: [@phyter1](https://github.com/phyter1)
 - LinkedIn: [linkedin.com/in/phytertek](https://linkedin.com/in/phytertek)
 - Email: ryan.phyter.1@gmail.com
+
+Leading AI-first development and building teams of humans and autonomous agents to deliver scalable, modern web applications.
 
 ## 🙏 Acknowledgments
 
