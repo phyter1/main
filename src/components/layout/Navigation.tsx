@@ -18,6 +18,8 @@ const navItems: NavItem[] = [
   { label: "Stack", href: "/stack" },
   { label: "Projects", href: "/projects" },
   { label: "Infrastructure", href: "/infrastructure" },
+  { label: "Chat", href: "/chat" },
+  { label: "Fit Assessment", href: "/fit-assessment" },
 ];
 
 /**
