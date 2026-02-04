@@ -1,6 +1,6 @@
 import {
-  type Principle,
   getAllPrinciples,
+  type Principle,
   principleGroups,
 } from "./principles";
 import { type Project, projects } from "./projects";

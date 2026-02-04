@@ -1,13 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import {
   type ExperienceEntry,
-  type ProficiencyLevel,
-  type Resume,
-  type SkillCategory,
   formatResumeAsLLMContext,
   getExpertiseByProficiency,
   getSkillsByCategory,
+  type ProficiencyLevel,
+  type Resume,
   resume,
+  type SkillCategory,
 } from "./resume";
 
 describe("T001: Create resume/experience data model for LLM context", () => {

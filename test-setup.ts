@@ -8,12 +8,9 @@ GlobalRegistrator.register();
 // Global mock for framer-motion to avoid animation issues in tests
 mock.module("framer-motion", () => ({
   motion: {
-    div: ({ children, ...props }: any) =>
-      createElement("div", props, children),
-    h1: ({ children, ...props }: any) =>
-      createElement("h1", props, children),
-    h2: ({ children, ...props }: any) =>
-      createElement("h2", props, children),
+    div: ({ children, ...props }: any) => createElement("div", props, children),
+    h1: ({ children, ...props }: any) => createElement("h1", props, children),
+    h2: ({ children, ...props }: any) => createElement("h2", props, children),
     p: ({ children, ...props }: any) => createElement("p", props, children),
     section: ({ children, ...props }: any) =>
       createElement("section", props, children),

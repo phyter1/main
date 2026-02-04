@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { stackItems, type StackItem } from "@/data/stack";
+import { type StackItem, stackItems } from "@/data/stack";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**

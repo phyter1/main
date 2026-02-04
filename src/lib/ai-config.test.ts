@@ -3,7 +3,7 @@
  * Validates environment variable handling, rate limiting constants, and configuration exports
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 describe("T002: AI SDK Configuration and Environment Validation", () => {
   // Store original environment
