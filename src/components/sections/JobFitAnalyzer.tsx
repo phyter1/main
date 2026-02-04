@@ -11,8 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { GuardrailFeedback } from "@/components/ui/guardrail-feedback";
 import { Textarea } from "@/components/ui/textarea";
 import { trackFitAssessment } from "@/lib/analytics";
+import type { GuardrailViolation } from "@/types/guardrails";
 
 /**
  * Response structure from /api/fit-assessment
@@ -24,21 +26,13 @@ interface FitAssessmentResponse {
 }
 
 /**
- * Error response from API
- */
-interface ErrorResponse {
-  error: string;
-  retryAfter?: number;
-}
-
-/**
  * Component state for form and results
  */
 interface JobFitAnalyzerState {
   jobDescription: string;
   loading: boolean;
   result: FitAssessmentResponse | null;
-  error: string | null;
+  error: GuardrailViolation | null;
   isInputCollapsed: boolean;
 }
 
@@ -132,7 +126,9 @@ export function JobFitAnalyzer() {
     if (value.length > MAX_CHARS) {
       setState((prev) => ({
         ...prev,
-        error: `Job description must not exceed ${MAX_CHARS.toLocaleString()} characters`,
+        error: {
+          error: `Job description must not exceed ${MAX_CHARS.toLocaleString()} characters`,
+        },
       }));
       return;
     }
@@ -149,7 +145,9 @@ export function JobFitAnalyzer() {
     if (!trimmed) {
       setState((prev) => ({
         ...prev,
-        error: "Job description is required and cannot be empty",
+        error: {
+          error: "Job description is required and cannot be empty",
+        },
       }));
       return false;
     }
@@ -157,7 +155,9 @@ export function JobFitAnalyzer() {
     if (trimmed.length > MAX_CHARS) {
       setState((prev) => ({
         ...prev,
-        error: `Job description must not exceed ${MAX_CHARS.toLocaleString()} characters`,
+        error: {
+          error: `Job description must not exceed ${MAX_CHARS.toLocaleString()} characters`,
+        },
       }));
       return false;
     }
@@ -203,22 +203,38 @@ export function JobFitAnalyzer() {
       });
 
       if (!response.ok) {
-        // Handle error response
-        const errorData: ErrorResponse = await response.json();
+        // Handle error response - try to parse as GuardrailViolation
+        let errorData: GuardrailViolation;
 
+        try {
+          errorData = await response.json();
+
+          // Ensure we have at least the error field
+          if (!errorData.error) {
+            errorData = { error: "Failed to process fit assessment" };
+          }
+        } catch (_parseError) {
+          // If JSON parsing fails, create simple error
+          errorData = { error: "Failed to process fit assessment" };
+        }
+
+        // Handle rate limit errors (both legacy and guardrail format)
         if (response.status === 429) {
-          setState((prev) => ({
-            ...prev,
-            loading: false,
-            error: `Rate limit exceeded. Please try again in ${errorData.retryAfter || 60} seconds.`,
-          }));
-          return;
+          // If no guardrail details, create legacy-style error message
+          if (!errorData.guardrail) {
+            const legacyRetryAfter = (
+              errorData as unknown as { retryAfter?: number }
+            ).retryAfter;
+            errorData = {
+              error: `Rate limit exceeded. Please try again in ${legacyRetryAfter || 60} seconds.`,
+            };
+          }
         }
 
         setState((prev) => ({
           ...prev,
           loading: false,
-          error: errorData.error || "Failed to process fit assessment",
+          error: errorData,
         }));
         return;
       }
@@ -249,8 +265,10 @@ export function JobFitAnalyzer() {
       setState((prev) => ({
         ...prev,
         loading: false,
-        error:
-          "Something went wrong. Failed to analyze job fit. Please try again.",
+        error: {
+          error:
+            "Something went wrong. Failed to analyze job fit. Please try again.",
+        },
       }));
     }
   };
@@ -260,157 +278,161 @@ export function JobFitAnalyzer() {
       <CardHeader>
         <CardTitle>Job Fit Analyzer</CardTitle>
         <CardDescription>
-          Paste your job description to see how well my background matches
-          your requirements
+          Paste your job description to see how well my background matches your
+          requirements
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Job Description Input */}
-            <div className="space-y-2">
-              <label
-                htmlFor="job-description"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Job Description Input */}
+          <div className="space-y-2">
+            <label
+              htmlFor="job-description"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Job Description
+            </label>
+
+            {state.isInputCollapsed ? (
+              // Collapsed single-line preview
+              <div
+                onClick={handleExpandInput}
+                className="cursor-pointer rounded-md border border-input bg-muted/50 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleExpandInput();
+                  }
+                }}
               >
-                Job Description
-              </label>
-
-              {state.isInputCollapsed ? (
-                // Collapsed single-line preview
-                <div
-                  onClick={handleExpandInput}
-                  className="cursor-pointer rounded-md border border-input bg-muted/50 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleExpandInput();
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-muted-foreground">
-                      {state.jobDescription.slice(0, 100)}...
-                    </span>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      Click to expand
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-muted-foreground">
+                    {state.jobDescription.slice(0, 100)}...
+                  </span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    Click to expand
+                  </span>
                 </div>
-              ) : (
-                // Full textarea
-                <>
-                  <Textarea
-                    id="job-description"
-                    value={state.jobDescription}
-                    onChange={handleInputChange}
-                    placeholder="Paste the full job description here..."
-                    className="min-h-[300px] resize-y"
-                    disabled={state.loading}
-                    aria-label="Job Description"
-                    aria-invalid={!!state.error}
-                    aria-describedby={state.error ? "error-message" : undefined}
-                  />
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>
-                      {state.jobDescription.length.toLocaleString()} /{" "}
-                      {MAX_CHARS.toLocaleString()}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
+              </div>
+            ) : (
+              // Full textarea
+              <>
+                <Textarea
+                  id="job-description"
+                  value={state.jobDescription}
+                  onChange={handleInputChange}
+                  placeholder="Paste the full job description here..."
+                  className="min-h-[300px] resize-y"
+                  disabled={state.loading}
+                  aria-label="Job Description"
+                  aria-invalid={!!state.error}
+                  aria-describedby={state.error ? "error-message" : undefined}
+                />
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>
+                    {state.jobDescription.length.toLocaleString()} /{" "}
+                    {MAX_CHARS.toLocaleString()}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
 
-            {/* Error Message */}
-            {state.error && (
+          {/* Error Message or Guardrail Feedback */}
+          {state.error &&
+            (state.error.guardrail ? (
+              <GuardrailFeedback
+                violation={state.error}
+                repositoryUrl="https://github.com/phyter1/main"
+              />
+            ) : (
               <div
                 id="error-message"
                 className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
                 role="alert"
               >
-                {state.error}
+                {state.error.error}
+              </div>
+            ))}
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            disabled={state.loading || !state.jobDescription.trim()}
+            className="w-full sm:w-auto"
+          >
+            {state.loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              "Analyze Fit"
+            )}
+          </Button>
+        </form>
+
+        {/* Results Display */}
+        {state.result && (
+          <div ref={resultsRef} className="mt-8 space-y-6">
+            {/* Fit Level Badge */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">Fit Level:</span>
+              <Badge
+                variant={getFitBadgeVariant(state.result.fitLevel)}
+                className={getFitBadgeClassName(state.result.fitLevel)}
+              >
+                {getFitLevelText(state.result.fitLevel)}
+              </Badge>
+            </div>
+
+            {/* Reasoning Section */}
+            {state.result.reasoning.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Reasoning</h3>
+                <ul className="space-y-2">
+                  {state.result.reasoning.map((reason, index) => (
+                    <li
+                      key={`reason-${
+                        // biome-ignore lint/suspicious/noArrayIndexKey: List is static after API response
+                        index
+                      }`}
+                      className="flex gap-2 text-sm text-muted-foreground"
+                    >
+                      <span className="text-primary">•</span>
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={state.loading || !state.jobDescription.trim()}
-              className="w-full sm:w-auto"
-            >
-              {state.loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                "Analyze Fit"
-              )}
-            </Button>
-          </form>
-
-          {/* Results Display */}
-          {state.result && (
-            <div ref={resultsRef} className="mt-8 space-y-6">
-              {/* Fit Level Badge */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">Fit Level:</span>
-                <Badge
-                  variant={getFitBadgeVariant(state.result.fitLevel)}
-                  className={getFitBadgeClassName(state.result.fitLevel)}
-                >
-                  {getFitLevelText(state.result.fitLevel)}
-                </Badge>
+            {/* Recommendations Section */}
+            {state.result.recommendations.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Recommendations</h3>
+                <ul className="space-y-2">
+                  {state.result.recommendations.map((recommendation, index) => (
+                    <li
+                      key={`rec-${
+                        // biome-ignore lint/suspicious/noArrayIndexKey: List is static after API response
+                        index
+                      }`}
+                      className="flex gap-2 text-sm text-muted-foreground"
+                    >
+                      <span className="text-primary">→</span>
+                      <span>{recommendation}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              {/* Reasoning Section */}
-              {state.result.reasoning.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold">Reasoning</h3>
-                  <ul className="space-y-2">
-                    {state.result.reasoning.map((reason, index) => (
-                      <li
-                        key={`reason-${
-                          // biome-ignore lint/suspicious/noArrayIndexKey: List is static after API response
-                          index
-                        }`}
-                        className="flex gap-2 text-sm text-muted-foreground"
-                      >
-                        <span className="text-primary">•</span>
-                        <span>{reason}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Recommendations Section */}
-              {state.result.recommendations.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold">Recommendations</h3>
-                  <ul className="space-y-2">
-                    {state.result.recommendations.map(
-                      (recommendation, index) => (
-                        <li
-                          key={`rec-${
-                            // biome-ignore lint/suspicious/noArrayIndexKey: List is static after API response
-                            index
-                          }`}
-                          className="flex gap-2 text-sm text-muted-foreground"
-                        >
-                          <span className="text-primary">→</span>
-                          <span>{recommendation}</span>
-                        </li>
-                      ),
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
+            )}
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }

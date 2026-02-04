@@ -10,15 +10,22 @@
  * - Jailbreak attempts
  */
 
+import type { GuardrailDetails, ValidationResultWithDetails } from "@/types/guardrails";
+
 /**
  * Validation result with detailed feedback
+ * @deprecated Use ValidationResultWithDetails for new code
  */
 export interface ValidationResult {
   isValid: boolean;
   sanitizedInput?: string;
   reason?: string;
   severity?: "low" | "medium" | "high";
+  guardrailDetails?: GuardrailDetails;
 }
+
+// Type alias for backward compatibility
+export type { ValidationResultWithDetails };
 
 /**
  * Common prompt injection patterns to detect and block
@@ -121,6 +128,34 @@ function sanitizeHtml(input: string): string {
 }
 
 /**
+ * Determine specific category based on matched pattern
+ */
+function categorizePromptInjection(pattern: RegExp): string {
+  const patternStr = pattern.source.toLowerCase();
+
+  if (patternStr.includes("ignore") || patternStr.includes("disregard") || patternStr.includes("forget")) {
+    return "System Instruction Override";
+  }
+  if (patternStr.includes("system") || patternStr.includes("instructions") || patternStr.includes("prompt")) {
+    return "System Prompt Extraction";
+  }
+  if (patternStr.includes("act") || patternStr.includes("pretend") || patternStr.includes("roleplay")) {
+    return "Role Confusion";
+  }
+  if (patternStr.includes("developer") || patternStr.includes("dan") || patternStr.includes("jailbreak")) {
+    return "Jailbreak Attempt";
+  }
+  if (patternStr.includes("system|") || patternStr.includes("inst|")) {
+    return "Instruction Delimiter Confusion";
+  }
+  if (patternStr.includes("base64") || patternStr.includes("rot13") || patternStr.includes("\\x") || patternStr.includes("\\u")) {
+    return "Encoding/Obfuscation";
+  }
+
+  return "Prompt Injection";
+}
+
+/**
  * Check for prompt injection patterns
  */
 function checkPromptInjection(input: string): ValidationResult {
@@ -128,10 +163,22 @@ function checkPromptInjection(input: string): ValidationResult {
 
   for (const pattern of PROMPT_INJECTION_PATTERNS) {
     if (pattern.test(input)) {
+      const category = categorizePromptInjection(pattern);
+
       return {
         isValid: false,
         reason: "Input contains patterns that attempt to override system instructions",
         severity: "high",
+        guardrailDetails: {
+          type: "prompt_injection",
+          severity: "high",
+          category,
+          explanation: "Your input contained patterns that attempt to override the AI's instructions. This portfolio demonstrates production-grade AI security by detecting and blocking these attempts.",
+          detected: `Patterns attempting to change the AI's behavior or extract system prompts. These are common attack vectors in AI applications.`,
+          implementation: "Input validation using pattern matching against 30+ known prompt injection techniques, including role confusion, instruction overrides, and jailbreak attempts.",
+          sourceFile: "src/lib/input-sanitization.ts",
+          lineNumbers: "26-71",
+        },
       };
     }
   }
@@ -145,10 +192,45 @@ function checkPromptInjection(input: string): ValidationResult {
       isValid: false,
       reason: "Input contains excessive special characters",
       severity: "medium",
+      guardrailDetails: {
+        type: "prompt_injection",
+        severity: "medium",
+        category: "Obfuscation Detection",
+        explanation: "Your input contains an unusually high ratio of special characters, which can indicate an attempt to obfuscate malicious content or bypass security filters.",
+        detected: `${Math.round(specialCharRatio * 100)}% special character ratio detected (threshold: 30%). This is often used in encoding attacks.`,
+        implementation: "Statistical analysis of character distribution to detect potential obfuscation attempts.",
+        sourceFile: "src/lib/input-sanitization.ts",
+        lineNumbers: "140-149",
+      },
     };
   }
 
   return { isValid: true };
+}
+
+/**
+ * Categorize suspicious pattern type
+ */
+function categorizeSuspiciousPattern(pattern: RegExp): string {
+  const patternStr = pattern.source.toLowerCase();
+
+  if (patternStr.includes("script") || patternStr.includes("javascript") || patternStr.includes("on\\w")) {
+    return "XSS/Script Injection";
+  }
+  if (patternStr.includes("rm") || patternStr.includes("curl") || patternStr.includes("wget") || patternStr.includes("bash")) {
+    return "Command Injection";
+  }
+  if (patternStr.includes("or") || patternStr.includes("drop") || patternStr.includes("union")) {
+    return "SQL Injection";
+  }
+  if (patternStr.includes("\\.\\.")) {
+    return "Path Traversal";
+  }
+  if (patternStr.includes("\\1{")) {
+    return "Token Stuffing";
+  }
+
+  return "Malicious Pattern";
 }
 
 /**
@@ -157,10 +239,22 @@ function checkPromptInjection(input: string): ValidationResult {
 function checkSuspiciousPatterns(input: string): ValidationResult {
   for (const pattern of SUSPICIOUS_PATTERNS) {
     if (pattern.test(input)) {
+      const category = categorizeSuspiciousPattern(pattern);
+
       return {
         isValid: false,
         reason: "Input contains suspicious or potentially malicious patterns",
         severity: "high",
+        guardrailDetails: {
+          type: "suspicious_pattern",
+          severity: "high",
+          category,
+          explanation: `Your input contained patterns commonly used in ${category.toLowerCase()} attacks. This demonstrates defense-in-depth security practices.`,
+          detected: `HTML script tags, JavaScript execution attempts, or other malicious code patterns. While this is a chat interface (not vulnerable to traditional XSS), the validation demonstrates comprehensive security thinking.`,
+          implementation: "Pattern matching against known malicious signatures including XSS, command injection, SQL injection, and path traversal.",
+          sourceFile: "src/lib/input-sanitization.ts",
+          lineNumbers: "76-99",
+        },
       };
     }
   }
@@ -184,10 +278,29 @@ export function validateChatMessage(message: string): ValidationResult {
 
   // Check length
   if (trimmed.length > INPUT_LIMITS.CHAT_MESSAGE) {
+    const overage = trimmed.length - INPUT_LIMITS.CHAT_MESSAGE;
+    const overagePercent = Math.round((overage / INPUT_LIMITS.CHAT_MESSAGE) * 100);
+
     return {
       isValid: false,
       reason: `Message exceeds maximum length of ${INPUT_LIMITS.CHAT_MESSAGE} characters`,
       severity: "low",
+      guardrailDetails: {
+        type: "length_validation",
+        severity: "low",
+        category: "Maximum Length Enforcement",
+        explanation: "Length limits prevent token stuffing attacks and excessive API costs while ensuring responsive performance.",
+        detected: `Your input is ${trimmed.length} characters, which is ${overage} characters (${overagePercent}% over the limit).`,
+        implementation: `Input is validated before processing using configurable limits defined in INPUT_LIMITS constants.`,
+        sourceFile: "src/lib/input-sanitization.ts",
+        lineNumbers: "104-108",
+        context: {
+          inputLength: trimmed.length,
+          maxLength: INPUT_LIMITS.CHAT_MESSAGE,
+          overage,
+          overagePercent,
+        },
+      },
     };
   }
 
@@ -210,6 +323,20 @@ export function validateChatMessage(message: string): ValidationResult {
       isValid: false,
       reason: "Message contains too many line breaks",
       severity: "medium",
+      guardrailDetails: {
+        type: "length_validation",
+        severity: "medium",
+        category: "Excessive Line Breaks",
+        explanation: "Line count limits prevent token stuffing via newlines and ensure readable formatting.",
+        detected: `Your input contains ${lineCount} lines (limit: ${INPUT_LIMITS.MAX_LINES}). This can indicate an attempt to inflate token usage or bypass validation.`,
+        implementation: "Line count validation before processing to prevent excessive newline abuse.",
+        sourceFile: "src/lib/input-sanitization.ts",
+        lineNumbers: "207-214",
+        context: {
+          lineCount,
+          maxLines: INPUT_LIMITS.MAX_LINES,
+        },
+      },
     };
   }
 
@@ -238,10 +365,29 @@ export function validateJobDescription(description: string): ValidationResult {
 
   // Check length
   if (trimmed.length > INPUT_LIMITS.JOB_DESCRIPTION) {
+    const overage = trimmed.length - INPUT_LIMITS.JOB_DESCRIPTION;
+    const overagePercent = Math.round((overage / INPUT_LIMITS.JOB_DESCRIPTION) * 100);
+
     return {
       isValid: false,
       reason: `Job description exceeds maximum length of ${INPUT_LIMITS.JOB_DESCRIPTION} characters`,
       severity: "low",
+      guardrailDetails: {
+        type: "length_validation",
+        severity: "low",
+        category: "Maximum Length Enforcement",
+        explanation: "Length limits prevent token stuffing attacks and excessive API costs while ensuring responsive performance.",
+        detected: `Your input is ${trimmed.length} characters, which is ${overage} characters (${overagePercent}% over the limit).`,
+        implementation: "Input is validated before processing using configurable limits defined in INPUT_LIMITS constants.",
+        sourceFile: "src/lib/input-sanitization.ts",
+        lineNumbers: "104-108",
+        context: {
+          inputLength: trimmed.length,
+          maxLength: INPUT_LIMITS.JOB_DESCRIPTION,
+          overage,
+          overagePercent,
+        },
+      },
     };
   }
 
@@ -277,6 +423,21 @@ export function validateJobDescription(description: string): ValidationResult {
       isValid: false,
       reason: "Input does not appear to be a job description. Please provide a complete job posting with requirements and responsibilities.",
       severity: "medium",
+      guardrailDetails: {
+        type: "scope_enforcement",
+        severity: "medium",
+        category: "Content Validation",
+        explanation: "This tool is specifically designed to analyze job descriptions. Scope enforcement ensures consistent, focused interactions and prevents misuse.",
+        detected: `Your input does not contain expected job-related keywords (responsibilities, requirements, qualifications, skills, etc.). This appears to be off-topic content.`,
+        implementation: "Keyword matching against common job description terminology to ensure appropriate use of the assessment tool.",
+        sourceFile: "src/lib/input-sanitization.ts",
+        lineNumbers: "262-281",
+        context: {
+          inputLength: trimmed.length,
+          keywordMatches,
+          required: "At least one job-related keyword",
+        },
+      },
     };
   }
 
@@ -286,6 +447,21 @@ export function validateJobDescription(description: string): ValidationResult {
       isValid: false,
       reason: "Input does not appear to be a job description. Please provide a complete job posting with requirements and responsibilities.",
       severity: "medium",
+      guardrailDetails: {
+        type: "scope_enforcement",
+        severity: "medium",
+        category: "Content Validation",
+        explanation: "This tool is specifically designed to analyze job descriptions. Scope enforcement ensures consistent, focused interactions and prevents misuse.",
+        detected: `Your input does not contain expected job-related keywords (responsibilities, requirements, qualifications, skills, etc.). This appears to be off-topic content.`,
+        implementation: "Keyword matching against common job description terminology to ensure appropriate use of the assessment tool.",
+        sourceFile: "src/lib/input-sanitization.ts",
+        lineNumbers: "262-290",
+        context: {
+          inputLength: trimmed.length,
+          keywordMatches,
+          required: "At least one job-related keyword",
+        },
+      },
     };
   }
 
@@ -296,6 +472,20 @@ export function validateJobDescription(description: string): ValidationResult {
       isValid: false,
       reason: "Job description contains too many line breaks",
       severity: "medium",
+      guardrailDetails: {
+        type: "length_validation",
+        severity: "medium",
+        category: "Excessive Line Breaks",
+        explanation: "Line count limits prevent token stuffing via newlines and ensure readable formatting.",
+        detected: `Your input contains ${lineCount} lines (limit: ${INPUT_LIMITS.MAX_LINES}). This can indicate an attempt to inflate token usage or bypass validation.`,
+        implementation: "Line count validation before processing to prevent excessive newline abuse.",
+        sourceFile: "src/lib/input-sanitization.ts",
+        lineNumbers: "468-476",
+        context: {
+          lineCount,
+          maxLines: INPUT_LIMITS.MAX_LINES,
+        },
+      },
     };
   }
 

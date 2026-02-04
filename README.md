@@ -8,6 +8,7 @@ A modern, high-performance portfolio website showcasing professional and persona
 
 - **🤖 AI Chat Assistant**: Interactive AI-powered chat interface trained on professional experience and engineering philosophy
 - **🎯 Job Fit Analyzer**: AI-powered job description analysis tool providing honest assessment of role alignment
+- **🛡️ Production-Grade Security**: Comprehensive guardrail system with educational feedback for prompt injection, rate limiting, and content validation
 - **🎨 Beautiful UI/UX**: Custom animations, grain overlay effects, and cursor glow
 - **📂 Project Showcase**: Filterable portfolio with professional and personal projects
 - **📊 Tech Stack Visualization**: Interactive technology stack with AI development tools and categorization
@@ -74,6 +75,23 @@ src/
     ├── fonts.ts             # Font configuration
     └── utils.ts             # Utility functions (cn helper)
 ```
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **[Architecture](./docs/00-ARCHITECTURE.md)** - System architecture and design patterns
+- **[Design System](./docs/01-DESIGN-SYSTEM.md)** - Colors, typography, and theming
+- **[Components](./docs/02-COMPONENTS.md)** - Component library and usage
+- **[Guardrail System](./docs/12-GUARDRAIL-SYSTEM.md)** - AI security with educational feedback
+- **[Security](./SECURITY.md)** - Security practices and vulnerability reporting
+
+The guardrail documentation is particularly notable for its production-grade security implementation with transparent, educational user feedback. See `docs/12-GUARDRAIL-SYSTEM.md` for details on:
+- Prompt injection detection (30+ attack patterns)
+- Rate limiting and abuse prevention
+- Length validation and token stuffing protection
+- Suspicious pattern detection (XSS, SQL injection, etc.)
+- Scope enforcement for appropriate content
 
 ## 🛠️ Getting Started
 
