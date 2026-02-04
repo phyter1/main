@@ -7,7 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "test": "bun run test:all",
+    "test:all": "bun run test:lib && bun run test:components && bun run test:api && bun run test:pages && bun run test:integration",
+    "test:lib": "bun test src/lib/ src/data/ src/hooks/",
+    "test:components": "bun test src/components/",
+    "test:api": "bun test src/app/api/",
+    "test:pages": "bun test src/app/about/page.test.tsx && bun test src/app/chat/page.test.tsx && bun test src/app/fit-assessment/page.test.tsx && bun test src/app/infrastructure/page.test.tsx && bun test src/app/principles/page.test.tsx && bun test src/app/projects/page.test.tsx && bun test src/app/stack/page.test.tsx",
+    "test:integration": "bun test src/app/__tests__/",
+    "test:watch": "bun test --watch"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.36",
