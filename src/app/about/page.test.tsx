@@ -29,6 +29,17 @@ mock.module("@/hooks/useReducedMotion", () => ({
   useReducedMotion: () => false,
 }));
 
+// Mock SkillsMatrix component
+mock.module("@/components/sections/SkillsMatrix", () => ({
+  SkillsMatrix: () => (
+    <div data-testid="skills-matrix">
+      <h3>Strong</h3>
+      <h3>Moderate</h3>
+      <h3>Gaps</h3>
+    </div>
+  ),
+}));
+
 describe("T009: About Page Cross-Page Connections", () => {
   describe("Engineering Philosophy Section", () => {
     it("should render the Engineering Philosophy section heading", () => {
@@ -60,7 +71,7 @@ describe("T009: About Page Cross-Page Connections", () => {
       render(<AboutPage />);
 
       expect(
-        screen.getAllByText("AI-Augmented Development").length,
+        screen.getAllByText("AI-First, Agentic Development").length,
       ).toBeGreaterThan(0);
       expect(
         screen.getAllByText("Full-Stack Ownership").length,
@@ -161,6 +172,83 @@ describe("T009: About Page Cross-Page Connections", () => {
 
       // Button should have the outline variant classes (borders)
       expect(principlesLinks[0].className).toContain("border");
+    });
+  });
+
+  describe("T012: Skills & Expertise Section with SkillsMatrix", () => {
+    it("should render the Skills & Expertise section heading", () => {
+      render(<AboutPage />);
+
+      const headings = screen.getAllByText("Skills & Expertise");
+      expect(headings.length).toBeGreaterThan(0);
+    });
+
+    it("should have explanatory subheading about honest self-assessment", () => {
+      render(<AboutPage />);
+
+      const subheadings = screen.getAllByText(/honest self-assessment/i);
+      expect(subheadings.length).toBeGreaterThan(0);
+      expect(subheadings[0].textContent).toContain(
+        "strengths and areas for growth",
+      );
+    });
+
+    it("should render SkillsMatrix component", () => {
+      render(<AboutPage />);
+
+      const skillsMatrices = screen.getAllByTestId("skills-matrix");
+      expect(skillsMatrices.length).toBeGreaterThan(0);
+    });
+
+    it("should have SkillsMatrix with all three columns", () => {
+      render(<AboutPage />);
+
+      const skillsMatrices = screen.getAllByTestId("skills-matrix");
+      expect(skillsMatrices[0].textContent).toContain("Strong");
+      expect(skillsMatrices[0].textContent).toContain("Moderate");
+      expect(skillsMatrices[0].textContent).toContain("Gaps");
+    });
+
+    it("should center the Skills & Expertise heading", () => {
+      render(<AboutPage />);
+
+      const headings = screen.getAllByText("Skills & Expertise");
+      expect(headings[0].className).toContain("text-center");
+    });
+
+    it("should position Skills & Expertise section before Career Timeline", () => {
+      render(<AboutPage />);
+
+      const skillsHeadings = screen.getAllByText("Skills & Expertise");
+      const timelineHeadings = screen.getAllByText("Career Timeline");
+
+      expect(skillsHeadings.length).toBeGreaterThan(0);
+      expect(timelineHeadings.length).toBeGreaterThan(0);
+
+      // Both should be h2 elements at the same heading level
+      expect(skillsHeadings[0].tagName).toBe("H2");
+      expect(timelineHeadings[0].tagName).toBe("H2");
+    });
+
+    it("should match existing page section styling", () => {
+      render(<AboutPage />);
+
+      const headings = screen.getAllByText("Skills & Expertise");
+      const skillsHeading = headings[0];
+
+      // Should use consistent heading styles
+      expect(skillsHeading.className).toContain("text-3xl");
+      expect(skillsHeading.className).toContain("font-bold");
+      expect(skillsHeading.className).toContain("text-foreground");
+    });
+
+    it("should have proper spacing between sections", () => {
+      render(<AboutPage />);
+
+      const headings = screen.getAllByText("Skills & Expertise");
+      const wrapper = headings[0].closest('[class*="mb-"]');
+
+      expect(wrapper).toBeDefined();
     });
   });
 });
