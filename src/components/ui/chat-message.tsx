@@ -38,7 +38,7 @@ function ChatMessage({
     >
       <div className="flex items-center justify-between gap-2 mb-1">
         <span className="text-xs font-medium opacity-70">
-          {isUser ? "You" : "Assistant"}
+          {isUser ? "You" : "Ryan"}
         </span>
         {timestamp && (
           <time

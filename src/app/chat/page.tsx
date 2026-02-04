@@ -43,9 +43,9 @@ export default function ChatPage() {
               Ask Me Anything
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Chat with an AI assistant trained on my experience, projects, and
-              engineering philosophy. Ask about my work, technical skills, or
-              approach to software development.
+              I'm an AI assistant trained on Ryan's experience, projects, and
+              engineering philosophy. Ask me about his work, technical skills,
+              AI-assisted development practices, or approach to software leadership.
             </p>
           </motion.div>
 

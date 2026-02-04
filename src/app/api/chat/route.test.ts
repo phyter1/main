@@ -26,7 +26,7 @@ mock.module("ai", () => ({
 
 // Mock the AI config
 mock.module("@/lib/ai-config", () => ({
-  createAnthropicClient: mock(() => "mock-anthropic-client"),
+  createOpenAIClient: mock(() => "mock-openai-client"),
   AI_RATE_LIMITS: {
     MAX_REQUESTS_PER_MINUTE: 10,
     MAX_TOKENS_PER_REQUEST: 4096,
@@ -190,7 +190,7 @@ describe("T005: Chat API Route with Streaming", () => {
 
       const callArgs = mockStreamText.mock.calls[0][0];
       expect(callArgs).toBeDefined();
-      expect(callArgs.model).toBe("mock-anthropic-client");
+      expect(callArgs.model).toBe("mock-openai-client");
       expect(callArgs.messages).toEqual(messages);
       expect(callArgs.system).toContain("Test User");
     });
