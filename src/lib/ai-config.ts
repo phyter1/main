@@ -8,7 +8,7 @@
  * - Type-safe configuration exports
  */
 
-import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 
 /**
  * Rate Limiting Constants
@@ -31,18 +31,9 @@ export const AI_RATE_LIMITS = {
 
 /**
  * AI Model Configuration
- * Defines the models available for different use cases
+ * Locked to gpt-4.1-nano for maximum cost efficiency
  */
-export const AI_MODELS = {
-  /** Primary model for chat completions */
-  CHAT: "claude-sonnet-4-5-20250929",
-
-  /** Model for fast, simple tasks */
-  FAST: "claude-3-5-haiku-20241022",
-
-  /** Model for complex reasoning tasks */
-  ADVANCED: "claude-opus-4-5-20251101",
-} as const;
+export const AI_MODEL = "gpt-4.1-nano" as const;
 
 /**
  * Environment Variable Validation
@@ -60,7 +51,7 @@ class AIConfigError extends Error {
  * @throws {AIConfigError} If required environment variables are missing or invalid
  */
 function validateEnvironment(): void {
-  const requiredVars = ["ANTHROPIC_API_KEY"] as const;
+  const requiredVars = ["OPENAI_API_KEY"] as const;
   const missing: string[] = [];
 
   for (const varName of requiredVars) {
@@ -78,10 +69,10 @@ function validateEnvironment(): void {
   }
 
   // Validate API key format (basic check)
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (apiKey && !apiKey.startsWith("sk-ant-")) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (apiKey && !apiKey.startsWith("sk-")) {
     console.warn(
-      'Warning: ANTHROPIC_API_KEY does not match expected format (should start with "sk-ant-")',
+      'Warning: OPENAI_API_KEY does not match expected format (should start with "sk-")',
     );
   }
 }
@@ -91,11 +82,11 @@ function validateEnvironment(): void {
  * Exports validated configuration for use throughout the application
  */
 export const aiConfig = {
-  /** Anthropic API key */
+  /** OpenAI API key */
   get apiKey(): string {
-    const key = process.env.ANTHROPIC_API_KEY;
+    const key = process.env.OPENAI_API_KEY;
     if (!key || key === "your_api_key_here") {
-      throw new AIConfigError("ANTHROPIC_API_KEY is not configured");
+      throw new AIConfigError("OPENAI_API_KEY is not configured");
     }
     return key;
   },
@@ -103,22 +94,23 @@ export const aiConfig = {
   /** Rate limiting configuration */
   rateLimits: AI_RATE_LIMITS,
 
-  /** Available AI models */
-  models: AI_MODELS,
+  /** AI model (locked to gpt-4.1-nano) */
+  model: AI_MODEL,
 
   /** Validates environment configuration */
   validate: validateEnvironment,
 } as const;
 
 /**
- * Anthropic SDK Client
+ * OpenAI SDK Client
  * Pre-configured client for AI SDK usage
+ * Locked to gpt-4.1-nano - no model selection allowed
  */
-export function createAnthropicClient(model: keyof typeof AI_MODELS = "CHAT") {
+export function createOpenAIClient() {
   // Validate environment before creating client
   aiConfig.validate();
 
-  return anthropic(AI_MODELS[model], {
+  return openai(AI_MODEL, {
     apiKey: aiConfig.apiKey,
   });
 }
@@ -126,7 +118,6 @@ export function createAnthropicClient(model: keyof typeof AI_MODELS = "CHAT") {
 /**
  * Type exports for AI configuration
  */
-export type AIModel = keyof typeof AI_MODELS;
 export type AIConfig = typeof aiConfig;
 export type AIRateLimits = typeof AI_RATE_LIMITS;
 
