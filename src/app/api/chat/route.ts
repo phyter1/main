@@ -10,6 +10,7 @@ import {
   logSecurityEvent,
   validateChatMessage,
 } from "@/lib/input-sanitization";
+import type { GuardrailViolation } from "@/types/guardrails";
 
 /**
  * Message structure for chat
@@ -149,11 +150,29 @@ export async function POST(request: Request): Promise<Response> {
     // Check rate limit
     if (isRateLimited(clientIP)) {
       const retryAfter = getSecondsUntilReset(clientIP);
+      const entry = rateLimitMap.get(clientIP);
+
+      const response: GuardrailViolation = {
+        error: "Rate limit exceeded. Please try again later.",
+        guardrail: {
+          type: "rate_limit",
+          severity: "medium",
+          category: "IP-Based Rate Limiting",
+          explanation: "Rate limiting prevents abuse and ensures fair access for all visitors. This is a standard production security practice.",
+          detected: `You have made ${entry?.count || AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests in the last minute. The limit is ${AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests per minute.`,
+          implementation: `Each IP address is limited to ${AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests per minute using a sliding window algorithm with automatic cleanup.`,
+          sourceFile: "src/app/api/chat/route.ts",
+          lineNumbers: "57-106",
+          context: {
+            currentCount: entry?.count || AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE,
+            limit: AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE,
+            retryAfter,
+          },
+        },
+      };
 
       return new Response(
-        JSON.stringify({
-          error: "Rate limit exceeded. Please try again later.",
-        }),
+        JSON.stringify(response),
         {
           status: 429,
           headers: {
@@ -212,10 +231,14 @@ export async function POST(request: Request): Promise<Response> {
             severity: validation.severity || "medium",
           });
 
+          // Build enhanced error response
+          const response: GuardrailViolation = {
+            error: validation.reason || "Invalid message content",
+            guardrail: validation.guardrailDetails,
+          };
+
           return new Response(
-            JSON.stringify({
-              error: validation.reason || "Invalid message content",
-            }),
+            JSON.stringify(response),
             {
               status: 400,
               headers: {

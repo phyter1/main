@@ -26,6 +26,7 @@ mock.module("framer-motion", () => ({
     h1: ({ children, ...props }: any) => createElement("h1", props, children),
     h2: ({ children, ...props }: any) => createElement("h2", props, children),
     p: ({ children, ...props }: any) => createElement("p", props, children),
+    span: ({ children, ...props }: any) => createElement("span", props, children),
     section: ({ children, ...props }: any) =>
       createElement("section", props, children),
     article: ({ children, ...props }: any) =>

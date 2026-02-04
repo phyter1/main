@@ -6,6 +6,7 @@ import {
   logSecurityEvent,
   validateJobDescription,
 } from "@/lib/input-sanitization";
+import type { GuardrailViolation } from "@/types/guardrails";
 
 /**
  * Rate limiting storage
@@ -113,13 +114,29 @@ export async function POST(request: Request) {
     const withinLimit = checkRateLimit(clientIP);
 
     if (!withinLimit) {
-      return Response.json(
-        {
-          error: "Rate limit exceeded. Please try again later.",
-          retryAfter: 60,
+      const record = rateLimitStore.get(clientIP);
+      const retryAfter = record ? Math.ceil((record.resetAt - Date.now()) / 1000) : 60;
+
+      const response: GuardrailViolation = {
+        error: "Rate limit exceeded. Please try again later.",
+        guardrail: {
+          type: "rate_limit",
+          severity: "medium",
+          category: "IP-Based Rate Limiting",
+          explanation: "Rate limiting prevents abuse and ensures fair access for all visitors. This is a standard production security practice.",
+          detected: `You have made ${record?.count || AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests in the last minute. The limit is ${AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests per minute.`,
+          implementation: `Each IP address is limited to ${AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests per minute using a sliding window algorithm with automatic cleanup.`,
+          sourceFile: "src/app/api/fit-assessment/route.ts",
+          lineNumbers: "20-44",
+          context: {
+            currentCount: record?.count || AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE,
+            limit: AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE,
+            retryAfter,
+          },
         },
-        { status: 429 },
-      );
+      };
+
+      return Response.json(response, { status: 429 });
     }
 
     // Parse and validate request body
@@ -153,10 +170,13 @@ export async function POST(request: Request) {
         severity: sanitizationResult.severity || "medium",
       });
 
-      return Response.json(
-        { error: sanitizationResult.reason || "Invalid job description" },
-        { status: 400 },
-      );
+      // Build enhanced error response
+      const response: GuardrailViolation = {
+        error: sanitizationResult.reason || "Invalid job description",
+        guardrail: sanitizationResult.guardrailDetails,
+      };
+
+      return Response.json(response, { status: 400 });
     }
 
     // Use sanitized input
