@@ -20,9 +20,9 @@ describe("T002: AI SDK Configuration and Environment Validation", () => {
   });
 
   describe("Environment Variable Validation", () => {
-    it("should validate required ANTHROPIC_API_KEY is present", () => {
+    it("should validate required OPENAI_API_KEY is present", () => {
       // Set valid API key
-      process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-12345";
+      process.env.OPENAI_API_KEY = "sk-test-key-12345";
 
       // Dynamic import to get fresh module with new env
       const { aiConfig } = require("./ai-config");
@@ -32,8 +32,8 @@ describe("T002: AI SDK Configuration and Environment Validation", () => {
       }).not.toThrow();
     });
 
-    it("should throw error when ANTHROPIC_API_KEY is missing", () => {
-      delete process.env.ANTHROPIC_API_KEY;
+    it("should throw error when OPENAI_API_KEY is missing", () => {
+      delete process.env.OPENAI_API_KEY;
 
       // Dynamic import to get fresh module
       const { aiConfig } = require("./ai-config");
@@ -41,12 +41,12 @@ describe("T002: AI SDK Configuration and Environment Validation", () => {
       expect(() => {
         aiConfig.validate();
       }).toThrow(
-        "Missing or invalid required environment variables: ANTHROPIC_API_KEY",
+        "Missing or invalid required environment variables: OPENAI_API_KEY",
       );
     });
 
     it("should reject placeholder API key value", () => {
-      process.env.ANTHROPIC_API_KEY = "your_api_key_here";
+      process.env.OPENAI_API_KEY = "your_api_key_here";
 
       const { aiConfig } = require("./ai-config");
 
@@ -56,7 +56,7 @@ describe("T002: AI SDK Configuration and Environment Validation", () => {
     });
 
     it("should reject empty API key value", () => {
-      process.env.ANTHROPIC_API_KEY = "";
+      process.env.OPENAI_API_KEY = "";
 
       const { aiConfig } = require("./ai-config");
 
@@ -66,21 +66,21 @@ describe("T002: AI SDK Configuration and Environment Validation", () => {
     });
 
     it("should provide API key through getter when valid", () => {
-      process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-12345";
+      process.env.OPENAI_API_KEY = "sk-test-key-12345";
 
       const { aiConfig } = require("./ai-config");
 
-      expect(aiConfig.apiKey).toBe("sk-ant-test-key-12345");
+      expect(aiConfig.apiKey).toBe("sk-test-key-12345");
     });
 
     it("should throw error from getter when API key is invalid", () => {
-      process.env.ANTHROPIC_API_KEY = "your_api_key_here";
+      process.env.OPENAI_API_KEY = "your_api_key_here";
 
       const { aiConfig } = require("./ai-config");
 
       expect(() => {
         const _key = aiConfig.apiKey;
-      }).toThrow("ANTHROPIC_API_KEY is not configured");
+      }).toThrow("OPENAI_API_KEY is not configured");
     });
   });
 
@@ -129,36 +129,32 @@ describe("T002: AI SDK Configuration and Environment Validation", () => {
     });
   });
 
-  describe("AI Models Configuration", () => {
-    it("should export AI_MODELS with correct model identifiers", () => {
-      const { AI_MODELS } = require("./ai-config");
+  describe("AI Model Configuration", () => {
+    it("should export AI_MODEL locked to gpt-4.1-nano", () => {
+      const { AI_MODEL } = require("./ai-config");
 
-      expect(AI_MODELS).toBeDefined();
-      expect(AI_MODELS.CHAT).toBe("claude-sonnet-4-5-20250929");
-      expect(AI_MODELS.FAST).toBe("claude-3-5-haiku-20241022");
-      expect(AI_MODELS.ADVANCED).toBe("claude-opus-4-5-20251101");
+      expect(AI_MODEL).toBeDefined();
+      expect(AI_MODEL).toBe("gpt-4.1-nano");
     });
 
-    it("should have all three model tiers defined", () => {
-      const { AI_MODELS } = require("./ai-config");
+    it("should be a constant string value", () => {
+      const { AI_MODEL } = require("./ai-config");
 
-      // Verify all three model tiers are available
-      expect(Object.keys(AI_MODELS)).toEqual(["CHAT", "FAST", "ADVANCED"]);
-      expect(AI_MODELS.CHAT).toBeTruthy();
-      expect(AI_MODELS.FAST).toBeTruthy();
-      expect(AI_MODELS.ADVANCED).toBeTruthy();
+      // Verify it's a string constant
+      expect(typeof AI_MODEL).toBe("string");
+      expect(AI_MODEL.length).toBeGreaterThan(0);
     });
   });
 
   describe("Configuration Object", () => {
     it("should export aiConfig with required properties", () => {
-      process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-12345";
+      process.env.OPENAI_API_KEY = "sk-test-key-12345";
 
       const { aiConfig } = require("./ai-config");
 
       expect(aiConfig).toBeDefined();
       expect(aiConfig.rateLimits).toBeDefined();
-      expect(aiConfig.models).toBeDefined();
+      expect(aiConfig.model).toBeDefined();
       expect(typeof aiConfig.validate).toBe("function");
     });
 
@@ -169,44 +165,41 @@ describe("T002: AI SDK Configuration and Environment Validation", () => {
       expect(aiConfig.rateLimits.MAX_TOKENS_PER_REQUEST).toBeDefined();
     });
 
-    it("should provide access to models through aiConfig", () => {
+    it("should provide access to model through aiConfig", () => {
       const { aiConfig } = require("./ai-config");
 
-      expect(aiConfig.models.CHAT).toBeDefined();
-      expect(aiConfig.models.FAST).toBeDefined();
-      expect(aiConfig.models.ADVANCED).toBeDefined();
+      expect(aiConfig.model).toBeDefined();
+      expect(aiConfig.model).toBe("gpt-4.1-nano");
     });
   });
 
-  describe("createAnthropicClient Function", () => {
-    it("should create client with default CHAT model", () => {
-      process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-12345";
+  describe("createOpenAIClient Function", () => {
+    it("should create client with gpt-4.1-nano model", () => {
+      process.env.OPENAI_API_KEY = "sk-test-key-12345";
 
-      const { createAnthropicClient } = require("./ai-config");
+      const { createOpenAIClient } = require("./ai-config");
 
       expect(() => {
-        const _client = createAnthropicClient();
+        const _client = createOpenAIClient();
       }).not.toThrow();
     });
 
-    it("should create client with specified model", () => {
-      process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-12345";
+    it("should not accept any model parameter", () => {
+      process.env.OPENAI_API_KEY = "sk-test-key-12345";
 
-      const { createAnthropicClient } = require("./ai-config");
+      const { createOpenAIClient } = require("./ai-config");
 
-      expect(() => {
-        const _fastClient = createAnthropicClient("FAST");
-        const _advancedClient = createAnthropicClient("ADVANCED");
-      }).not.toThrow();
+      // Function should have no parameters
+      expect(createOpenAIClient.length).toBe(0);
     });
 
     it("should validate environment before creating client", () => {
-      delete process.env.ANTHROPIC_API_KEY;
+      delete process.env.OPENAI_API_KEY;
 
-      const { createAnthropicClient } = require("./ai-config");
+      const { createOpenAIClient } = require("./ai-config");
 
       expect(() => {
-        createAnthropicClient();
+        createOpenAIClient();
       }).toThrow();
     });
   });
@@ -218,14 +211,14 @@ describe("T002: AI SDK Configuration and Environment Validation", () => {
       const {
         aiConfig,
         AI_RATE_LIMITS,
-        AI_MODELS,
-        createAnthropicClient,
+        AI_MODEL,
+        createOpenAIClient,
       } = require("./ai-config");
 
       expect(aiConfig).toBeDefined();
       expect(AI_RATE_LIMITS).toBeDefined();
-      expect(AI_MODELS).toBeDefined();
-      expect(createAnthropicClient).toBeDefined();
+      expect(AI_MODEL).toBeDefined();
+      expect(createOpenAIClient).toBeDefined();
     });
   });
 });
