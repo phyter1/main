@@ -110,9 +110,7 @@ export function createOpenAIClient() {
   // Validate environment before creating client
   aiConfig.validate();
 
-  return openai(AI_MODEL, {
-    apiKey: aiConfig.apiKey,
-  });
+  return openai(AI_MODEL);
 }
 
 /**

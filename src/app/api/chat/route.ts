@@ -3,13 +3,21 @@
  * POST endpoint for streaming AI chat completions with resume context
  */
 
-import { type Message, streamText } from "ai";
+import { streamText } from "ai";
 import { formatResumeAsLLMContext, resume } from "@/data/resume";
 import { AI_RATE_LIMITS, createOpenAIClient } from "@/lib/ai-config";
 import {
   logSecurityEvent,
   validateChatMessage,
 } from "@/lib/input-sanitization";
+
+/**
+ * Message structure for chat
+ */
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
 
 /**
  * Rate limiting state
@@ -311,7 +319,6 @@ Your goal: Help visitors understand my unique approach to modern engineering lea
       model: openaiClient,
       messages: sanitizedMessages,
       system: systemPrompt,
-      maxTokens: AI_RATE_LIMITS.MAX_TOKENS_PER_REQUEST,
     });
 
     // Return streaming response

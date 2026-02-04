@@ -74,7 +74,6 @@ Your goal: Help visitors understand Ryan's unique approach to modern engineering
       model: client,
       messages: [{ role: "user", content: question }],
       system: systemPrompt,
-      maxTokens: 4096,
     });
 
     console.log("📝 Response:");

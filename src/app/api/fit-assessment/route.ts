@@ -78,18 +78,21 @@ const RequestSchema = z.object({
  * Response schema for AI-generated assessment
  */
 const AssessmentSchema = z.object({
-  fitLevel: z.enum(["strong", "moderate", "weak"], {
-    description:
+  fitLevel: z
+    .enum(["strong", "moderate", "weak"])
+    .describe(
       "Overall fit level: strong (highly qualified), moderate (partially qualified), weak (not a good match)",
-  }),
-  reasoning: z.array(z.string(), {
-    description:
+    ),
+  reasoning: z
+    .array(z.string())
+    .describe(
       "Array of specific reasons for the fit assessment, referencing candidate's actual experience and skills",
-  }),
-  recommendations: z.array(z.string(), {
-    description:
+    ),
+  recommendations: z
+    .array(z.string())
+    .describe(
       "Array of actionable recommendations for the candidate (skills to highlight, areas to develop, etc.)",
-  }),
+    ),
 });
 
 export type FitAssessmentRequest = z.infer<typeof RequestSchema>;
@@ -251,7 +254,6 @@ Provide a structured assessment with:
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
-      maxTokens: AI_RATE_LIMITS.MAX_TOKENS_PER_REQUEST,
     });
 
     // Return structured response
