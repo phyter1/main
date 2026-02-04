@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Job Fit Assessment",
   description:
-    "AI-powered job fit assessment tool. Get honest insights on how well a job description matches your experience, skills, and career background.",
+    "See if I'm a good fit for your open role. AI-powered assessment of how my experience and skills match your job requirements.",
   keywords: [
     "Job Fit Assessment",
     "Career Assessment",
@@ -19,13 +19,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Job Fit Assessment | Ryan Lowe",
     description:
-      "AI-powered tool to assess how well job descriptions match your professional background. Get honest, detailed insights on role compatibility.",
+      "See if I'm a good fit for your open role. AI-powered assessment of how my experience and skills match your job requirements.",
     url: "https://ryn.phytertek.com/fit-assessment",
   },
   twitter: {
     title: "Job Fit Assessment | Ryan Lowe",
     description:
-      "AI-powered tool to assess how well job descriptions match your professional background. Get honest, detailed insights on role compatibility.",
+      "See if I'm a good fit for your open role. AI-powered assessment of how my experience and skills match your job requirements.",
   },
 };
 
