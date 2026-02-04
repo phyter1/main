@@ -108,7 +108,26 @@ Always use `bun lint` and `bun format` (not `npm run lint` or other package mana
 
 ## AI Integration
 
-This project uses the Vercel AI SDK with Anthropic's models for AI-powered features.
+This project uses the Vercel AI SDK with Anthropic's Claude models to power interactive AI features, including a conversational chat interface and AI-powered job fit assessment.
+
+### Overview
+
+The application includes three main AI-powered features:
+
+1. **Interactive Chat Interface** (`/chat`)
+   - Real-time streaming conversations with AI
+   - Full context about Ryan's professional background
+   - Token-by-token response streaming for responsive UX
+
+2. **Job Fit Assessment** (`/fit-assessment`)
+   - AI-powered analysis of job descriptions vs. candidate experience
+   - Structured assessment with fit level, reasoning, and recommendations
+   - Honest, actionable feedback based on actual skills and experience
+
+3. **Expandable Context System**
+   - Resume data formatted as LLM context
+   - Comprehensive markdown representation of experience, skills, projects, and principles
+   - Efficient context injection into every AI request
 
 ### Setup
 
@@ -121,54 +140,570 @@ This project uses the Vercel AI SDK with Anthropic's models for AI-powered featu
    # Get your API key from: https://console.anthropic.com/settings/keys
    ```
 
-2. **Environment Variables**
-   - `ANTHROPIC_API_KEY` (required): Your Anthropic API key
-   - `AI_MAX_REQUESTS_PER_MINUTE` (optional): Rate limit for AI requests (default: 10)
-   - `AI_MAX_TOKENS_PER_REQUEST` (optional): Max tokens per request (default: 4096)
+2. **Required Environment Variables**
+   ```bash
+   # Required: Your Anthropic API key
+   ANTHROPIC_API_KEY=sk-ant-api03-...
 
-### Available Models
+   # Optional: Rate limiting configuration
+   AI_MAX_REQUESTS_PER_MINUTE=10        # Default: 10
+   AI_MAX_TOKENS_PER_REQUEST=4096       # Default: 4096
+   ```
 
-The AI configuration (`src/lib/ai-config.ts`) provides access to three model tiers:
+3. **Environment Validation**
+   - The application validates environment variables on server startup
+   - Missing or invalid keys will throw descriptive errors
+   - Non-blocking during Next.js build/static generation
+   - API key format validation (warns if doesn't match `sk-ant-` pattern)
 
-- **CHAT**: Claude Sonnet 4.5 - Primary model for chat completions and interactive features
-- **FAST**: Claude 3.5 Haiku - Optimized for fast, simple tasks
-- **ADVANCED**: Claude Opus 4.5 - Best for complex reasoning and advanced tasks
+### API Routes
 
-### Usage Example
+#### POST /api/chat
+
+Handles streaming chat completions with resume context.
+
+**Request Format:**
+```typescript
+{
+  messages: Array<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+  }>
+}
+```
+
+**Response:**
+- Streaming text response (real-time token delivery)
+- Content-Type: `text/plain; charset=utf-8`
+
+**Features:**
+- Streaming responses using Vercel AI SDK's `streamText()`
+- Resume context automatically injected into system prompt
+- IP-based rate limiting (10 requests/minute per IP)
+- Comprehensive error handling with user-friendly messages
+
+**Error Responses:**
+- `400 Bad Request`: Invalid request body or missing messages
+- `429 Too Many Requests`: Rate limit exceeded (includes `Retry-After` header)
+- `500 Internal Server Error`: AI API failure or processing error
+
+**Implementation:**
+```typescript
+// Example usage in a React component
+const response = await fetch('/api/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ messages: conversationHistory })
+});
+
+// Handle streaming response
+const reader = response.body?.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  const chunk = decoder.decode(value);
+  // Process streaming chunk
+}
+```
+
+#### POST /api/fit-assessment
+
+Assesses job fit based on resume data and a provided job description.
+
+**Request Format:**
+```typescript
+{
+  jobDescription: string; // 1-10000 characters, required
+}
+```
+
+**Response Format:**
+```typescript
+{
+  fitLevel: "strong" | "moderate" | "weak";
+  reasoning: string[];        // Specific reasons for assessment
+  recommendations: string[];  // Actionable recommendations
+}
+```
+
+**Features:**
+- Structured AI output using Vercel AI SDK's `generateObject()`
+- Zod schema validation for type-safe responses
+- Honest assessment based on actual resume data
+- Actionable recommendations for skill development
+
+**Error Responses:**
+- `400 Bad Request`: Invalid or missing job description
+- `429 Too Many Requests`: Rate limit exceeded
+- `500 Internal Server Error`: AI API failure
+
+**Assessment Criteria:**
+- **strong**: Candidate has most/all required skills with relevant experience
+- **moderate**: Some required skills but may need development in key areas
+- **weak**: Lacks most required skills or experience level doesn't match
+
+### LLM Context Management
+
+The resume data model provides a comprehensive context formatting system for AI interactions.
+
+#### Resume Data Structure
+
+Located in `src/data/resume.ts`, the resume data includes:
 
 ```typescript
-import { createAnthropicClient, AI_RATE_LIMITS } from '@/lib/ai-config';
-
-// Create a client with the default CHAT model
-const client = createAnthropicClient();
-
-// Or specify a different model
-const fastClient = createAnthropicClient('FAST');
-const advancedClient = createAnthropicClient('ADVANCED');
-
-// Access rate limiting constants
-console.log(AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE);
+interface Resume {
+  personalInfo: {
+    name: string;
+    title: string;
+    location: string;
+    summary: string;
+  };
+  experience: Array<{
+    title: string;
+    organization: string;
+    period: string;
+    description: string;
+    highlights: string[];
+    technologies?: string[];
+  }>;
+  skills: {
+    languages: Skill[];
+    frameworks: Skill[];
+    databases: Skill[];
+    devTools: Skill[];
+    infrastructure: Skill[];
+  };
+  projects: Project[];
+  principles: Principle[];
+}
 ```
+
+#### Context Formatting
+
+The `formatResumeAsLLMContext()` function converts resume data into markdown:
+
+```typescript
+import { formatResumeAsLLMContext, resume } from '@/data/resume';
+
+// Generate comprehensive markdown context
+const resumeContext = formatResumeAsLLMContext(resume);
+
+// Use in system prompt
+const systemPrompt = `You are an AI assistant with access to:
+${resumeContext}`;
+```
+
+**Context Includes:**
+- Personal information and professional summary
+- Detailed experience history with highlights
+- Technical skills organized by category with proficiency levels
+- Featured projects with descriptions and technologies
+- Engineering principles and philosophy
+
+**Benefits:**
+- Consistent context across all AI interactions
+- Efficient token usage with structured markdown
+- Easy to update as experience grows
+- Type-safe data access
+
+### Available AI Models
+
+The AI configuration (`src/lib/ai-config.ts`) provides three model tiers:
+
+```typescript
+export const AI_MODELS = {
+  CHAT: "claude-sonnet-4-5-20250929",      // Primary: Chat completions
+  FAST: "claude-3-5-haiku-20241022",       // Fast: Simple tasks
+  ADVANCED: "claude-opus-4-5-20251101"     // Advanced: Complex reasoning
+}
+```
+
+**Model Selection:**
+```typescript
+import { createAnthropicClient } from '@/lib/ai-config';
+
+// Use default CHAT model (Sonnet 4.5)
+const chatClient = createAnthropicClient();
+
+// Use FAST model for quick responses
+const fastClient = createAnthropicClient('FAST');
+
+// Use ADVANCED model for complex analysis
+const advancedClient = createAnthropicClient('ADVANCED');
+```
+
+**Model Characteristics:**
+- **CHAT (Sonnet 4.5)**: Balanced performance and quality for conversations
+- **FAST (Haiku)**: Lower latency for simple tasks, cost-effective
+- **ADVANCED (Opus 4.5)**: Highest quality reasoning for complex assessments
 
 ### Rate Limiting
 
-Rate limits are configured in `src/lib/ai-config.ts`:
-- Maximum 10 requests per minute (configurable via environment)
-- Maximum 4096 tokens per request (configurable via environment)
-- 30 second request timeout
-- 3 retry attempts with 1 second delay
+Rate limiting is implemented at the API route level with IP-based tracking.
 
-### Environment Validation
+**Configuration:**
+```typescript
+export const AI_RATE_LIMITS = {
+  MAX_REQUESTS_PER_MINUTE: 10,    // Per IP address
+  MAX_TOKENS_PER_REQUEST: 4096,   // Per individual request
+  REQUEST_TIMEOUT_MS: 30000,      // 30 second timeout
+  MAX_RETRIES: 3,                 // Retry attempts
+  RETRY_DELAY_MS: 1000           // Delay between retries
+}
+```
 
-The AI configuration module automatically validates environment variables:
-- Checks for required `ANTHROPIC_API_KEY` presence
-- Validates API key format (warns if doesn't match expected pattern)
-- Throws descriptive errors if configuration is invalid
-- Safe for Next.js build process (non-blocking during static generation)
+**Implementation:**
+- **In-memory tracking**: Per-IP request counts with automatic cleanup
+- **Rolling window**: 60-second window from first request
+- **Retry-After header**: Informs clients when they can retry
+- **Independent tracking**: Different IPs tracked separately
 
-### Security Notes
+**Rate Limit Response:**
+```typescript
+// When rate limit exceeded:
+{
+  error: "Rate limit exceeded. Please try again later.",
+  retryAfter: 42  // seconds until reset
+}
+// HTTP Status: 429 Too Many Requests
+// Header: Retry-After: 42
+```
 
-- Never commit `.env.local` files containing actual API keys
-- Use `.env.local.example` as a template for team members
-- API keys are only validated in server-side contexts
-- Environment variables are not exposed to the client bundle
+**Production Considerations:**
+- Current implementation uses in-memory storage
+- For multi-instance deployments, consider Redis or distributed cache
+- Monitor rate limit hits with analytics
+- Adjust limits based on usage patterns and API quotas
+
+### Testing Strategy
+
+AI features use mocked API calls in tests for fast, reliable, isolated testing.
+
+#### Mocking AI SDK
+
+```typescript
+// Mock streamText for chat tests
+const mockStreamTextResult = {
+  toTextStreamResponse: mock(() => {
+    return new Response("mock stream response", {
+      status: 200,
+      headers: { "Content-Type": "text/plain; charset=utf-8" }
+    });
+  })
+};
+
+const mockStreamText = mock(() => mockStreamTextResult);
+
+mock.module("ai", () => ({
+  streamText: mockStreamText
+}));
+```
+
+#### Mocking AI Configuration
+
+```typescript
+// Mock AI config and rate limits
+mock.module("@/lib/ai-config", () => ({
+  createAnthropicClient: mock(() => "mock-anthropic-client"),
+  AI_RATE_LIMITS: {
+    MAX_REQUESTS_PER_MINUTE: 10,
+    MAX_TOKENS_PER_REQUEST: 4096
+  }
+}));
+```
+
+#### Mocking Resume Data
+
+```typescript
+// Mock resume context for predictable tests
+const mockResume = {
+  personalInfo: {
+    name: "Test User",
+    title: "Test Title",
+    location: "Test Location",
+    summary: "Test summary"
+  },
+  // ... minimal test data
+};
+
+const mockFormatResumeAsLLMContext = mock(() => "# Test User\n\nTest context");
+
+mock.module("@/data/resume", () => ({
+  resume: mockResume,
+  formatResumeAsLLMContext: mockFormatResumeAsLLMContext
+}));
+```
+
+#### Test Coverage Areas
+
+**Chat API Route Tests:**
+- Request validation (messages array format)
+- Resume context integration
+- Streaming response handling
+- Rate limiting enforcement
+- Error handling (400, 429, 500 status codes)
+- IP-based tracking
+
+**Fit Assessment API Tests:**
+- Request validation (job description length and format)
+- Structured response format (fitLevel, reasoning, recommendations)
+- Rate limiting
+- Error handling
+- Zod schema validation
+
+**Component Tests:**
+- ChatInterface: User input, message display, streaming, error states
+- Chat page: Layout, hero section, component integration
+- Fit assessment page: Form handling, result display
+
+**Benefits of Mocked Tests:**
+- Fast execution (no actual API calls)
+- Deterministic results (no flaky tests)
+- No API quota consumption during testing
+- Isolated component behavior testing
+- Easy to test error scenarios
+
+### Analytics and Privacy
+
+The application implements privacy-respecting analytics tracking for AI feature usage.
+
+**Tracking Philosophy:**
+- No personally identifiable information (PII) collected
+- No conversation content stored or tracked
+- Only aggregate usage metrics
+- GDPR and privacy law compliant
+
+**Tracked Events:**
+- AI chat session initiated (count only)
+- Fit assessment requested (count only)
+- API rate limit hits (for optimization)
+- Error rates by type (for reliability monitoring)
+
+**Not Tracked:**
+- Message content or conversation topics
+- User identity or IP addresses beyond rate limiting
+- Personal information from job descriptions
+- Individual user behavior or session details
+
+**Implementation:**
+- Server-side only (no client-side tracking scripts)
+- Minimal data retention
+- No third-party analytics services
+- Self-hosted monitoring preferred
+
+### Troubleshooting
+
+#### API Key Issues
+
+**Problem:** `AIConfigError: Missing or invalid required environment variables: ANTHROPIC_API_KEY`
+
+**Solution:**
+1. Verify `.env.local` file exists in project root
+2. Ensure `ANTHROPIC_API_KEY` is set and not "your_api_key_here"
+3. Get API key from https://console.anthropic.com/settings/keys
+4. Restart development server after updating `.env.local`
+
+**Problem:** `Warning: ANTHROPIC_API_KEY does not match expected format`
+
+**Solution:**
+- API key should start with `sk-ant-`
+- Verify you copied the entire key
+- Generate a new key if the current one is invalid
+
+#### Rate Limiting Issues
+
+**Problem:** 429 responses during development
+
+**Solution:**
+1. Rate limit is per IP address, development and testing may hit limit quickly
+2. Increase `AI_MAX_REQUESTS_PER_MINUTE` in `.env.local` for development
+3. Wait 60 seconds for rate limit to reset
+4. Consider implementing a bypass for development environments
+
+**Problem:** Rate limit not working correctly in production
+
+**Solution:**
+- Verify proxy headers (`x-forwarded-for`, `x-real-ip`) are being passed correctly
+- Check if multiple app instances need distributed cache (Redis)
+- Monitor rate limit hits with logging
+
+#### Streaming Issues
+
+**Problem:** Chat responses not streaming, appear all at once
+
+**Solution:**
+1. Verify response Content-Type is `text/plain; charset=utf-8`
+2. Check browser compatibility with ReadableStream API
+3. Ensure no response buffering middleware
+4. Test with network throttling disabled
+
+**Problem:** Streaming stops mid-response
+
+**Solution:**
+- Check API token limits (default 4096)
+- Verify network connection stability
+- Check server timeout configuration (default 30s)
+- Review server logs for errors
+
+#### Context Issues
+
+**Problem:** AI responses don't include resume information
+
+**Solution:**
+1. Verify `formatResumeAsLLMContext()` is called in API route
+2. Check resume data is populated correctly in `src/data/resume.ts`
+3. Review system prompt includes resume context
+4. Test with explicit questions about resume content
+
+**Problem:** Token limit exceeded errors
+
+**Solution:**
+- Resume context is ~3000 tokens, leaving ~1000 for conversation
+- Reduce `AI_MAX_TOKENS_PER_REQUEST` if needed
+- Consider truncating older conversation history
+- Optimize context formatting to reduce token usage
+
+#### Test Failures
+
+**Problem:** Tests fail with "module not found" for mocks
+
+**Solution:**
+1. Ensure mock.module() calls are before imports
+2. Use dynamic imports: `const module = await import("./route")`
+3. Clear mock state between tests with `mock.restore()`
+
+**Problem:** Rate limiting tests fail intermittently
+
+**Solution:**
+- Rate limit state persists between tests
+- Use unique IP addresses per test
+- Clear rate limit map in `afterEach()` hook
+- Avoid parallel test execution for rate limit tests
+
+### Code Examples
+
+#### Creating a Custom AI Feature
+
+```typescript
+// src/app/api/custom-feature/route.ts
+import { generateObject } from "ai";
+import { z } from "zod";
+import { createAnthropicClient } from "@/lib/ai-config";
+import { formatResumeAsLLMContext, resume } from "@/data/resume";
+
+// Define response schema
+const ResponseSchema = z.object({
+  result: z.string(),
+  confidence: z.number().min(0).max(1)
+});
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { input } = body;
+
+    // Create AI client
+    const model = createAnthropicClient("CHAT");
+
+    // Generate resume context
+    const resumeContext = formatResumeAsLLMContext(resume);
+
+    // Generate structured response
+    const result = await generateObject({
+      model,
+      schema: ResponseSchema,
+      system: `Context: ${resumeContext}`,
+      prompt: input,
+      temperature: 0.7
+    });
+
+    return Response.json(result.object);
+  } catch (error) {
+    return Response.json(
+      { error: "Processing failed" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+#### Using Different Models
+
+```typescript
+// Fast model for simple tasks
+const summaryClient = createAnthropicClient("FAST");
+const summary = await generateText({
+  model: summaryClient,
+  prompt: "Summarize in one sentence"
+});
+
+// Advanced model for complex reasoning
+const analysisClient = createAnthropicClient("ADVANCED");
+const analysis = await generateObject({
+  model: analysisClient,
+  schema: ComplexAnalysisSchema,
+  prompt: "Perform deep analysis..."
+});
+```
+
+### Security Best Practices
+
+1. **API Key Management**
+   - Never commit `.env.local` files
+   - Use `.env.local.example` as template
+   - Rotate keys periodically
+   - Use different keys for dev/staging/prod
+
+2. **Input Validation**
+   - Always validate user input with Zod schemas
+   - Sanitize input before passing to AI
+   - Enforce length limits on user-provided text
+   - Validate request structure before processing
+
+3. **Rate Limiting**
+   - Implement rate limiting on all AI endpoints
+   - Use IP-based tracking as baseline
+   - Consider user authentication for personalized limits
+   - Monitor and adjust limits based on usage patterns
+
+4. **Error Handling**
+   - Never expose API keys or internal errors to clients
+   - Log errors server-side for debugging
+   - Return user-friendly error messages
+   - Implement proper HTTP status codes
+
+5. **Context Security**
+   - Review context data before injecting into prompts
+   - Avoid including sensitive information in context
+   - Validate resume data structure and content
+   - Sanitize user-provided data before context inclusion
+
+### Performance Optimization
+
+1. **Context Management**
+   - Cache formatted resume context if data is static
+   - Minimize context size to reduce token usage
+   - Consider dynamic context based on conversation topic
+   - Use efficient markdown formatting
+
+2. **Streaming Optimization**
+   - Use streaming for better perceived performance
+   - Implement proper backpressure handling
+   - Optimize network buffering settings
+   - Consider WebSocket for bidirectional streaming
+
+3. **Model Selection**
+   - Use FAST model when possible for cost/speed
+   - Reserve ADVANCED model for complex tasks
+   - Profile token usage across different models
+   - Monitor response latency per model
+
+4. **Rate Limiting Strategy**
+   - Use Redis or distributed cache for multi-instance
+   - Implement sliding window for smoother limiting
+   - Consider tier-based limits for authenticated users
+   - Monitor and optimize limits based on API quotas
