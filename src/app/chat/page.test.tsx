@@ -2,14 +2,6 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 import ChatPage from "./page";
 
-// Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
-  motion: {
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-}));
-
 // Mock ChatInterface component
 mock.module("@/components/sections/ChatInterface", () => ({
   ChatInterface: ({ className }: { className?: string }) => (
@@ -17,11 +9,6 @@ mock.module("@/components/sections/ChatInterface", () => ({
       Mock ChatInterface
     </div>
   ),
-}));
-
-// Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
-  useReducedMotion: () => false,
 }));
 
 describe("T010: /chat Page Implementation", () => {

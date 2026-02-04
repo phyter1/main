@@ -2,14 +2,6 @@ import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import AboutPage from "./page";
 
-// Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
-  motion: {
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-}));
-
 // Mock next/image
 mock.module("next/image", () => ({
   __esModule: true,
@@ -22,11 +14,6 @@ mock.module("next/image", () => ({
 // Mock timeline data
 mock.module("@/data/timeline", () => ({
   getSortedTimeline: () => [],
-}));
-
-// Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
-  useReducedMotion: () => false,
 }));
 
 // Mock SkillsMatrix component

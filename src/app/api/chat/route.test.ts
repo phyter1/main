@@ -18,9 +18,10 @@ const mockStreamTextResult = {
 
 const mockStreamText = mock(() => mockStreamTextResult);
 
-// Mock the anthropic client
+// Mock the AI SDK - include generateObject for compatibility with other tests
 mock.module("ai", () => ({
   streamText: mockStreamText,
+  generateObject: mock(() => Promise.resolve({ object: {} })),
 }));
 
 // Mock the AI config
@@ -68,14 +69,25 @@ describe("T005: Chat API Route with Streaming", () => {
     mockStreamTextResult.toTextStreamResponse.mockClear();
     mockFormatResumeAsLLMContext.mockClear();
 
+    // Reset mock implementations to default
+    mockStreamText.mockImplementation(() => mockStreamTextResult);
+    mockStreamTextResult.toTextStreamResponse.mockImplementation(() => {
+      return new Response("mock stream response", {
+        status: 200,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    });
+
     // Dynamic import to get fresh module with mocks
     const module = await import("./route");
     POST = module.POST;
   });
 
   afterEach(() => {
-    // Reset rate limiting state between tests
-    mock.restore();
+    // Clean up mocks after each test
+    mockStreamText.mockClear();
+    mockStreamTextResult.toTextStreamResponse.mockClear();
+    mockFormatResumeAsLLMContext.mockClear();
   });
 
   describe("Request Handling", () => {

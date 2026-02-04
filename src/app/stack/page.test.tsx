@@ -1,20 +1,7 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import { stackItems } from "@/data/stack";
 import StackPage from "./page";
-
-// Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
-  motion: {
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-}));
-
-// Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
-  useReducedMotion: () => false,
-}));
 
 describe("T005: Add AI Development Tools to Stack Page", () => {
   describe("AI Development Tools in Data", () => {

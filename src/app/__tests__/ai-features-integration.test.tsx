@@ -14,26 +14,6 @@ import userEvent from "@testing-library/user-event";
 // Setup environment for API tests
 process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-for-integration-testing";
 
-// Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
-  motion: {
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    section: ({ children, ...props }: any) => (
-      <section {...props}>{children}</section>
-    ),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-}));
-
-// Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
-  useReducedMotion: () => false,
-}));
-
 // Mock Next.js router
 const mockPush = mock(() => Promise.resolve(true));
 const mockRouter = {

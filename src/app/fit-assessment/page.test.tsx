@@ -1,18 +1,6 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import FitAssessmentPage from "./page";
-
-// Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-}));
-
-// Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
-  useReducedMotion: () => false,
-}));
 
 describe("T011: Fit Assessment Page Component", () => {
   describe("Page Structure and Content", () => {
