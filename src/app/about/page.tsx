@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import Image from "next/image";
+import { SkillsMatrix } from "@/components/sections/SkillsMatrix";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -239,6 +240,21 @@ export default function AboutPage() {
                 </CardContent>
               </Card>
             </div>
+          </motion.div>
+
+          <Separator />
+
+          {/* Skills & Expertise Section */}
+          <motion.div variants={itemVariants}>
+            <h2 className="mb-4 text-3xl font-bold text-foreground text-center">
+              Skills & Expertise
+            </h2>
+            <p className="mx-auto mb-8 max-w-2xl text-center text-muted-foreground">
+              An honest self-assessment of my technical capabilities. I believe
+              in transparency about both strengths and areas for growth—knowing
+              what you don't know is just as important as knowing what you do.
+            </p>
+            <SkillsMatrix />
           </motion.div>
 
           <Separator />
