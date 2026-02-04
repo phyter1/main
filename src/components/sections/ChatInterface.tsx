@@ -85,7 +85,7 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
         );
       }
 
-      // Handle streaming response
+      // Handle streaming response (plain text, not SSE format)
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error("No response body");
@@ -106,50 +106,23 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
         },
       ]);
 
+      // Read plain text stream chunks
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
+        // Decode chunk as plain text
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        assistantMessage += chunk;
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") continue;
-
-            try {
-              // Handle both plain text and JSON responses
-              if (data.startsWith("{")) {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  assistantMessage += parsed.content;
-                }
-              } else {
-                assistantMessage += data;
-              }
-
-              // Update the assistant message with accumulated content
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: assistantMessage }
-                    : msg,
-                ),
-              );
-            } catch (_e) {
-              // If JSON parsing fails, treat as plain text
-              assistantMessage += data;
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: assistantMessage }
-                    : msg,
-                ),
-              );
-            }
-          }
-        }
+        // Update the assistant message with accumulated content
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: assistantMessage }
+              : msg,
+          ),
+        );
       }
     } catch (err) {
       console.error("Chat error:", err);
