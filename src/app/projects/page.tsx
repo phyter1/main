@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ExpandableContext } from "@/components/ui/expandable-context";
 import { type Project, projects } from "@/data/projects";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -235,45 +236,54 @@ export default function ProjectsPage() {
                     </div>
                   </CardContent>
 
-                  <CardFooter className="flex gap-2">
-                    {project.links.demo && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="gap-2"
-                        asChild
-                      >
-                        <a
-                          href={project.links.demo}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                  <CardFooter className="flex flex-col gap-4">
+                    <div className="flex gap-2">
+                      {project.links.demo && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="gap-2"
+                          asChild
                         >
-                          <ExternalLink className="h-4 w-4" />
-                          Live Demo
-                        </a>
-                      </Button>
-                    )}
-                    {project.links.github && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        asChild
-                      >
-                        <a
-                          href={project.links.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          <a
+                            href={project.links.demo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            Live Demo
+                          </a>
+                        </Button>
+                      )}
+                      {project.links.github && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          asChild
                         >
-                          <Github className="h-4 w-4" />
-                          Code
-                        </a>
-                      </Button>
-                    )}
-                    {!project.links.demo && !project.links.github && (
-                      <Button variant="outline" size="sm" disabled>
-                        Private Project
-                      </Button>
+                          <a
+                            href={project.links.github}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Github className="h-4 w-4" />
+                            Code
+                          </a>
+                        </Button>
+                      )}
+                      {!project.links.demo && !project.links.github && (
+                        <Button variant="outline" size="sm" disabled>
+                          Private Project
+                        </Button>
+                      )}
+                    </div>
+
+                    {project.context && (
+                      <ExpandableContext
+                        context={project.context}
+                        className="w-full"
+                      />
                     )}
                   </CardFooter>
                 </Card>
