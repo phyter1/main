@@ -1,10 +1,14 @@
-import { describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Set up test environment with API key before any imports
 process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-for-testing";
 
-// Mock the AI SDK to avoid API calls in tests
+// Mock the AI SDK module BEFORE any imports
 mock.module("ai", () => ({
+  // Export streamText for compatibility with other tests
+  streamText: mock(() => ({
+    toTextStreamResponse: () => new Response("mock", { status: 200 }),
+  })),
   generateObject: mock(async ({ prompt }: { prompt: string }) => {
     // Parse the job description to determine fit level
     const jobDescLower = prompt.toLowerCase();

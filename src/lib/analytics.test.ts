@@ -13,23 +13,33 @@ describe("Analytics Utility - Privacy-Respecting AI Feature Usage Tracking", () 
     // Create mock for Umami tracking
     mockUmamiTrack = mock(() => undefined);
 
-    // Setup window.umami global
-    (
-      global as unknown as {
-        window: { umami?: { track: typeof mockUmamiTrack } };
-      }
-    ).window = {
-      umami: {
+    // Setup window.umami global (preserve existing window object)
+    if (typeof window !== "undefined") {
+      (window as any).umami = {
         track: mockUmamiTrack,
-      },
-    };
+      };
+    } else {
+      (
+        global as unknown as {
+          window: { umami?: { track: typeof mockUmamiTrack } };
+        }
+      ).window = {
+        umami: {
+          track: mockUmamiTrack,
+        },
+      };
+    }
   });
 
   afterEach(() => {
-    // Clean up mocks
-    mock.restore();
-    // Clear window object
-    delete (global as unknown as { window?: unknown }).window;
+    // Clean up mocks but preserve window object
+    mockUmamiTrack.mockClear();
+    // Only delete umami property, not the entire window
+    if (typeof window !== "undefined") {
+      delete (window as any).umami;
+    } else if ((global as any).window) {
+      delete (global as any).window.umami;
+    }
   });
 
   describe("trackChatMessage", () => {

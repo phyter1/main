@@ -1,27 +1,6 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import { SkillsMatrix } from "./SkillsMatrix";
-
-// Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
-  motion: {
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    section: ({ children, ...props }: any) => (
-      <section {...props}>{children}</section>
-    ),
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    h2: ({ children, ...props }: any) => <h2 {...props}>{children}</h2>,
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    p: ({ children, ...props }: any) => <p {...props}>{children}</p>,
-  },
-}));
-
-// Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
-  useReducedMotion: () => false,
-}));
 
 // Mock skills data for testing (reference data for understanding test structure)
 const _mockSkillsData = {

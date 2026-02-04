@@ -2,18 +2,6 @@ import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import { Hero } from "./Hero";
 
-// Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
-  motion: {
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    h1: ({ children, ...props }: any) => <h1 {...props}>{children}</h1>,
-    // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
-    p: ({ children, ...props }: any) => <p {...props}>{children}</p>,
-  },
-}));
-
 // Mock TypeWriter component
 mock.module("@/components/effects/TypeWriter", () => ({
   TypeWriter: ({
