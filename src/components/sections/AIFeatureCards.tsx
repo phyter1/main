@@ -38,8 +38,8 @@ export function AIFeatureCards({ variants }: AIFeatureCardsProps) {
             AI Assistant
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-1 flex-col gap-4">
-          <p className="flex-1 text-sm text-muted-foreground">
+        <CardContent className="flex flex-1 flex-col">
+          <p className="mb-6 flex-1 text-sm text-muted-foreground">
             Chat with an AI trained on my experience, projects, and engineering
             philosophy. Ask about my background, technical expertise, or
             approach to problem-solving.
@@ -58,8 +58,8 @@ export function AIFeatureCards({ variants }: AIFeatureCardsProps) {
             Job Fit Analyzer
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-1 flex-col gap-4">
-          <p className="flex-1 text-sm text-muted-foreground">
+        <CardContent className="flex flex-1 flex-col">
+          <p className="mb-6 flex-1 text-sm text-muted-foreground">
             Get an honest AI-powered assessment of how my skills and experience
             align with your role. Paste a job description and receive detailed
             fit analysis.
