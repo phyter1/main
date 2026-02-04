@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { RotatingTypeWriter } from "@/components/effects/RotatingTypeWriter";
 import { TypeWriter } from "@/components/effects/TypeWriter";
+import { AIFeatureCards } from "@/components/sections/AIFeatureCards";
 import { Button } from "@/components/ui/button";
 import { stackItems } from "@/data/stack";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -121,6 +122,9 @@ export function Hero() {
             <a href="/about">Let's Connect</a>
           </Button>
         </motion.div>
+
+        {/* AI Feature Showcase */}
+        <AIFeatureCards variants={itemVariants} />
 
         {/* Scroll indicator */}
         <motion.div

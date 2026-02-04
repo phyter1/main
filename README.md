@@ -6,12 +6,14 @@ A modern, high-performance portfolio website showcasing professional and persona
 
 ## ✨ Features
 
+- **🤖 AI Chat Assistant**: Interactive AI-powered chat interface trained on professional experience and engineering philosophy
+- **🎯 Job Fit Analyzer**: AI-powered job description analysis tool providing honest assessment of role alignment
 - **🎨 Beautiful UI/UX**: Custom animations, grain overlay effects, and cursor glow
-- **🎯 Project Showcase**: Filterable portfolio with professional and personal projects
+- **📂 Project Showcase**: Filterable portfolio with professional and personal projects
 - **📊 Tech Stack Visualization**: Interactive technology stack with AI development tools and categorization
 - **🏗️ Infrastructure Timeline**: Visual representation of infrastructure and AI-powered DevOps automation
 - **📚 Engineering Principles**: Dedicated page showcasing principles from The Phoenix Project, The Unicorn Project, and The Goal, with focus on AI-first development and team leadership
-- **🤖 Agentic AI Leadership**: Showcasing experience leading teams of humans and autonomous AI agents
+- **👥 Agentic AI Leadership**: Showcasing experience leading teams of humans and autonomous AI agents
 - **⚡ Performance Optimized**: React 19 with React Compiler enabled
 - **🌓 Modern Design System**: OKLCH color space with custom theming
 - **♿ Accessibility**: Reduced motion support and semantic HTML
