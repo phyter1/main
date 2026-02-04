@@ -1,3 +1,10 @@
+export interface ProjectContext {
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -20,6 +27,7 @@ export interface Project {
     performance?: string;
   };
   highlights: string[];
+  context?: ProjectContext;
 }
 
 export const projects: Project[] = [
@@ -55,6 +63,15 @@ export const projects: Project[] = [
       "Optimized Docker builds reducing image sizes by 80%",
       "Led AWS cost optimization initiatives",
     ],
+    context: {
+      situation:
+        "Hugo Health needed a comprehensive healthcare platform to empower 30,000+ patients to access and manage their health records. The platform required robust EHR integration, dynamic survey capabilities, and enterprise-grade infrastructure to support sensitive healthcare data.",
+      task: "Lead the complete architecture and development of a full-stack healthcare platform with cloud-native infrastructure, implementing secure EHR integrations, dynamic survey systems, and scalable CI/CD pipelines while maintaining 99.9% uptime SLA.",
+      action:
+        "Architected and developed the platform using TypeScript, Next.js, and React for the frontend, with Node.js backend services. Implemented infrastructure as code using Terraform, built comprehensive CI/CD pipelines in Azure DevOps, and deployed to AWS with Docker containerization. Optimized Docker builds to reduce image sizes by 80% and led cost optimization initiatives to improve infrastructure efficiency.",
+      result:
+        "Successfully delivered a production platform serving 30,000+ active users with 99.9% uptime SLA. The platform now provides seamless EHR integration, dynamic survey capabilities, and enterprise-grade security for healthcare data management. Achieved significant cost savings through infrastructure optimization and established scalable development practices.",
+    },
   },
   {
     id: "ehr-integration",
@@ -83,6 +100,15 @@ export const projects: Project[] = [
       "Random IP rotation to circumvent bot detection",
       "Patient-authorized retrieval across Epic, Cerner, and other EHR systems",
     ],
+    context: {
+      situation:
+        "Before the FHIR mandate, patients needed a way to authorize retrieval of their health records from multiple EHR platforms (Epic, Cerner, etc.). These platforms had sophisticated bot detection systems that prevented automated access, making it extremely difficult to build a scalable solution for patient-authorized data retrieval.",
+      task: "Design and build a distributed browser automation system that could circumvent bot detection mechanisms while maintaining patient authorization and security. The system needed to scale reliably across multiple EHR platforms and handle concurrent requests efficiently.",
+      action:
+        "Engineered a sophisticated AWS Fargate-based architecture that spins up Docker instances with XVFB installed to run headed Puppeteer browsers from random IP addresses. Implemented TypeScript/Node.js orchestration layer using AWS ECS for container management. Designed IP rotation strategy and browser fingerprinting techniques to avoid detection while maintaining full compliance with patient authorization requirements.",
+      result:
+        "Successfully deployed a production system that retrieves patient-authorized health records across Epic, Cerner, and other major EHR platforms. The distributed architecture scales automatically with demand, maintains high reliability, and successfully circumvents bot detection while remaining fully compliant with healthcare regulations and patient authorization protocols.",
+    },
   },
   {
     id: "survey-platform",
@@ -103,6 +129,15 @@ export const projects: Project[] = [
       "Custom prescription medication lookup integration",
       "Interactive body map for symptom tracking",
     ],
+    context: {
+      situation:
+        "Healthcare providers needed a flexible system to create and manage patient intake forms and health assessments. Existing survey tools lacked the specialized features required for healthcare use cases, such as prescription drug lookups, anatomical symptom mapping, and complex conditional logic based on patient responses.",
+      task: "Design and build a comprehensive survey platform from scratch that would support visual survey creation, advanced conditional branching, healthcare-specific question types (prescription lookups, body maps), and seamless integration with patient intake workflows.",
+      action:
+        "Architected and developed a full-stack survey system using TypeScript, React, Next.js, and PostgreSQL. Built a drag-and-drop visual builder interface that allows non-technical users to create complex surveys. Implemented advanced conditional logic engine for branching based on responses, integrated prescription medication database with intelligent lookup, and created interactive anatomical body maps for symptom tracking. Added support for matrix question types and various response formats.",
+      result:
+        "Delivered a production-ready survey platform that powers patient intake and health assessments for healthcare providers. The system enables clinical staff to create sophisticated, branching surveys without developer intervention. Features like prescription lookup and body mapping have significantly improved data collection quality and patient experience during intake processes.",
+    },
   },
   {
     id: "ai-workflow",
@@ -178,6 +213,15 @@ export const projects: Project[] = [
       "Multiple rule sets (Vegas Strip, Atlantic City, European)",
       "Comprehensive audit trail system with 25+ event types and session replay",
     ],
+    context: {
+      situation:
+        "Card counting is a valuable skill for understanding probability and game theory, but practicing requires either expensive trips to casinos or subpar training tools that don't accurately simulate real casino conditions. Most existing trainers lack proper game engines, comprehensive audit trails, or support for multiple casino rule variations.",
+      task: "Build a professional-grade blackjack training platform that accurately simulates casino conditions, supports multiple counting systems and game modes, provides detailed session analytics, and offers an engaging user experience comparable to real casino play.",
+      action:
+        "Developed a complete blackjack game engine in TypeScript supporting all standard actions (hit, stand, split, double down, surrender) with Next.js and React for the UI. Built three progressive training modes (beginner, intermediate, advanced) with real-time counting feedback. Implemented configurable rule sets for major casino variations (Vegas Strip, Atlantic City, European). Created a comprehensive audit trail system tracking 25+ event types with session replay capabilities. Designed a casino-style interface using Tailwind CSS and shadcn/ui components.",
+      result:
+        "Launched a fully-functional blackjack training platform at 21.phytertek.com that provides realistic casino simulation for card counting practice. The platform features accurate probability calculations, multiple counting systems, detailed analytics, and an immersive casino-style experience. The audit trail and replay system enables in-depth analysis of playing strategies and decision-making patterns.",
+    },
   },
   {
     id: "tts-cli",
