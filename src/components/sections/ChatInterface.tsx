@@ -7,6 +7,7 @@ import { ChatMessage } from "@/components/ui/chat-message";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { TypingIndicator } from "@/components/ui/typing-indicator";
+import { trackChatMessage } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -59,6 +60,9 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     setInput("");
     setIsLoading(true);
     setError(null);
+
+    // Track chat message interaction (privacy-respecting - no content tracked)
+    trackChatMessage();
 
     try {
       const response = await fetch("/api/chat", {

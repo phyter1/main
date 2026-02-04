@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { trackFitAssessment } from "@/lib/analytics";
 
 /**
  * Response structure from /api/fit-assessment
@@ -213,6 +214,9 @@ export function JobFitAnalyzer() {
 
       // Success - parse and display results
       const result: FitAssessmentResponse = await response.json();
+
+      // Track fit assessment interaction (privacy-respecting - no job description tracked)
+      trackFitAssessment();
 
       setState((prev) => ({
         ...prev,
