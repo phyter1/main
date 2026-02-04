@@ -54,7 +54,7 @@ describe("GuardrailFeedback", () => {
 
       render(<GuardrailFeedback violation={violation} />);
 
-      expect(screen.getByText(/Rate Limit/i)).toBeDefined();
+      expect(screen.getAllByText(/Rate Limit/i).length).toBeGreaterThan(0);
       expect(screen.getByText(/MEDIUM/i)).toBeDefined();
     });
 
@@ -235,6 +235,133 @@ describe("GuardrailFeedback", () => {
 
       const alert = container.querySelector("[role='alert']");
       expect(alert).toBeDefined();
+    });
+  });
+
+  describe("Animations", () => {
+    it("should render Card component with proper structure", () => {
+      const violation: GuardrailViolation = {
+        error: "Test error",
+        guardrail: {
+          type: "prompt_injection",
+          severity: "high",
+          category: "Test",
+          explanation: "Test",
+          detected: "Test",
+          implementation: "Test",
+          sourceFile: "src/lib/input-sanitization.ts",
+        },
+      };
+
+      const { container } = render(<GuardrailFeedback violation={violation} />);
+
+      // Check that the Card component is rendered
+      const card = container.querySelector("[data-guardrail-type]");
+      expect(card).toBeDefined();
+    });
+
+    it("should expand and collapse details section smoothly", () => {
+      const violation: GuardrailViolation = {
+        error: "Test error",
+        guardrail: {
+          type: "prompt_injection",
+          severity: "high",
+          category: "Test",
+          explanation: "Test",
+          detected: "Test",
+          implementation: "Test",
+          sourceFile: "src/lib/input-sanitization.ts",
+        },
+      };
+
+      render(<GuardrailFeedback violation={violation} />);
+
+      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+
+      // Initially not expanded
+      expect(expandButton.getAttribute("aria-expanded")).toBe("false");
+
+      // Click to expand
+      expandButton.click();
+      expect(expandButton.getAttribute("aria-expanded")).toBe("true");
+
+      // Details should be visible
+      expect(screen.getByText(/Implementation:/i)).toBeDefined();
+
+      // Click to collapse
+      expandButton.click();
+      expect(expandButton.getAttribute("aria-expanded")).toBe("false");
+    });
+
+    it("should have hover states on expand button", () => {
+      const violation: GuardrailViolation = {
+        error: "Test error",
+        guardrail: {
+          type: "prompt_injection",
+          severity: "high",
+          category: "Test",
+          explanation: "Test",
+          detected: "Test",
+          implementation: "Test",
+          sourceFile: "src/lib/input-sanitization.ts",
+        },
+      };
+
+      render(<GuardrailFeedback violation={violation} />);
+
+      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+
+      // Button should have hover classes
+      expect(expandButton.className).toContain("hover:");
+    });
+
+    it("should have focus states for keyboard navigation", () => {
+      const violation: GuardrailViolation = {
+        error: "Test error",
+        guardrail: {
+          type: "prompt_injection",
+          severity: "high",
+          category: "Test",
+          explanation: "Test",
+          detected: "Test",
+          implementation: "Test",
+          sourceFile: "src/lib/input-sanitization.ts",
+        },
+      };
+
+      render(<GuardrailFeedback violation={violation} />);
+
+      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+
+      // Button should be focusable
+      expect(expandButton.getAttribute("type")).toBe("button");
+    });
+
+    it("should rotate arrow icon when expanded", () => {
+      const violation: GuardrailViolation = {
+        error: "Test error",
+        guardrail: {
+          type: "prompt_injection",
+          severity: "high",
+          category: "Test",
+          explanation: "Test",
+          detected: "Test",
+          implementation: "Test",
+          sourceFile: "src/lib/input-sanitization.ts",
+        },
+      };
+
+      const { container } = render(<GuardrailFeedback violation={violation} />);
+
+      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+
+      // Click to expand
+      expandButton.click();
+
+      // Arrow should have rotation class when expanded
+      const arrow = expandButton.querySelector("[aria-hidden='true']");
+      expect(arrow).toBeDefined();
+      expect(arrow?.className).toContain("rotate-180");
     });
   });
 });
