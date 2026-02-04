@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +39,7 @@ interface JobFitAnalyzerState {
   loading: boolean;
   result: FitAssessmentResponse | null;
   error: string | null;
+  isInputCollapsed: boolean;
 }
 
 /**
@@ -111,7 +112,10 @@ export function JobFitAnalyzer() {
     loading: false,
     result: null,
     error: null,
+    isInputCollapsed: false,
   });
+
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   /**
    * Handle textarea input change
@@ -159,6 +163,13 @@ export function JobFitAnalyzer() {
     }
 
     return true;
+  };
+
+  /**
+   * Handle expanding the collapsed input
+   */
+  const handleExpandInput = () => {
+    setState((prev) => ({ ...prev, isInputCollapsed: false }));
   };
 
   /**
@@ -222,7 +233,16 @@ export function JobFitAnalyzer() {
         ...prev,
         loading: false,
         result,
+        isInputCollapsed: true, // Collapse input after successful analysis
       }));
+
+      // Scroll to results after a brief delay to allow state update
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
     } catch (error) {
       console.error("Error analyzing job fit:", error);
 
@@ -236,17 +256,16 @@ export function JobFitAnalyzer() {
   };
 
   return (
-    <section className="container mx-auto max-w-4xl px-6 py-12">
-      <Card>
-        <CardHeader>
-          <CardTitle>Job Fit Analyzer</CardTitle>
-          <CardDescription>
-            Paste a job description to see how well it matches your experience
-            and skills
-          </CardDescription>
-        </CardHeader>
+    <Card>
+      <CardHeader>
+        <CardTitle>Job Fit Analyzer</CardTitle>
+        <CardDescription>
+          Paste your job description to see how well my background matches
+          your requirements
+        </CardDescription>
+      </CardHeader>
 
-        <CardContent>
+      <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Job Description Input */}
             <div className="space-y-2">
@@ -256,23 +275,52 @@ export function JobFitAnalyzer() {
               >
                 Job Description
               </label>
-              <Textarea
-                id="job-description"
-                value={state.jobDescription}
-                onChange={handleInputChange}
-                placeholder="Paste the full job description here..."
-                className="min-h-[300px] resize-y"
-                disabled={state.loading}
-                aria-label="Job Description"
-                aria-invalid={!!state.error}
-                aria-describedby={state.error ? "error-message" : undefined}
-              />
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
-                  {state.jobDescription.length.toLocaleString()} /{" "}
-                  {MAX_CHARS.toLocaleString()}
-                </span>
-              </div>
+
+              {state.isInputCollapsed ? (
+                // Collapsed single-line preview
+                <div
+                  onClick={handleExpandInput}
+                  className="cursor-pointer rounded-md border border-input bg-muted/50 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleExpandInput();
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-muted-foreground">
+                      {state.jobDescription.slice(0, 100)}...
+                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      Click to expand
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                // Full textarea
+                <>
+                  <Textarea
+                    id="job-description"
+                    value={state.jobDescription}
+                    onChange={handleInputChange}
+                    placeholder="Paste the full job description here..."
+                    className="min-h-[300px] resize-y"
+                    disabled={state.loading}
+                    aria-label="Job Description"
+                    aria-invalid={!!state.error}
+                    aria-describedby={state.error ? "error-message" : undefined}
+                  />
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>
+                      {state.jobDescription.length.toLocaleString()} /{" "}
+                      {MAX_CHARS.toLocaleString()}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Error Message */}
@@ -305,7 +353,7 @@ export function JobFitAnalyzer() {
 
           {/* Results Display */}
           {state.result && (
-            <div className="mt-8 space-y-6">
+            <div ref={resultsRef} className="mt-8 space-y-6">
               {/* Fit Level Badge */}
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">Fit Level:</span>
@@ -363,7 +411,6 @@ export function JobFitAnalyzer() {
             </div>
           )}
         </CardContent>
-      </Card>
-    </section>
+    </Card>
   );
 }

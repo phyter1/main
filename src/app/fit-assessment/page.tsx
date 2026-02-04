@@ -42,13 +42,18 @@ export default function FitAssessmentPage() {
           {/* Header Section */}
           <motion.div variants={itemVariants} className="text-center">
             <h1 className="mb-4 text-5xl font-bold tracking-tight text-foreground md:text-6xl">
-              Job Fit Assessment
+              Am I Right for the Role?
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Get an honest assessment of how well a job matches your experience
-              and skills based on your background, expertise, and career
-              journey.
+              Hiring managers and recruiters: paste your job description below to get
+              an honest AI-powered assessment of how well my experience and skills
+              match your requirements.
             </p>
+          </motion.div>
+
+          {/* Job Fit Analyzer Component */}
+          <motion.div variants={itemVariants}>
+            <JobFitAnalyzer />
           </motion.div>
 
           {/* How to Use Section */}
@@ -103,9 +108,8 @@ export default function FitAssessmentPage() {
                         Honest Assessment Philosophy:
                       </strong>{" "}
                       This tool provides transparent feedback. A "weak fit"
-                      doesn't mean you can't do the job—it means there may be
-                      better opportunities that align more closely with your
-                      strengths and experience.
+                      doesn't mean I can't succeed—it means there may be
+                      roles that better align with my core strengths and experience.
                     </span>
                   </p>
                 </div>
@@ -148,30 +152,25 @@ export default function FitAssessmentPage() {
                     <span className="text-primary">•</span>
                     <span>
                       <strong className="text-foreground">
-                        Review recommendations carefully:
+                        Review recommendations:
                       </strong>{" "}
-                      The suggestions are tailored to help you make informed
-                      decisions about your next career move
+                      See what I bring to the table and where I might need
+                      support or ramp-up time
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
                     <span>
                       <strong className="text-foreground">
-                        Consider multiple roles:
+                        Compare with your requirements:
                       </strong>{" "}
-                      Compare assessments across different opportunities to find
-                      the best match for your skills
+                      The assessment helps you quickly determine role alignment
+                      and compatibility
                     </span>
                   </li>
                 </ul>
               </CardContent>
             </Card>
-          </motion.div>
-
-          {/* Job Fit Analyzer Component */}
-          <motion.div variants={itemVariants}>
-            <JobFitAnalyzer />
           </motion.div>
         </motion.div>
       </div>

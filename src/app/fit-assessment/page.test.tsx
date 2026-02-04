@@ -15,7 +15,7 @@ describe("T011: Fit Assessment Page Component", () => {
       // Check for main heading
       const heading = screen.getByRole("heading", { level: 1 });
       expect(heading).toBeDefined();
-      expect(heading.textContent).toContain("Job Fit Assessment");
+      expect(heading.textContent).toContain("Am I Right for the Role?");
     });
 
     it("should render introductory text explaining the tool", () => {
