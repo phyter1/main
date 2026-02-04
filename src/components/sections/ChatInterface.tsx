@@ -4,9 +4,11 @@ import { Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatMessage } from "@/components/ui/chat-message";
+import { GuardrailFeedback } from "@/components/ui/guardrail-feedback";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { TypingIndicator } from "@/components/ui/typing-indicator";
+import type { GuardrailViolation } from "@/types/guardrails";
 import { trackChatMessage } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +27,7 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<GuardrailViolation | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -79,10 +81,16 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`,
-        );
+        const errorData: GuardrailViolation = await response
+          .json()
+          .catch(() => ({ error: `HTTP error! status: ${response.status}` }));
+
+        // Store the full GuardrailViolation object
+        setError(errorData);
+
+        // Don't throw - let the error state handle display
+        setIsLoading(false);
+        return;
       }
 
       // Handle streaming response (plain text, not SSE format)
@@ -126,23 +134,16 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
       }
     } catch (err) {
       console.error("Chat error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred. Please try again.",
-      );
 
-      // Add error message to chat
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          role: "assistant",
-          content: `Error: ${err instanceof Error ? err.message : "An error occurred. Please try again."}`,
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
+      // Create a simple error violation for network/unexpected errors
+      const errorViolation: GuardrailViolation = {
+        error:
+          err instanceof Error
+            ? err.message
+            : "An error occurred. Please try again.",
+      };
+
+      setError(errorViolation);
       setIsLoading(false);
     }
   };
@@ -198,8 +199,11 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
       {/* Input Area */}
       <div className="border-t p-4">
         {error && (
-          <div className="mb-3 p-3 rounded-md bg-destructive/10 border border-destructive/50">
-            <p className="text-sm text-destructive">{error}</p>
+          <div className="mb-3">
+            <GuardrailFeedback
+              violation={error}
+              repositoryUrl="https://github.com/phyter1/main"
+            />
           </div>
         )}
 
