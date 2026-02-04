@@ -282,6 +282,7 @@ export default function ProjectsPage() {
                     {project.context && (
                       <ExpandableContext
                         context={project.context}
+                        projectId={project.id}
                         className="w-full"
                       />
                     )}

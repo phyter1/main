@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import { trackContextExpansion } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
@@ -13,14 +14,25 @@ export interface ExpandableContextProps {
     action: string;
     result: string;
   };
+  projectId?: string;
   className?: string;
 }
 
-function ExpandableContext({ context, className }: ExpandableContextProps) {
+function ExpandableContext({
+  context,
+  projectId,
+  className,
+}: ExpandableContextProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleExpanded = () => {
-    setIsExpanded((prev) => !prev);
+    const newExpandedState = !isExpanded;
+    setIsExpanded(newExpandedState);
+
+    // Track context expansion when user expands (privacy-respecting - only project ID tracked)
+    if (newExpandedState && projectId) {
+      trackContextExpansion(projectId);
+    }
   };
 
   return (
