@@ -28,16 +28,16 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // Phoenix Project - The Three Ways
-      expect(screen.getByText(/Three Ways/i)).toBeDefined();
-      expect(screen.getByText(/Phoenix Project/i)).toBeDefined();
+      expect(screen.getAllByText(/Three Ways/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Phoenix Project/i).length).toBeGreaterThan(0);
 
       // Unicorn Project - The Five Ideals
-      expect(screen.getByText(/Five Ideals/i)).toBeDefined();
-      expect(screen.getByText(/Unicorn Project/i)).toBeDefined();
+      expect(screen.getAllByText(/Five Ideals/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Unicorn Project/i).length).toBeGreaterThan(0);
 
       // The Goal - Theory of Constraints
-      expect(screen.getByText(/Five Focusing Steps/i)).toBeDefined();
-      expect(screen.getByText(/Theory of Constraints/i)).toBeDefined();
+      expect(screen.getAllByText(/Five Focusing Steps/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Theory of Constraints/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -46,21 +46,21 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // First Way
-      expect(screen.getByText(/First Way.*Systems Thinking/i)).toBeDefined();
+      expect(screen.getAllByText(/First Way.*Systems Thinking/i).length).toBeGreaterThan(0);
 
       // Second Way
-      expect(screen.getByText(/Second Way.*Amplify Feedback/i)).toBeDefined();
+      expect(screen.getAllByText(/Second Way.*Amplify Feedback/i).length).toBeGreaterThan(0);
 
       // Third Way
-      expect(screen.getByText(/Third Way.*Experimentation/i)).toBeDefined();
+      expect(screen.getAllByText(/Third Way.*Experimentation/i).length).toBeGreaterThan(0);
     });
 
     it("should display principle descriptions and applications", () => {
       render(<PrinciplesPage />);
 
       // Check for key content from principles data
-      expect(screen.getByText(/value stream/i)).toBeDefined();
-      expect(screen.getByText(/feedback loops/i)).toBeDefined();
+      expect(screen.getAllByText(/value stream/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/feedback loops/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -69,19 +69,19 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // First Ideal
-      expect(screen.getByText(/Locality.*Simplicity/i)).toBeDefined();
+      expect(screen.getAllByText(/Locality.*Simplicity/i).length).toBeGreaterThan(0);
 
       // Second Ideal
-      expect(screen.getByText(/Focus.*Flow.*Joy/i)).toBeDefined();
+      expect(screen.getAllByText(/Focus.*Flow.*Joy/i).length).toBeGreaterThan(0);
 
       // Third Ideal
-      expect(screen.getByText(/Improvement.*Daily Work/i)).toBeDefined();
+      expect(screen.getAllByText(/Improvement.*Daily Work/i).length).toBeGreaterThan(0);
 
       // Fourth Ideal
-      expect(screen.getByText(/Psychological Safety/i)).toBeDefined();
+      expect(screen.getAllByText(/Psychological Safety/i).length).toBeGreaterThan(0);
 
       // Fifth Ideal
-      expect(screen.getByText(/Customer Focus/i)).toBeDefined();
+      expect(screen.getAllByText(/Customer Focus/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -90,11 +90,11 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // All five steps
-      expect(screen.getByText(/Identify.*Constraint/i)).toBeDefined();
-      expect(screen.getByText(/Exploit.*Constraint/i)).toBeDefined();
-      expect(screen.getByText(/Subordinate/i)).toBeDefined();
-      expect(screen.getByText(/Elevate.*Constraint/i)).toBeDefined();
-      expect(screen.getByText(/Repeat.*Process/i)).toBeDefined();
+      expect(screen.getAllByText(/Identify.*Constraint/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Exploit.*Constraint/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Subordinate/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Elevate.*Constraint/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Repeat.*Process/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -146,7 +146,7 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // Component renders successfully with reduced motion support
-      expect(screen.getByRole("heading", { level: 1 })).toBeDefined();
+      expect(screen.getAllByRole("heading", { level: 1 }).length).toBeGreaterThan(0);
     });
   });
 
@@ -176,8 +176,8 @@ describe("T007: Principles Page Component", () => {
 
       // Verify data is rendered correctly by checking for specific content
       // from principles.ts file
-      expect(screen.getByText(/Hugo Health/i)).toBeDefined();
-      expect(screen.getByText(/systems thinking/i)).toBeDefined();
+      expect(screen.getAllByText(/Hugo Health/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/systems thinking/i).length).toBeGreaterThan(0);
     });
 
     it("should display principle groups in correct order", () => {
@@ -185,13 +185,13 @@ describe("T007: Principles Page Component", () => {
 
       const allText = container.textContent || "";
 
-      // Phoenix should come before Unicorn
-      const phoenixIndex = allText.indexOf("Phoenix Project");
-      const unicornIndex = allText.indexOf("Unicorn Project");
+      // Phoenix should come before Unicorn (using subtitle text)
+      const phoenixIndex = allText.indexOf("From The Phoenix Project");
+      const unicornIndex = allText.indexOf("From The Unicorn Project");
       expect(phoenixIndex).toBeLessThan(unicornIndex);
 
-      // Unicorn should come before Theory of Constraints
-      const goalIndex = allText.indexOf("Theory of Constraints");
+      // Unicorn should come before TOC (using subtitle text)
+      const goalIndex = allText.indexOf("From Theory of Constraints");
       expect(unicornIndex).toBeLessThan(goalIndex);
     });
   });
@@ -212,7 +212,7 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // Check for personal application content (Hugo Health references)
-      expect(screen.getByText(/Hugo Health/i)).toBeDefined();
+      expect(screen.getAllByText(/Hugo Health/i).length).toBeGreaterThan(0);
 
       // Multiple personal references should exist
       const allText = document.body.textContent || "";
