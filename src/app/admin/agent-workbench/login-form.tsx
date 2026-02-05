@@ -44,8 +44,8 @@ export function LoginForm() {
       }
 
       // Redirect to agent workbench on success
-      router.push(data.redirectTo || "/admin/agent-workbench");
-      router.refresh();
+      // Use window.location for hard reload to ensure cookie is picked up
+      window.location.href = data.redirectTo || "/admin/agent-workbench";
     } catch {
       setError("An error occurred. Please try again.");
     } finally {

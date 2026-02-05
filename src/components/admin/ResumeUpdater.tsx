@@ -290,7 +290,7 @@ function SkillsDisplay({ skills }: { skills: Resume["skills"] }) {
             <div className="space-y-2">
               <div className="font-semibold capitalize">{category}</div>
               <div className="flex gap-2 flex-wrap">
-                {skillList.map((skill) => (
+                {skillList.map((skill: Skill) => (
                   <SkillBadge key={skill.name} skill={skill} />
                 ))}
               </div>

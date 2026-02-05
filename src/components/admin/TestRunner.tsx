@@ -100,7 +100,7 @@ export default function TestRunner({ agentType, promptText }: TestRunnerProps) {
       type: criterionType,
       value:
         criterionType === "first-person"
-          ? true
+          ? ""
           : criterionType === "token-limit" || criterionType === "max-length"
             ? Number(criterionValue)
             : criterionValue,
