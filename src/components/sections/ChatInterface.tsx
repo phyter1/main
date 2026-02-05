@@ -121,6 +121,12 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
 
         // Decode chunk as plain text
         const chunk = decoder.decode(value, { stream: true });
+
+        // Hide loading indicator as soon as first chunk arrives
+        if (assistantMessage === "") {
+          setIsLoading(false);
+        }
+
         assistantMessage += chunk;
 
         // Update the assistant message with accumulated content
@@ -132,9 +138,6 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
           ),
         );
       }
-
-      // Clean up loading state after streaming completes
-      setIsLoading(false);
     } catch (err) {
       console.error("Chat error:", err);
 
