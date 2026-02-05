@@ -27,6 +27,7 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@sentry/nextjs": "^10.27.0",
+    "@vercel/analytics": "^1.6.1",
     "@xyflow/react": "^12.9.3",
     "ai": "^6.0.69",
     "class-variance-authority": "^0.7.1",
