@@ -135,7 +135,6 @@ KEY ACHIEVEMENT: EHR integration using AWS Fargate to evade bot detection and bl
 
 CORE TECHNICAL SKILLS:
 - TypeScript (7 yrs), React (7 yrs), Node.js (8 yrs) - expert level
-- Python - proficient (AI/ML toolchain experience)
 - Modern web stack: Next.js, PostgreSQL, AWS infrastructure
 - AI Toolchain: Claude Code, LangChain, Anthropic API, OpenAI API
 - Cloud-native: Docker, AWS Lambda, ECS, infrastructure-as-code
