@@ -134,6 +134,11 @@ describe("Admin Workflows Integration Tests", () => {
     it("completes full refinement workflow from login to deployment", async () => {
       const user = userEvent.setup();
 
+      // Mock window.location since LoginForm uses window.location.href for redirect
+      const originalLocation = window.location;
+      delete (window as { location?: Location }).location;
+      window.location = { ...originalLocation, href: "" } as Location;
+
       // Step 1: Mock login API
       global.fetch = mock((url: string) => {
         if (url === "/api/admin/login") {
@@ -209,10 +214,13 @@ describe("Admin Workflows Integration Tests", () => {
       const loginButton = screen.getByRole("button", { name: /Sign in/i });
       await user.click(loginButton);
 
-      // Verify login API was called
+      // Verify login API was called and window.location.href was set
       await waitFor(() => {
-        expect(mockRouterPush).toHaveBeenCalledWith("/admin/agent-workbench");
+        expect(window.location.href).toBe("/admin/agent-workbench");
       });
+
+      // Restore window.location
+      window.location = originalLocation;
 
       // Step 4: Now render the PromptEditor component (simulating navigation)
       cleanup();

@@ -1,0 +1,150 @@
+#!/bin/bash
+
+# Sequential Test Runner
+# Runs all tests individually to avoid concurrency issues
+# Continues on failures and reports summary at the end
+
+echo "🧪 Running all tests sequentially..."
+echo ""
+
+# Track totals
+total_tests=0
+total_pass=0
+total_fail=0
+failed_files=()
+
+# Function to run a test file and extract results
+run_test() {
+  local file=$1
+  local label=$2
+
+  echo "  Testing: $label"
+
+  # Run test and capture output
+  output=$(bun test "$file" 2>&1 || true)
+
+  # Extract pass/fail counts
+  pass=$(echo "$output" | grep -oE '[0-9]+ pass' | grep -oE '[0-9]+' | head -1 || echo "0")
+  fail=$(echo "$output" | grep -oE '[0-9]+ fail' | grep -oE '[0-9]+' | head -1 || echo "0")
+
+  total_pass=$((total_pass + pass))
+  total_fail=$((total_fail + fail))
+  total_tests=$((total_tests + pass + fail))
+
+  if [ "$fail" -gt 0 ]; then
+    echo "    ⚠️  $pass pass, $fail fail"
+    failed_files+=("$label ($fail failed)")
+  elif [ "$pass" -gt 0 ]; then
+    echo "    ✅ $pass pass"
+  else
+    echo "    ❌ No tests found or error"
+    failed_files+=("$label (error)")
+  fi
+}
+
+# Library Tests
+echo "📚 Library Tests"
+run_test "src/lib/ai-config.test.ts" "ai-config"
+run_test "src/lib/analytics.test.ts" "analytics"
+run_test "src/lib/auth.test.ts" "auth"
+run_test "src/lib/input-sanitization.test.ts" "input-sanitization"
+run_test "src/lib/prompt-versioning.test.ts" "prompt-versioning"
+run_test "src/lib/test-runner.test.ts" "test-runner"
+echo ""
+
+# UI Component Tests
+echo "🎨 UI Component Tests"
+run_test "src/components/ui/chat-message.test.tsx" "chat-message"
+run_test "src/components/ui/expandable-context.test.tsx" "expandable-context"
+run_test "src/components/ui/guardrail-feedback.test.tsx" "guardrail-feedback"
+run_test "src/components/ui/typing-indicator.test.tsx" "typing-indicator"
+echo ""
+
+# Section Component Tests
+echo "📦 Section Component Tests"
+run_test "src/components/sections/ChatInterface.test.tsx" "ChatInterface"
+run_test "src/components/sections/Hero.test.tsx" "Hero"
+run_test "src/components/sections/JobFitAnalyzer.test.tsx" "JobFitAnalyzer"
+run_test "src/components/sections/SkillsMatrix.test.tsx" "SkillsMatrix"
+echo ""
+
+# Admin Component Tests
+echo "🔧 Admin Component Tests"
+run_test "src/components/admin/PromptDiff.test.tsx" "PromptDiff"
+run_test "src/components/admin/PromptEditor.test.tsx" "PromptEditor"
+run_test "src/components/admin/ResumeUpdater.test.tsx" "ResumeUpdater"
+run_test "src/components/admin/TestRunner.test.tsx" "TestRunner"
+echo ""
+
+# Layout Component Tests
+echo "🏗️ Layout Component Tests"
+run_test "src/components/layout/Navigation.test.tsx" "Navigation"
+echo ""
+
+# Page Tests
+echo "📄 Page Tests"
+run_test "src/app/about/page.test.tsx" "about"
+run_test "src/app/chat/page.test.tsx" "chat"
+run_test "src/app/fit-assessment/page.test.tsx" "fit-assessment"
+run_test "src/app/principles/page.test.tsx" "principles"
+run_test "src/app/projects/page.test.tsx" "projects"
+run_test "src/app/stack/page.test.tsx" "stack"
+run_test "src/app/layout.test.tsx" "layout"
+echo ""
+
+# Admin Page Tests
+echo "🔐 Admin Page Tests"
+run_test "src/app/admin/agent-workbench/page.test.tsx" "agent-workbench/page"
+run_test "src/app/admin/agent-workbench/layout.test.tsx" "agent-workbench/layout"
+run_test "src/app/admin/agent-workbench/history/page.test.tsx" "agent-workbench/history"
+echo ""
+
+# API Route Tests
+echo "🌐 API Route Tests"
+run_test "src/app/api/chat/route.test.ts" "chat API"
+run_test "src/app/api/fit-assessment/route.test.ts" "fit-assessment API"
+echo ""
+
+# Admin API Route Tests
+echo "🔐 Admin API Route Tests"
+run_test "src/app/api/admin/deploy-prompt/route.test.ts" "deploy-prompt API"
+run_test "src/app/api/admin/login/route.test.ts" "login API"
+run_test "src/app/api/admin/prompt-history/route.test.ts" "prompt-history API"
+run_test "src/app/api/admin/refine-prompt/route.test.ts" "refine-prompt API"
+run_test "src/app/api/admin/test-prompt/route.test.ts" "test-prompt API"
+run_test "src/app/api/admin/update-resume/route.test.ts" "update-resume API"
+echo ""
+
+# Data Tests
+echo "💾 Data Tests"
+run_test "src/data/resume.test.ts" "resume"
+echo ""
+
+# Integration Tests
+echo "🔗 Integration Tests"
+run_test "src/app/admin/__tests__/workflows.integration.test.tsx" "workflows integration"
+run_test "src/app/__tests__/guardrail-feedback.integration.test.tsx" "guardrail-feedback integration"
+run_test "src/app/__tests__/ai-features-integration.test.tsx" "ai-features integration"
+echo ""
+
+# Summary
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📊 Test Summary"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Total tests:  $total_tests"
+echo "Passed:       $total_pass ✅"
+echo "Failed:       $total_fail ❌"
+echo ""
+
+if [ ${#failed_files[@]} -gt 0 ]; then
+  echo "Failed test files:"
+  for file in "${failed_files[@]}"; do
+    echo "  - $file"
+  done
+  echo ""
+  exit 1
+else
+  echo "🎉 All tests passed!"
+  echo ""
+  exit 0
+fi

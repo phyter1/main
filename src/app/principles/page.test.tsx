@@ -1,8 +1,11 @@
-import { describe, expect, it } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "bun:test";
+import { cleanup, render, screen } from "@testing-library/react";
 import PrinciplesPage from "./page";
 
 describe("T007: Principles Page Component", () => {
+  afterEach(() => {
+    cleanup();
+  });
   describe("Page Structure and Content", () => {
     it("should render the principles page with use client directive", () => {
       // This test verifies the file exists and can be imported

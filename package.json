@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "bun run test:sequential",
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
@@ -13,6 +14,7 @@
     "convex:codegen": "convex codegen",
     "test": "bun test",
     "test:all": "bun run test:lib && bun run test:components && bun run test:api && bun run test:pages && bun run test:admin && bun run test:integration && bun run test:middleware",
+    "test:sequential": "./scripts/test-all-sequential.sh",
     "test:lib": "bun test src/lib/",
     "test:components": "bun test src/components/",
     "test:api": "bun test src/app/api/",

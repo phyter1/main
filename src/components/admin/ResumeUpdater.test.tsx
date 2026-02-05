@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { Resume } from "@/data/resume";
 import { ResumeUpdater } from "./ResumeUpdater";
@@ -98,6 +98,7 @@ describe("ResumeUpdater Component - T017", () => {
   });
 
   afterEach(() => {
+    cleanup();
     mock.restore();
   });
 
