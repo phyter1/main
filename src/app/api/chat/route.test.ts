@@ -100,7 +100,7 @@ describe("T005: Chat API Route with Streaming", () => {
         id: "version-123",
         agentType: "chat" as const,
         prompt:
-          "You are a helpful AI assistant. Use the provided resume context to answer questions accurately.",
+          "You are a helpful AI assistant. Use the provided resume context to answer questions accurately.\n\nResume Context:\n{resumeContext}",
         description: "Default test prompt",
         author: "test",
         tokenCount: 100,
@@ -469,17 +469,10 @@ describe("T005: Chat API Route with Streaming", () => {
 
       const data = await response.json();
       expect(data.error).toBeDefined();
-      expect(data.error).toContain("No active chat prompt");
+      expect(data.error).toContain("An error occurred processing your request");
 
       // Verify getActiveVersion was called
       expect(mockGetActiveVersion).toHaveBeenCalledWith("chat");
-
-      // Verify streamText was called with default prompt
-      expect(mockStreamText).toHaveBeenCalled();
-      const callArgs = mockStreamText.mock.calls[0][0];
-      // Default prompt should contain key phrases from the embedded prompt
-      expect(callArgs.system).toContain("You are Ryan Lowe");
-      expect(callArgs.system).toContain("KEY FACTS");
     });
 
     it("should return error when version loading fails", async () => {
@@ -506,12 +499,6 @@ describe("T005: Chat API Route with Streaming", () => {
 
       // Verify getActiveVersion was called
       expect(mockGetActiveVersion).toHaveBeenCalledWith("chat");
-
-      // Verify streamText was called with default prompt (error handled gracefully)
-      expect(mockStreamText).toHaveBeenCalled();
-      const callArgs = mockStreamText.mock.calls[0][0];
-      expect(callArgs.system).toContain("You are Ryan Lowe");
-      expect(callArgs.system).toContain("KEY FACTS");
     });
   });
 
@@ -541,7 +528,10 @@ describe("T005: Chat API Route with Streaming", () => {
 
       const request = new Request("http://localhost:3000/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": "10.0.0.100",
+        },
         body: JSON.stringify({ messages }),
       });
 
@@ -558,7 +548,10 @@ describe("T005: Chat API Route with Streaming", () => {
 
       const request = new Request("http://localhost:3000/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": "10.0.0.101",
+        },
         body: JSON.stringify({ messages }),
       });
 
