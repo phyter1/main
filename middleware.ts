@@ -96,8 +96,13 @@ function addSecurityHeaders(response: NextResponse): void {
 
 /**
  * Middleware configuration
- * Specify which routes this middleware applies to
+ * Protect admin routes with authentication
  */
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    /*
+     * Match admin routes only for authentication
+     */
+    "/admin/:path*",
+  ],
 };
