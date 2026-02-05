@@ -322,7 +322,7 @@ export const stackItems: StackItem[] = [
     id: "langchain",
     label: "LangChain",
     category: "devtool",
-    proficiency: "intermediate",
+    proficiency: "proficient",
     context: "personal",
     personalStack: true,
     description:
@@ -333,7 +333,7 @@ export const stackItems: StackItem[] = [
     id: "huggingface",
     label: "Hugging Face",
     category: "devtool",
-    proficiency: "intermediate",
+    proficiency: "proficient",
     context: "personal",
     personalStack: true,
     description:
