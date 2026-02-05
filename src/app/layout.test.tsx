@@ -56,8 +56,8 @@ mock.module("@/components/layout/Navigation", () => ({
 }));
 
 describe("T002: Layout with Analytics Component Tests", () => {
-  let RootLayout: any;
-  let metadata: any;
+  let RootLayout: React.ComponentType<{ children: React.ReactNode }>;
+  let metadata: Record<string, unknown>;
 
   beforeAll(async () => {
     const layoutModule = await import("./layout");
@@ -125,7 +125,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
     });
 
     it("should render children content inside main element", () => {
-      const { container } = render(
+      render(
         <RootLayout>
           <div data-testid="test-content">Test Content</div>
         </RootLayout>,
