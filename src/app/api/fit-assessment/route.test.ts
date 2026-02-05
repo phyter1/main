@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Set up test environment with API key before any imports
 process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-for-testing";
+process.env.OPENAI_API_KEY = "sk-test-key-for-testing";
 
 // Mock the AI SDK module BEFORE any imports
 mock.module("ai", () => ({
@@ -74,9 +75,144 @@ mock.module("ai", () => ({
   }),
 }));
 
+// Mock the prompt versioning system
+const mockGetActiveVersion = mock(() => null);
+
+mock.module("@/lib/prompt-versioning", () => ({
+  getActiveVersion: mockGetActiveVersion,
+}));
+
 import { POST } from "./route";
 
 describe("T006: Job Fit Assessment API Route", () => {
+  beforeEach(() => {
+    // Reset mock state before each test
+    mockGetActiveVersion.mockClear();
+    mockGetActiveVersion.mockReturnValue(null);
+  });
+
+  describe("T012: Prompt Loading", () => {
+    it("should load active prompt version when available", async () => {
+      // Mock active version available
+      const mockActiveVersion = {
+        id: "test-version-123",
+        agentType: "fit-assessment" as const,
+        prompt: "This is a custom system prompt for testing.",
+        description: "Test version",
+        author: "test-user",
+        tokenCount: 10,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      };
+
+      mockGetActiveVersion.mockReturnValue(Promise.resolve(mockActiveVersion));
+
+      const jobDescription = `
+        Senior TypeScript Developer
+
+        We are looking for an experienced TypeScript developer to join our team.
+
+        Requirements:
+        - Expert knowledge of TypeScript and React
+        - Experience with Next.js framework
+        - Strong understanding of modern web development
+
+        Responsibilities:
+        - Build and maintain web applications
+        - Collaborate with the engineering team
+        - Contribute to technical decisions
+      `;
+
+      const request = new Request("http://localhost:3000/api/fit-assessment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": "10.2.1.1",
+        },
+        body: JSON.stringify({ jobDescription }),
+      });
+
+      await POST(request);
+
+      // Verify getActiveVersion was called
+      expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
+    });
+
+    it("should fall back to default prompt when no active version", async () => {
+      // Mock no active version
+      mockGetActiveVersion.mockReturnValue(Promise.resolve(null));
+
+      const jobDescription = `
+        Senior TypeScript Developer
+
+        We are looking for an experienced TypeScript developer to join our team.
+
+        Requirements:
+        - Expert knowledge of TypeScript and React
+        - Experience with Next.js framework
+        - Strong understanding of modern web development
+
+        Responsibilities:
+        - Build and maintain web applications
+        - Collaborate with the engineering team
+        - Contribute to technical decisions
+      `;
+
+      const request = new Request("http://localhost:3000/api/fit-assessment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": "10.2.1.2",
+        },
+        body: JSON.stringify({ jobDescription }),
+      });
+
+      const response = await POST(request);
+
+      // Should still work with default prompt
+      expect(response.status).toBe(200);
+      expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
+    });
+
+    it("should fall back to default prompt when version loading fails", async () => {
+      // Mock error during version loading
+      mockGetActiveVersion.mockImplementation(() => {
+        throw new Error("Failed to load prompt version");
+      });
+
+      const jobDescription = `
+        Senior TypeScript Developer
+
+        We are looking for an experienced TypeScript developer to join our team.
+
+        Requirements:
+        - Expert knowledge of TypeScript and React
+        - Experience with Next.js framework
+        - Strong understanding of modern web development
+
+        Responsibilities:
+        - Build and maintain web applications
+        - Collaborate with the engineering team
+        - Contribute to technical decisions
+      `;
+
+      const request = new Request("http://localhost:3000/api/fit-assessment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": "10.2.1.3",
+        },
+        body: JSON.stringify({ jobDescription }),
+      });
+
+      const response = await POST(request);
+
+      // Should still work with default prompt fallback
+      expect(response.status).toBe(200);
+      expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
+    });
+  });
+
   describe("Input Validation", () => {
     it("should reject requests without jobDescription", async () => {
       const request = new Request("http://localhost:3000/api/fit-assessment", {
