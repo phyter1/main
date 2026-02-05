@@ -708,30 +708,1198 @@ const analysis = await generateObject({
    - Consider tier-based limits for authenticated users
    - Monitor and optimize limits based on API quotas
 
-## Admin Workbench
+## AI Agent Workbench
 
-The application includes a secure administrative interface for managing portfolio content, analytics, and system configuration. Authentication is password-based with session management.
+The application includes a sophisticated AI Agent Workbench for conversational prompt refinement, testing, and deployment. This meta-demonstration showcases AI-first development by using AI to improve AI - enabling iterative refinement of agent prompts through natural language conversation, side-by-side testing, and version control.
 
 ### Overview
 
-The Admin Workbench provides:
+The AI Agent Workbench is a conversational interface for refining and testing AI agent prompts. Rather than manually editing system prompts, you describe desired changes in natural language, and the AI generates refined prompts that better capture your intent. This approach demonstrates using AI to improve AI systems through iterative refinement.
 
-1. **Content Management**
-   - Edit resume data, projects, and experience
-   - Update skills and technologies
-   - Manage featured work and case studies
+**Key Capabilities:**
+- **Conversational Prompt Refinement**: Describe changes in natural language, AI generates refined prompts
+- **Side-by-Side Testing**: Compare current vs. modified prompts with identical test cases
+- **Version History**: Full version control with rollback capability
+- **Resume Data Updates**: AI-powered resume content updates
+- **Test Suite Management**: Define test cases with multiple criterion types
 
-2. **Analytics Dashboard**
-   - AI feature usage metrics
-   - Chat engagement statistics
-   - Job fit assessment trends
-   - Rate limit monitoring
+**Meta-Demonstration:**
+This workbench demonstrates AI-first development principles:
+- Using AI to improve AI agent behavior
+- Natural language as the primary interface for technical changes
+- Rapid iteration through conversational refinement
+- Test-driven validation of prompt improvements
 
-3. **System Configuration**
-   - AI model settings and quotas
-   - Rate limit adjustments
-   - Environment variable management (view only)
-   - Cache and performance tuning
+### Features
+
+#### Conversational Prompt Refinement
+Describe desired prompt changes in natural language, and the AI generates refined system prompts:
+
+```typescript
+// Example refinement request
+"Make the chat agent more conversational and friendly while maintaining professionalism"
+
+// AI generates refined prompt with changes highlighted
+// Shows diff view of modifications
+// Apply changes with one click
+```
+
+**Refinement Capabilities:**
+- Tone and style adjustments (formal, casual, friendly, technical)
+- Capability additions (new skills, knowledge areas, response patterns)
+- Response structure changes (conciseness, detail level, formatting)
+- Context integration improvements (better use of resume data)
+- Safety and guardrail enhancements
+
+#### Side-by-Side Testing
+Test current vs. modified prompts with identical inputs to validate improvements:
+
+```typescript
+// Define test cases
+const tests = [
+  {
+    question: "Tell me about Ryan's experience with React",
+    criteria: [
+      { type: "contains", value: "React" },
+      { type: "first-person", expected: false },
+      { type: "max-length", value: 500 }
+    ]
+  }
+];
+
+// Run both prompts simultaneously
+// Compare results side-by-side
+// View pass/fail for each criterion
+// See performance metrics (tokens, latency)
+```
+
+**Testing Features:**
+- Parallel execution for fair comparison
+- Multiple criterion types for validation
+- Aggregate metrics (pass rate, avg tokens, avg latency)
+- Visual diff highlighting differences in responses
+- Test suite persistence across sessions
+
+#### Version History with Rollback
+Complete version control for all prompt changes:
+
+```typescript
+// Version metadata
+{
+  versionId: "v1.2.3",
+  timestamp: "2026-02-04T19:30:00Z",
+  description: "Made agent more conversational and friendly",
+  author: "admin",
+  tokenCount: 1250,
+  isActive: true,
+  changes: [
+    "Added conversational tone guidance",
+    "Enhanced context usage patterns",
+    "Improved error handling instructions"
+  ]
+}
+```
+
+**Version Management:**
+- Automatic versioning on deployment
+- Semantic version numbering (major.minor.patch)
+- Detailed change descriptions
+- One-click rollback to previous versions
+- Version comparison (diff view)
+- Only one active version per agent type
+
+#### Resume Data Updates
+AI-powered updates to resume content through natural language:
+
+```typescript
+// Example update request
+"Add my new role as Senior Engineering Lead at TechCorp,
+started January 2026, focusing on AI integration and team leadership"
+
+// AI generates structured resume data
+// Shows preview of changes
+// Apply to update resume.ts
+```
+
+**Update Capabilities:**
+- New experience entries with structured data
+- Skill additions with proficiency levels
+- Project updates with technologies and descriptions
+- Principle additions for engineering philosophy
+- Automatic formatting and validation
+
+#### Test Suite Management
+Define and manage comprehensive test cases for agent validation:
+
+**Criterion Types:**
+- `contains`: Response must contain specific text
+- `first-person`: Response must/must not use first person ("I", "my")
+- `token-limit`: Response must stay under token limit
+- `max-length`: Response character length limit
+- `response-time`: Maximum acceptable latency
+- `sentiment`: Expected sentiment (positive, neutral, professional)
+
+**Test Organization:**
+- Group tests by category (basic queries, technical questions, edge cases)
+- Reusable test suites
+- Historical test results
+- Pass/fail tracking over time
+
+### Admin Routes
+
+#### Pages
+
+**`/admin/agent-workbench`** - Main workbench interface with tabbed navigation
+
+Tabs:
+- **Chat Agent**: Refine and test chat agent prompts
+- **Resume Data**: Update resume content
+- **Test Suite**: Manage test cases and run validations
+- **Settings**: Configure workbench behavior
+
+**`/admin/agent-workbench/history`** - Version history viewer
+
+Features:
+- List all prompt versions chronologically
+- View version details and metadata
+- Compare versions (diff view)
+- Rollback to previous versions
+- Export version history
+
+#### API Routes
+
+**`POST /api/admin/login`** - Admin authentication
+```typescript
+// Request
+{ password: string }
+
+// Response (success)
+{ success: true, sessionId: string }
+
+// Response (failure)
+{ error: "Invalid password" }
+```
+
+**`POST /api/admin/logout`** - Session termination
+```typescript
+// Response
+{ success: true }
+```
+
+**`POST /api/admin/refine-prompt`** - AI-powered prompt refinement
+```typescript
+// Request
+{
+  agentType: "chat" | "assessment" | "custom";
+  currentPrompt: string;
+  refinementRequest: string;
+  context?: string;
+}
+
+// Response
+{
+  refinedPrompt: string;
+  changes: string[];
+  reasoning: string;
+  tokenCount: number;
+  estimatedImprovement: string;
+}
+```
+
+**`POST /api/admin/test-prompt`** - Test prompt execution
+```typescript
+// Request
+{
+  prompt: string;
+  testCases: Array<{
+    question: string;
+    criteria: Array<{
+      type: "contains" | "first-person" | "token-limit" | "max-length";
+      value?: string | number;
+      expected?: boolean;
+    }>;
+  }>;
+  compareWith?: string; // Compare with current active prompt
+}
+
+// Response
+{
+  results: Array<{
+    question: string;
+    response: string;
+    passed: boolean;
+    criteriaResults: Array<{
+      type: string;
+      passed: boolean;
+      message: string;
+    }>;
+    tokenCount: number;
+    latency: number;
+  }>;
+  metrics: {
+    passRate: number;
+    avgTokens: number;
+    avgLatency: number;
+  };
+  comparison?: {
+    currentResults: TestResults;
+    modifiedResults: TestResults;
+    improvement: string;
+  };
+}
+```
+
+**`POST /api/admin/deploy-prompt`** - Deploy refined prompt as new version
+```typescript
+// Request
+{
+  agentType: "chat" | "assessment" | "custom";
+  prompt: string;
+  description: string;
+  changes: string[];
+}
+
+// Response
+{
+  success: true;
+  version: {
+    versionId: string;
+    timestamp: string;
+    description: string;
+    tokenCount: number;
+  };
+}
+```
+
+**`GET /api/admin/prompt-history`** - Retrieve version history
+```typescript
+// Query params
+?agentType=chat&limit=10&offset=0
+
+// Response
+{
+  versions: Array<{
+    versionId: string;
+    timestamp: string;
+    description: string;
+    author: string;
+    tokenCount: number;
+    isActive: boolean;
+    changes: string[];
+  }>;
+  total: number;
+}
+```
+
+**`POST /api/admin/update-resume`** - Update resume data
+```typescript
+// Request
+{
+  updateRequest: string; // Natural language description
+  section?: "experience" | "skills" | "projects" | "principles";
+}
+
+// Response
+{
+  preview: {
+    section: string;
+    changes: Array<{
+      type: "add" | "modify" | "remove";
+      path: string;
+      before?: any;
+      after?: any;
+    }>;
+  };
+  applyUrl: string; // Endpoint to apply changes
+}
+```
+
+### Prompt Versioning System
+
+#### Storage Structure
+
+Prompt versions are stored in `.admin/prompts/{agent-type}/{version-id}.json`:
+
+```
+.admin/
+└── prompts/
+    ├── chat/
+    │   ├── v1.0.0.json
+    │   ├── v1.1.0.json
+    │   └── v1.2.0.json (active)
+    ├── assessment/
+    │   ├── v1.0.0.json
+    │   └── v1.1.0.json (active)
+    └── custom/
+        └── v1.0.0.json (active)
+```
+
+#### Version Metadata Schema
+
+```typescript
+interface PromptVersion {
+  versionId: string;           // Semantic version (v1.2.3)
+  agentType: string;           // Agent type identifier
+  timestamp: string;           // ISO 8601 timestamp
+  description: string;         // Human-readable description
+  author: string;              // Who created this version
+  prompt: string;              // The actual system prompt
+  tokenCount: number;          // Token count of prompt
+  isActive: boolean;           // Currently deployed version
+  changes: string[];           // List of changes from previous version
+  metadata: {
+    testResults?: TestResults; // Results from pre-deployment testing
+    previousVersion?: string;  // Link to previous version
+    rollbackCount: number;     // Number of times rolled back to this
+    deploymentNotes?: string;  // Additional deployment context
+  };
+}
+```
+
+#### Versioning Functions
+
+**Save New Version:**
+```typescript
+async function savePromptVersion(
+  agentType: string,
+  prompt: string,
+  description: string,
+  changes: string[]
+): Promise<PromptVersion> {
+  // Generate new semantic version
+  const latestVersion = await getLatestVersion(agentType);
+  const newVersion = incrementVersion(latestVersion);
+
+  // Deactivate current active version
+  await deactivateCurrentVersion(agentType);
+
+  // Create version metadata
+  const version: PromptVersion = {
+    versionId: newVersion,
+    agentType,
+    timestamp: new Date().toISOString(),
+    description,
+    author: "admin",
+    prompt,
+    tokenCount: countTokens(prompt),
+    isActive: true,
+    changes,
+    metadata: {
+      previousVersion: latestVersion,
+      rollbackCount: 0
+    }
+  };
+
+  // Save to filesystem
+  await fs.writeFile(
+    `.admin/prompts/${agentType}/${newVersion}.json`,
+    JSON.stringify(version, null, 2)
+  );
+
+  return version;
+}
+```
+
+**Load Active Version:**
+```typescript
+async function loadActivePrompt(agentType: string): Promise<PromptVersion> {
+  const versions = await listVersions(agentType);
+  const active = versions.find(v => v.isActive);
+
+  if (!active) {
+    throw new Error(`No active version for agent type: ${agentType}`);
+  }
+
+  return active;
+}
+```
+
+**List Versions:**
+```typescript
+async function listVersions(
+  agentType: string,
+  options?: { limit?: number; offset?: number }
+): Promise<PromptVersion[]> {
+  const dir = `.admin/prompts/${agentType}`;
+  const files = await fs.readdir(dir);
+
+  const versions = await Promise.all(
+    files
+      .filter(f => f.endsWith('.json'))
+      .map(f => fs.readFile(path.join(dir, f), 'utf-8'))
+      .map(async content => JSON.parse(await content))
+  );
+
+  // Sort by timestamp (newest first)
+  versions.sort((a, b) =>
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
+  // Apply pagination
+  const { limit = 10, offset = 0 } = options || {};
+  return versions.slice(offset, offset + limit);
+}
+```
+
+**Rollback to Version:**
+```typescript
+async function rollbackToVersion(
+  agentType: string,
+  versionId: string
+): Promise<void> {
+  // Load target version
+  const targetVersion = await loadVersion(agentType, versionId);
+
+  // Deactivate current version
+  await deactivateCurrentVersion(agentType);
+
+  // Activate target version
+  targetVersion.isActive = true;
+  targetVersion.metadata.rollbackCount += 1;
+
+  // Save updated version
+  await saveVersion(targetVersion);
+
+  // Create git commit for rollback
+  await gitCommit(`Rollback ${agentType} prompt to ${versionId}`);
+}
+```
+
+**Active Version Policy:**
+- Only one version can be active per agent type at any time
+- Activating a new version automatically deactivates the current one
+- Rollback creates a new activation without creating a new version
+- All version changes are tracked in git for audit trail
+
+### Test Runner Capabilities
+
+#### Test Case Definition
+
+```typescript
+interface TestCase {
+  id: string;
+  name: string;
+  category: string;
+  question: string;
+  criteria: Criterion[];
+  tags?: string[];
+  priority?: "low" | "medium" | "high";
+}
+
+interface Criterion {
+  type: "contains" | "first-person" | "token-limit" | "max-length" | "response-time" | "sentiment";
+  value?: string | number;
+  expected?: boolean;
+  message?: string;
+}
+```
+
+#### Criterion Types
+
+**`contains` - Text Content Validation**
+```typescript
+{
+  type: "contains",
+  value: "React",
+  message: "Response must mention React"
+}
+```
+Validates that the response contains specific text (case-insensitive).
+
+**`first-person` - Perspective Validation**
+```typescript
+{
+  type: "first-person",
+  expected: false,
+  message: "Response should use third person (not 'I' or 'my')"
+}
+```
+Validates response perspective (agent should speak about Ryan in third person).
+
+**`token-limit` - Token Budget Validation**
+```typescript
+{
+  type: "token-limit",
+  value: 500,
+  message: "Response must stay under 500 tokens"
+}
+```
+Ensures response stays within token budget for cost control.
+
+**`max-length` - Character Length Validation**
+```typescript
+{
+  type: "max-length",
+  value: 1000,
+  message: "Response must be under 1000 characters"
+}
+```
+Validates response character length for UI constraints.
+
+**`response-time` - Latency Validation**
+```typescript
+{
+  type: "response-time",
+  value: 3000,
+  message: "Response must complete within 3 seconds"
+}
+```
+Ensures acceptable response latency for user experience.
+
+**`sentiment` - Tone Validation**
+```typescript
+{
+  type: "sentiment",
+  value: "professional",
+  message: "Response should maintain professional tone"
+}
+```
+Validates response sentiment (positive, neutral, professional, technical).
+
+#### Side-by-Side Comparison
+
+When testing a modified prompt, the test runner executes both prompts in parallel:
+
+```typescript
+interface ComparisonResults {
+  current: {
+    results: TestResult[];
+    metrics: Metrics;
+    prompt: string;
+  };
+  modified: {
+    results: TestResult[];
+    metrics: Metrics;
+    prompt: string;
+  };
+  improvement: {
+    passRateDelta: number;      // +5% pass rate
+    tokenDelta: number;          // -50 avg tokens
+    latencyDelta: number;        // -200ms avg latency
+    recommendation: string;      // "Deploy" or "Needs improvement"
+  };
+  sideBySide: Array<{
+    question: string;
+    currentResponse: string;
+    modifiedResponse: string;
+    currentPassed: boolean;
+    modifiedPassed: boolean;
+    diff: string;                // Visual diff of responses
+  }>;
+}
+```
+
+**Comparison Features:**
+- Parallel execution for fair timing comparison
+- Visual diff highlighting response differences
+- Criterion-by-criterion comparison
+- Aggregate metrics comparison (pass rate, tokens, latency)
+- Improvement recommendations based on results
+
+#### Metrics Calculation
+
+```typescript
+interface Metrics {
+  passRate: number;           // Percentage of tests passed
+  avgTokens: number;          // Average tokens per response
+  avgLatency: number;         // Average response time (ms)
+  totalTests: number;         // Number of tests executed
+  totalPassed: number;        // Number of tests passed
+  totalFailed: number;        // Number of tests failed
+  criteriaBreakdown: {
+    [criterionType: string]: {
+      passed: number;
+      failed: number;
+      passRate: number;
+    };
+  };
+}
+```
+
+### Workflows
+
+#### Prompt Refinement Workflow
+
+1. **Navigate to Chat Agent Tab**
+   - Access `/admin/agent-workbench`
+   - Select "Chat Agent" tab
+   - View current active prompt
+
+2. **Describe Desired Changes**
+   ```typescript
+   // Example refinement requests:
+   "Make the agent more conversational and use a friendly tone"
+   "Add capability to discuss specific technologies in depth"
+   "Improve how the agent structures responses with better formatting"
+   "Make responses more concise while maintaining key information"
+   ```
+
+3. **Review Generated Diff**
+   - AI generates refined prompt
+   - View side-by-side diff showing changes
+   - Read AI's reasoning for modifications
+   - Check token count impact
+
+4. **Test Refinement**
+   - Run existing test suite against new prompt
+   - View side-by-side comparison with current prompt
+   - Check pass rate and performance metrics
+   - Review individual test results
+
+5. **Apply Changes**
+   - If satisfied with test results, click "Apply"
+   - Changes staged but not yet deployed
+   - Can continue iterating with more refinements
+
+6. **Deploy New Version**
+   - Click "Deploy" to activate refined prompt
+   - Enter version description and change notes
+   - New semantic version created automatically
+   - Old version deactivated, remains in history
+   - Git commit created for audit trail
+
+#### Resume Update Workflow
+
+1. **Navigate to Resume Data Tab**
+   - Access `/admin/agent-workbench`
+   - Select "Resume Data" tab
+   - View current resume structure
+
+2. **Describe Addition**
+   ```typescript
+   // Example update requests:
+   "Add new position: Senior Engineering Lead at TechCorp,
+   started January 2026, focusing on AI integration and
+   building high-performance teams"
+
+   "Add skill: PostgreSQL with expert proficiency level"
+
+   "Update principle: Add 'AI-First Development' principle
+   about using AI tools to enhance productivity"
+   ```
+
+3. **Review Preview**
+   - AI generates structured resume data
+   - View formatted preview of changes
+   - Check JSON structure and formatting
+   - Validate all required fields present
+
+4. **Apply Update**
+   - Click "Apply" to update `src/data/resume.ts`
+   - File modified with proper TypeScript formatting
+   - Changes immediately reflected in application
+   - Git commit created with update details
+
+#### Testing Workflow
+
+1. **Navigate to Test Suite Tab**
+   - Access `/admin/agent-workbench`
+   - Select "Test Suite" tab
+   - View existing test cases
+
+2. **Add Test Cases**
+   ```typescript
+   {
+     name: "React Experience Query",
+     category: "Technical Questions",
+     question: "What experience does Ryan have with React?",
+     criteria: [
+       {
+         type: "contains",
+         value: "React",
+         message: "Must mention React"
+       },
+       {
+         type: "first-person",
+         expected: false,
+         message: "Should use third person"
+       },
+       {
+         type: "max-length",
+         value: 500,
+         message: "Keep response concise"
+       }
+     ],
+     priority: "high"
+   }
+   ```
+
+3. **Run Tests**
+   - Select test cases to execute
+   - Choose prompt to test (current or modified)
+   - Click "Run Tests"
+   - View real-time progress
+
+4. **Review Results**
+   - See pass/fail status for each test
+   - View detailed criterion results
+   - Check aggregate metrics
+   - Identify failing tests for improvement
+
+#### Rollback Workflow
+
+1. **Navigate to History Page**
+   - Access `/admin/agent-workbench/history`
+   - View chronological version list
+   - See active version highlighted
+
+2. **Select Version**
+   - Click on version to view details
+   - Read version description and changes
+   - Check when deployed and by whom
+   - View test results from deployment
+
+3. **View Diff**
+   - Click "Compare with Active"
+   - See side-by-side diff of prompts
+   - Review what would change with rollback
+   - Check token count differences
+
+4. **Rollback**
+   - Click "Rollback to This Version"
+   - Confirm rollback action
+   - Selected version becomes active
+   - Git commit created documenting rollback
+   - Previous active version remains in history
+
+### Security Best Practices
+
+#### Authentication and Session Security
+
+**Rate Limiting:**
+- Default: 5 requests per minute per IP for admin API routes
+- Applies to all `/api/admin/*` endpoints
+- Prevents brute force password attacks
+- Configurable via `ADMIN_MAX_REQUESTS_PER_MINUTE` environment variable
+
+**Session Management:**
+- Sessions encrypted using `ADMIN_SESSION_SECRET`
+- Default expiration: 7 days of inactivity
+- Sessions invalidated on logout
+- Secure cookie flags in production (httpOnly, secure, sameSite)
+
+**Password Security:**
+- Minimum 16 characters recommended
+- Mixed case letters, numbers, and symbols
+- Hashed using bcrypt before comparison
+- Rotate every 90 days
+
+#### Audit Trail via Git Commits
+
+All prompt deployments and rollbacks create git commits for complete audit trail:
+
+```bash
+# Deployment commit
+feat(workbench): deploy chat prompt v1.2.0
+
+Changes:
+- Made agent more conversational and friendly
+- Enhanced context usage patterns
+- Improved error handling instructions
+
+Deployed by: admin
+Timestamp: 2026-02-04T19:30:00Z
+
+# Rollback commit
+fix(workbench): rollback chat prompt to v1.1.0
+
+Reason: v1.2.0 showed decreased pass rate in testing
+Rolled back by: admin
+Timestamp: 2026-02-04T20:15:00Z
+```
+
+**Audit Benefits:**
+- Complete history of all prompt changes
+- Easy to identify who changed what and when
+- Rollback capability through git history
+- Integration with CI/CD pipelines
+- Compliance and accountability
+
+#### Prompt Injection Prevention
+
+The refinement request system includes protections against prompt injection attacks:
+
+**Input Validation:**
+```typescript
+// Validate refinement requests
+function validateRefinementRequest(request: string): void {
+  // Check length limits
+  if (request.length > 5000) {
+    throw new Error("Refinement request too long");
+  }
+
+  // Detect injection patterns
+  const injectionPatterns = [
+    /ignore (previous|all) instructions/i,
+    /disregard (previous|all) (instructions|rules)/i,
+    /you are now/i,
+    /new instructions:/i,
+    /system:/i,
+    /\[INST\]/i,
+    /<\|.*?\|>/
+  ];
+
+  for (const pattern of injectionPatterns) {
+    if (pattern.test(request)) {
+      throw new Error("Invalid refinement request detected");
+    }
+  }
+}
+```
+
+**Sanitization:**
+- Strip potentially malicious formatting
+- Limit special characters
+- Validate against known injection patterns
+- Log suspicious requests for review
+
+**Sandboxing:**
+- Refinement runs in controlled context
+- Cannot access sensitive environment variables
+- Limited to prompt generation only
+- Cannot execute arbitrary code
+
+#### API Security
+
+**Authentication Required:**
+All admin API routes require valid session:
+```typescript
+// Middleware checks session before processing
+export async function middleware(request: Request) {
+  const session = await getSession(request);
+
+  if (!session?.authenticated) {
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  return NextResponse.next();
+}
+```
+
+**Rate Limiting by Route:**
+```typescript
+// Different limits for different routes
+const rateLimits = {
+  "/api/admin/login": 5,           // 5/min - prevent brute force
+  "/api/admin/refine-prompt": 10,  // 10/min - expensive AI calls
+  "/api/admin/test-prompt": 5,     // 5/min - very expensive
+  "/api/admin/deploy-prompt": 20,  // 20/min - cheap operations
+  "/api/admin/update-resume": 10   // 10/min - moderate cost
+};
+```
+
+**Input Validation:**
+- All inputs validated with Zod schemas
+- Type-safe request/response handling
+- Explicit validation of required fields
+- Length limits on all text inputs
+
+### Development Guidelines
+
+#### Project Structure
+
+All admin workbench components follow consistent organization:
+
+```
+src/
+├── components/
+│   └── admin/
+│       ├── workbench/
+│       │   ├── ChatAgentTab.tsx        # Chat agent refinement interface
+│       │   ├── ResumeDataTab.tsx       # Resume update interface
+│       │   ├── TestSuiteTab.tsx        # Test management interface
+│       │   ├── SettingsTab.tsx         # Workbench settings
+│       │   ├── PromptDiff.tsx          # Diff viewer component
+│       │   ├── TestResults.tsx         # Test results display
+│       │   └── VersionHistory.tsx      # Version history list
+│       ├── auth/
+│       │   ├── LoginForm.tsx           # Admin login form
+│       │   └── SessionProvider.tsx     # Session context
+│       └── layout/
+│           ├── AdminLayout.tsx         # Admin page layout
+│           └── AdminNav.tsx            # Admin navigation
+├── app/
+│   ├── admin/
+│   │   ├── agent-workbench/
+│   │   │   ├── page.tsx                # Main workbench page
+│   │   │   └── history/
+│   │   │       └── page.tsx            # History viewer page
+│   │   ├── login/
+│   │   │   └── page.tsx                # Login page
+│   │   └── layout.tsx                  # Admin section layout
+│   └── api/
+│       └── admin/
+│           ├── login/
+│           │   └── route.ts            # Login endpoint
+│           ├── logout/
+│           │   └── route.ts            # Logout endpoint
+│           ├── refine-prompt/
+│           │   └── route.ts            # Prompt refinement
+│           ├── test-prompt/
+│           │   └── route.ts            # Test execution
+│           ├── deploy-prompt/
+│           │   └── route.ts            # Version deployment
+│           ├── prompt-history/
+│           │   └── route.ts            # History retrieval
+│           └── update-resume/
+│               └── route.ts            # Resume updates
+└── lib/
+    └── admin/
+        ├── prompt-versioning.ts        # Version management functions
+        ├── test-runner.ts              # Test execution engine
+        ├── session.ts                  # Session management
+        └── validation.ts               # Input validation
+```
+
+#### Component Patterns
+
+**Admin Components:**
+All admin components use consistent patterns:
+
+```typescript
+// Example: ChatAgentTab.tsx
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { PromptDiff } from './PromptDiff';
+
+export function ChatAgentTab() {
+  const [currentPrompt, setCurrentPrompt] = useState<string>('');
+  const [refinementRequest, setRefinementRequest] = useState<string>('');
+  const [refinedPrompt, setRefinedPrompt] = useState<string | null>(null);
+  const [isRefining, setIsRefining] = useState(false);
+
+  const handleRefine = async () => {
+    setIsRefining(true);
+    try {
+      const response = await fetch('/api/admin/refine-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentType: 'chat',
+          currentPrompt,
+          refinementRequest
+        })
+      });
+
+      const data = await response.json();
+      setRefinedPrompt(data.refinedPrompt);
+    } catch (error) {
+      console.error('Refinement failed:', error);
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Textarea
+        value={refinementRequest}
+        onChange={(e) => setRefinementRequest(e.target.value)}
+        placeholder="Describe how you want to refine the prompt..."
+        rows={4}
+      />
+
+      <Button onClick={handleRefine} disabled={isRefining}>
+        {isRefining ? 'Refining...' : 'Refine Prompt'}
+      </Button>
+
+      {refinedPrompt && (
+        <PromptDiff
+          original={currentPrompt}
+          modified={refinedPrompt}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+#### Testing Patterns
+
+**Mocking AI SDK for Tests:**
+
+```typescript
+import { describe, it, expect, mock, beforeEach } from 'bun:test';
+
+// Mock AI SDK for predictable testing
+const mockGenerateText = mock(() => ({
+  text: "Refined prompt with improvements"
+}));
+
+mock.module('ai', () => ({
+  generateText: mockGenerateText,
+  generateObject: mock(() => ({
+    object: { /* mock object */ }
+  }))
+}));
+
+describe('Prompt Refinement API', () => {
+  beforeEach(() => {
+    mock.restore();
+  });
+
+  it('should refine prompt based on request', async () => {
+    const response = await fetch('/api/admin/refine-prompt', {
+      method: 'POST',
+      body: JSON.stringify({
+        agentType: 'chat',
+        currentPrompt: 'Original prompt',
+        refinementRequest: 'Make it more friendly'
+      })
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.refinedPrompt).toBeDefined();
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+#### shadcn/ui Component Usage
+
+All admin UI uses shadcn/ui components with the new-york style:
+
+```typescript
+// Common components used in admin interfaces
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+```
+
+**Example Usage:**
+```typescript
+<Card>
+  <CardHeader>
+    <CardTitle>Prompt Refinement</CardTitle>
+    <CardDescription>
+      Describe changes to refine the agent prompt
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Textarea placeholder="Enter refinement request..." />
+    <Button className="mt-4">Refine</Button>
+  </CardContent>
+</Card>
+```
+
+#### API Route Patterns
+
+All admin API routes follow consistent patterns:
+
+```typescript
+// Example: src/app/api/admin/refine-prompt/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { generateText } from 'ai';
+import { createAnthropicClient } from '@/lib/ai-config';
+import { validateSession } from '@/lib/admin/session';
+import { validateRefinementRequest } from '@/lib/admin/validation';
+
+// Request schema
+const RequestSchema = z.object({
+  agentType: z.enum(['chat', 'assessment', 'custom']),
+  currentPrompt: z.string().min(10).max(10000),
+  refinementRequest: z.string().min(10).max(5000),
+  context: z.string().optional()
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    // Validate session
+    const session = await validateSession(request);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Parse and validate request
+    const body = await request.json();
+    const validated = RequestSchema.parse(body);
+
+    // Additional validation
+    validateRefinementRequest(validated.refinementRequest);
+
+    // Generate refined prompt
+    const model = createAnthropicClient('CHAT');
+    const result = await generateText({
+      model,
+      system: `You are a prompt engineering expert...`,
+      prompt: `Current prompt: ${validated.currentPrompt}\n\nRefinement request: ${validated.refinementRequest}`
+    });
+
+    // Return result
+    return NextResponse.json({
+      refinedPrompt: result.text,
+      changes: extractChanges(result.text),
+      reasoning: extractReasoning(result.text),
+      tokenCount: countTokens(result.text)
+    });
+
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    console.error('Refinement error:', error);
+    return NextResponse.json(
+      { error: 'Refinement failed' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+#### Best Practices
+
+**Component Development:**
+- Keep components focused and single-purpose
+- Use TypeScript for full type safety
+- Implement proper loading and error states
+- Follow React Server Component patterns where applicable
+- Use shadcn/ui components consistently
+
+**API Development:**
+- Always validate session authentication
+- Use Zod for request validation
+- Implement proper error handling with specific messages
+- Return appropriate HTTP status codes
+- Log errors server-side for debugging
+
+**Testing:**
+- Mock AI SDK calls for predictable tests
+- Test authentication and authorization
+- Test input validation (valid and invalid inputs)
+- Test error scenarios (rate limits, invalid sessions)
+- Use Bun test framework with descriptive test names
+
+**Security:**
+- Never expose API keys or sensitive data
+- Validate all user inputs
+- Implement rate limiting on all endpoints
+- Use secure session management
+- Log security-relevant events
+
+**Git Workflow:**
+- Commit prompt deployments with descriptive messages
+- Document rollbacks with reasons
+- Use conventional commit format
+- Include admin actions in commit messages
 
 ### Setup and Authentication
 
