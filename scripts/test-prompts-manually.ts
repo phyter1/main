@@ -6,16 +6,22 @@
  */
 
 import { streamText } from "ai";
-import { createOpenAIClient } from "../src/lib/ai-config";
 import { formatResumeAsLLMContext, resume } from "../src/data/resume";
+import { createOpenAIClient } from "../src/lib/ai-config";
 
 console.log("🧪 Testing AI Prompts Manually\n");
 console.log("=".repeat(80));
 
 // Test individual questions
 const testQuestions = [
-  { q: "What is your experience with TypeScript?", desc: "TypeScript expertise" },
-  { q: "Tell me about your AI-assisted development practices", desc: "AI-assisted dev (PRIMARY)" },
+  {
+    q: "What is your experience with TypeScript?",
+    desc: "TypeScript expertise",
+  },
+  {
+    q: "Tell me about your AI-assisted development practices",
+    desc: "AI-assisted dev (PRIMARY)",
+  },
   { q: "What are you most proud of at Hugo Health?", desc: "Key achievement" },
   { q: "How many years of experience do you have?", desc: "Simple factual" },
   { q: "What's your experience with Python?", desc: "Gap handling" },
@@ -91,7 +97,7 @@ async function main() {
     await testOne(q, desc);
     console.log("=".repeat(80));
     // Small delay between requests to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 }
 

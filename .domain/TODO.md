@@ -1,192 +1,248 @@
-# TODO: Feature: LLM interface trained on my previous work, experience, and expertise for interactive out-of-loop screening (phyter1/main#7)
+# TODO: Private AI Agent Refinement & Testing Workbench (phyter1/main#15)
 
-**Source**: https://github.com/phyter1/main/issues/7
-**Created**: 2026-02-04T15:11:57Z
+**Source**: https://github.com/phyter1/main/issues/15
+**Created**: 2026-02-05T00:01:28Z
+**Status**: In Progress
 
 ## Overview
 
-Build an AI-powered portfolio interface that allows hiring managers to:
-- Query experience and expertise through conversational AI
-- Paste job descriptions for fit assessment
-- Expand resume items to see AI-generated context
-- View honest skills assessment (strong/moderate/gaps)
+Build a private, authenticated workbench for conversationally refining and testing AI agents (chat and job-fit analyzer). This meta-feature demonstrates AI-first development by using AI to improve AI.
 
 ## Tasks
 
-### Group 1 (Foundation - No Dependencies)
+### Group 1: Foundation - Auth & Core Infrastructure (No Dependencies)
 
-- [ ] T001: Create resume/experience data model for LLM context
-  - **Acceptance**: Data structure in `src/data/resume.ts` containing structured experience, projects, and expertise
-  - **Acceptance**: Includes all information from existing `projects.ts`, `stack.ts`, `principles.ts`, `timeline.ts`
-  - **Acceptance**: Formatted as LLM-friendly context (markdown or structured text)
-  - **Acceptance**: Includes skills taxonomy with proficiency levels (expert/intermediate/learning/gaps)
-  - **Acceptance**: TypeScript interface exported
+- [ ] **T001: Create authentication utilities and middleware**
+  - Acceptance: `src/lib/auth.ts` created with password hashing utilities
+  - Acceptance: `middleware.ts` created with auth check for `/admin/*` routes
+  - Acceptance: Redirects unauthenticated requests to login page
+  - Acceptance: Sets secure HTTP-only cookie on successful auth
+  - Acceptance: Unit tests for auth utilities (password verification, token validation)
+  - Files: `middleware.ts`, `src/lib/auth.ts`, `src/lib/auth.test.ts`
 
-- [ ] T002: Add AI SDK dependency and configure environment
-  - **Acceptance**: Package installed (Vercel AI SDK or Anthropic SDK)
-  - **Acceptance**: `.env.local.example` file with API key placeholder
-  - **Acceptance**: Environment variable validation in config
-  - **Acceptance**: Rate limiting constants defined
-  - **Acceptance**: Documentation in CLAUDE.md about AI integration
+- [ ] **T002: Create prompt versioning system**
+  - Acceptance: `src/lib/prompt-versioning.ts` created with save/load/list version functions
+  - Acceptance: Prompts saved to `.admin/prompts/{agent-type}/{version-id}.json`
+  - Acceptance: Version metadata includes: timestamp, description, author, token count
+  - Acceptance: Functions: `savePromptVersion()`, `loadPromptVersion()`, `listVersions()`, `rollbackVersion()`
+  - Acceptance: Unit tests for all versioning functions
+  - Files: `src/lib/prompt-versioning.ts`, `src/lib/prompt-versioning.test.ts`
 
-- [ ] T003: Create shadcn/ui chat components (textarea, message bubbles)
-  - **Acceptance**: `components/ui/textarea.tsx` added via shadcn CLI
-  - **Acceptance**: `components/ui/scroll-area.tsx` added for chat history
-  - **Acceptance**: Custom `ChatMessage` component created with user/assistant variants
-  - **Acceptance**: Typing indicator component created
-  - **Acceptance**: Components use existing theme variables
+- [ ] **T003: Create test execution engine**
+  - Acceptance: `src/lib/test-runner.ts` created with test case execution logic
+  - Acceptance: Runs test cases against a given system prompt
+  - Acceptance: Returns structured results: pass/fail, response text, token count, latency
+  - Acceptance: Supports criteria evaluation: contains text, first person, token limit, etc.
+  - Acceptance: Unit tests with mocked AI responses
+  - Files: `src/lib/test-runner.ts`, `src/lib/test-runner.test.ts`
 
-- [ ] T004: Create SkillsMatrix component for displaying skills with gaps
-  - **Acceptance**: Component in `src/components/sections/SkillsMatrix.tsx`
-  - **Acceptance**: Displays three columns: Strong, Moderate, Gaps
-  - **Acceptance**: Uses badge components from shadcn/ui
-  - **Acceptance**: Responsive grid layout (stacks on mobile)
-  - **Acceptance**: Reads from skills data model
-  - **Acceptance**: Has colocated test file with >80% coverage
+- [ ] **T004: Add admin environment configuration**
+  - Acceptance: `.env.local.example` updated with `ADMIN_PASSWORD` variable
+  - Acceptance: `ADMIN_SESSION_SECRET` for session encryption
+  - Acceptance: Documentation in `.env.local.example` for setup
+  - Acceptance: CLAUDE.md updated with admin auth section
+  - Files: `.env.local.example`, `CLAUDE.md`
 
-### Group 2 (API Layer - Depends on Group 1)
+### Group 2: API Routes - Prompt Management (Depends on Group 1: T002)
 
-- [ ] T005: Create API route for chat completions with streaming
-  - **Acceptance**: Route at `src/app/api/chat/route.ts`
-  - **Acceptance**: POST endpoint accepts `{messages: Message[]}`
-  - **Acceptance**: Streams LLM responses using AI SDK
-  - **Acceptance**: System prompt includes resume data from T001
-  - **Acceptance**: Error handling for API failures
-  - **Acceptance**: Rate limiting implemented (10 req/min per IP)
-  - **Depends**: T001, T002
+- [ ] **T005: Create prompt refinement API route**
+  - Acceptance: `POST /api/admin/refine-prompt` created
+  - Acceptance: Input: agent type, current prompt, refinement request (conversational)
+  - Acceptance: Uses AI to generate refined prompt based on request
+  - Acceptance: Returns: proposed prompt, diff summary, token count comparison
+  - Acceptance: Rate limiting (5 req/min for admin routes)
+  - Acceptance: Auth check using middleware
+  - Acceptance: Unit tests with mocked AI responses
+  - Depends: T002
+  - Files: `src/app/api/admin/refine-prompt/route.ts`, `src/app/api/admin/refine-prompt/route.test.ts`
 
-- [ ] T006: Create API route for job fit assessment
-  - **Acceptance**: Route at `src/app/api/fit-assessment/route.ts`
-  - **Acceptance**: POST endpoint accepts `{jobDescription: string}`
-  - **Acceptance**: Returns structured assessment: `{fitLevel: "strong"|"weak"|"moderate", reasoning: string[], recommendations: string[]}`
-  - **Acceptance**: Uses resume data for comparison
-  - **Acceptance**: Input validation (max 10k characters, required field)
-  - **Acceptance**: Error handling and rate limiting
-  - **Depends**: T001, T002
+- [ ] **T006: Create test-prompt API route**
+  - Acceptance: `POST /api/admin/test-prompt` created
+  - Acceptance: Input: prompt text, agent type, test cases array
+  - Acceptance: Runs all test cases against the prompt using test-runner
+  - Acceptance: Returns: test results with pass/fail, responses, metrics
+  - Acceptance: Supports parallel test execution
+  - Acceptance: Auth check using middleware
+  - Acceptance: Unit tests with mocked test runner
+  - Depends: T003
+  - Files: `src/app/api/admin/test-prompt/route.ts`, `src/app/api/admin/test-prompt/route.test.ts`
 
-### Group 3 (UI Components - Depends on Group 2)
+- [ ] **T007: Create deploy-prompt API route**
+  - Acceptance: `POST /api/admin/deploy-prompt` created
+  - Acceptance: Input: agent type, prompt version ID
+  - Acceptance: Updates the active prompt file for specified agent
+  - Acceptance: Creates git commit with change description
+  - Acceptance: Returns: deployment status, commit hash, rollback instructions
+  - Acceptance: Auth check using middleware
+  - Acceptance: Unit tests with mocked file system and git operations
+  - Depends: T002
+  - Files: `src/app/api/admin/deploy-prompt/route.ts`, `src/app/api/admin/deploy-prompt/route.test.ts`
 
-- [ ] T007: Create ChatInterface component with streaming support
-  - **Acceptance**: Component at `src/components/sections/ChatInterface.tsx`
-  - **Acceptance**: Displays message history with user/assistant bubbles
-  - **Acceptance**: Textarea for input with send button
-  - **Acceptance**: Connects to `/api/chat` endpoint
-  - **Acceptance**: Streams responses token-by-token
-  - **Acceptance**: Loading states and error handling
-  - **Acceptance**: Accessible (keyboard navigation, ARIA labels)
-  - **Acceptance**: Has colocated test file mocking API calls
-  - **Depends**: T003, T005
+- [ ] **T008: Create prompt history API route**
+  - Acceptance: `GET /api/admin/prompt-history?agent={type}` created
+  - Acceptance: Returns list of all prompt versions for specified agent
+  - Acceptance: Includes metadata: timestamp, description, token count, author
+  - Acceptance: Sorted by timestamp (newest first)
+  - Acceptance: Auth check using middleware
+  - Acceptance: Unit tests
+  - Depends: T002
+  - Files: `src/app/api/admin/prompt-history/route.ts`, `src/app/api/admin/prompt-history/route.test.ts`
 
-- [ ] T008: Create JobFitAnalyzer component
-  - **Acceptance**: Component at `src/components/sections/JobFitAnalyzer.tsx`
-  - **Acceptance**: Large textarea for pasting job description
-  - **Acceptance**: "Analyze Fit" button triggers assessment
-  - **Acceptance**: Displays fit level with color coding (green/yellow/red)
-  - **Acceptance**: Shows reasoning bullets and recommendations
-  - **Acceptance**: Loading state during analysis
-  - **Acceptance**: Error handling for invalid input
-  - **Acceptance**: Has colocated test file with >80% coverage
-  - **Depends**: T006
+### Group 3: API Routes - Resume Management (Depends on Group 1)
 
-- [ ] T009: Create ExpandableContext component for resume items
-  - **Acceptance**: Component at `src/components/ui/ExpandableContext.tsx`
-  - **Acceptance**: Shows "View AI Context" button
-  - **Acceptance**: Expands to reveal detailed context
-  - **Acceptance**: Smooth animation using Framer Motion
-  - **Acceptance**: Can be used in existing project cards
-  - **Acceptance**: Accepts `context` prop with situation/task/action/result
-  - **Acceptance**: Has colocated test file
-  - **Depends**: T003
+- [ ] **T009: Create update-resume API route**
+  - Acceptance: `POST /api/admin/update-resume` created
+  - Acceptance: Input: conversational update request ("Add project X with tech Y")
+  - Acceptance: Uses AI to generate proposed resume data changes
+  - Acceptance: Returns: proposed changes, diff preview, affected sections
+  - Acceptance: Does NOT auto-commit - returns preview for approval
+  - Acceptance: Auth check using middleware
+  - Acceptance: Unit tests with mocked AI responses
+  - Files: `src/app/api/admin/update-resume/route.ts`, `src/app/api/admin/update-resume/route.test.ts`
 
-### Group 4 (Pages - Depends on Group 3)
+- [ ] **T010: Modify resume.ts to support dynamic updates**
+  - Acceptance: Add `updateResume()` function that accepts partial resume updates
+  - Acceptance: Validates structure before applying changes
+  - Acceptance: Preserves existing data while merging updates
+  - Acceptance: Exports `applyResumeUpdate()` for admin use
+  - Acceptance: Unit tests for update logic
+  - Files: `src/data/resume.ts`, `src/data/resume.test.ts`
 
-- [ ] T010: Create /chat page for AI conversation interface
-  - **Acceptance**: Page at `src/app/chat/page.tsx`
-  - **Acceptance**: Layout file with appropriate title
-  - **Acceptance**: Renders ChatInterface component
-  - **Acceptance**: Hero section with title "Ask Me Anything"
-  - **Acceptance**: Subtitle explaining the AI is trained on experience
-  - **Acceptance**: Follows existing page structure conventions
-  - **Acceptance**: Has colocated test file
-  - **Depends**: T007
+### Group 4: Make Existing Routes Configurable (Depends on Group 2: T002)
 
-- [ ] T011: Create /fit-assessment page for job description analyzer
-  - **Acceptance**: Page at `src/app/fit-assessment/page.tsx`
-  - **Acceptance**: Layout file with SEO metadata
-  - **Acceptance**: Renders JobFitAnalyzer component
-  - **Acceptance**: Introductory text explaining the tool
-  - **Acceptance**: Example job description link or sample
-  - **Acceptance**: Follows existing page conventions
-  - **Acceptance**: Has colocated test file
-  - **Depends**: T008
+- [ ] **T011: Refactor chat route to support prompt loading**
+  - Acceptance: Extract system prompt to separate constant/file
+  - Acceptance: Add `loadActivePrompt('chat')` function call
+  - Acceptance: Falls back to embedded prompt if no active version
+  - Acceptance: Maintains all existing functionality (streaming, rate limits, validation)
+  - Acceptance: Existing tests still pass
+  - Acceptance: New test for prompt loading
+  - Depends: T002
+  - Files: `src/app/api/chat/route.ts`, `src/app/api/chat/route.test.ts`
 
-- [ ] T012: Update /about or /stack page to include SkillsMatrix with gaps
-  - **Acceptance**: SkillsMatrix component added to appropriate page
-  - **Acceptance**: Section header: "Skills & Expertise"
-  - **Acceptance**: Subheader explaining honest self-assessment
-  - **Acceptance**: Integration matches existing page style
-  - **Acceptance**: Tests updated to cover new section
-  - **Depends**: T004
+- [ ] **T012: Refactor fit-assessment route to support prompt loading**
+  - Acceptance: Extract system prompt to separate constant/file
+  - Acceptance: Add `loadActivePrompt('fit-assessment')` function call
+  - Acceptance: Falls back to embedded prompt if no active version
+  - Acceptance: Maintains all existing functionality
+  - Acceptance: Existing tests still pass
+  - Acceptance: New test for prompt loading
+  - Depends: T002
+  - Files: `src/app/api/fit-assessment/route.ts`, `src/app/api/fit-assessment/route.test.ts`
 
-### Group 5 (Integration - Depends on Group 4)
+### Group 5: Admin UI Components (Depends on Group 1: T001)
 
-- [ ] T013: Update Navigation to include new pages
-  - **Acceptance**: "Chat" link added to navigation
-  - **Acceptance**: "Fit Assessment" link added
-  - **Acceptance**: Navigation maintains responsive behavior
-  - **Acceptance**: Active states work for new routes
-  - **Acceptance**: Tests updated to include new links
-  - **Depends**: T010, T011
+- [ ] **T013: Create admin layout with authentication**
+  - Acceptance: `src/app/admin/agent-workbench/layout.tsx` created
+  - Acceptance: Wraps admin routes with auth check
+  - Acceptance: Renders login form if not authenticated
+  - Acceptance: Shows navigation sidebar when authenticated
+  - Acceptance: Includes logout button
+  - Acceptance: Uses shadcn/ui components
+  - Depends: T001
+  - Files: `src/app/admin/agent-workbench/layout.tsx`
 
-- [ ] T014: Enhance existing projects page with ExpandableContext
-  - **Acceptance**: At least 3 featured projects have "View AI Context" buttons
-  - **Acceptance**: Context data includes STAR format (Situation, Task, Action, Result)
-  - **Acceptance**: Smooth UX with loading states
-  - **Acceptance**: Maintains existing project card styling
-  - **Acceptance**: Tests verify expansion functionality
-  - **Depends**: T009
+- [ ] **T014: Create PromptDiff component**
+  - Acceptance: `src/components/admin/PromptDiff.tsx` created
+  - Acceptance: Shows side-by-side diff of original vs. proposed prompt
+  - Acceptance: Highlights additions (green), deletions (red), changes (yellow)
+  - Acceptance: Displays token count difference
+  - Acceptance: Syntax highlighting for prompt text
+  - Acceptance: Responsive layout (stacks on mobile)
+  - Files: `src/components/admin/PromptDiff.tsx`
 
-### Group 6 (Polish & Documentation - Depends on Group 5)
+- [ ] **T015: Create TestRunner component**
+  - Acceptance: `src/components/admin/TestRunner.tsx` created
+  - Acceptance: Displays list of test cases with add/edit/delete controls
+  - Acceptance: Shows test results in table: question, expected criteria, pass/fail
+  - Acceptance: Displays metrics: pass rate, avg tokens, avg latency
+  - Acceptance: "Run Tests" button triggers API call to `/api/admin/test-prompt`
+  - Acceptance: Shows loading state during test execution
+  - Acceptance: Side-by-side comparison of current vs. modified prompt results
+  - Files: `src/components/admin/TestRunner.tsx`
 
-- [ ] T015: Add usage analytics for AI features
-  - **Acceptance**: Track chat interactions (count, not content)
-  - **Acceptance**: Track fit assessments (count)
-  - **Acceptance**: Track context expansions
-  - **Acceptance**: Privacy-respecting (no PII)
-  - **Acceptance**: Uses existing Umami integration
-  - **Depends**: T013
+- [ ] **T016: Create PromptEditor component**
+  - Acceptance: `src/components/admin/PromptEditor.tsx` created
+  - Acceptance: Conversational chat interface for refinement requests
+  - Acceptance: Shows current prompt in read-only panel
+  - Acceptance: Displays AI-proposed changes in diff view
+  - Acceptance: "Test Changes", "Apply Changes", "Revert" buttons
+  - Acceptance: Streaming response support for refinement suggestions
+  - Acceptance: Uses shadcn/ui components (Textarea, Button, Card, etc.)
+  - Files: `src/components/admin/PromptEditor.tsx`
 
-- [ ] T016: Update CLAUDE.md with AI integration patterns
-  - **Acceptance**: Documents API routes structure
-  - **Acceptance**: Explains LLM context management
-  - **Acceptance**: Lists environment variables required
-  - **Acceptance**: Includes testing strategy for AI features
-  - **Acceptance**: Rate limiting explanation
-  - **Depends**: T015
+- [ ] **T017: Create ResumeUpdater component**
+  - Acceptance: `src/components/admin/ResumeUpdater.tsx` created
+  - Acceptance: Conversational interface for resume updates
+  - Acceptance: Shows current resume data in structured view
+  - Acceptance: Displays proposed changes with diff
+  - Acceptance: "Preview Changes", "Apply Changes", "Cancel" buttons
+  - Acceptance: Integration with `/api/admin/update-resume`
+  - Files: `src/components/admin/ResumeUpdater.tsx`
 
-- [ ] T017: Create comprehensive E2E test for full user flow
-  - **Acceptance**: Test simulates: landing → chat → fit assessment → context expansion
-  - **Acceptance**: Mocks API responses appropriately
-  - **Acceptance**: Verifies all critical user paths
-  - **Acceptance**: Runs in CI/CD pipeline
-  - **Acceptance**: Covers error scenarios
-  - **Depends**: T016
+### Group 6: Main Workbench Pages (Depends on Group 5)
 
-## Execution Strategy
+- [ ] **T018: Create main agent workbench page**
+  - Acceptance: `src/app/admin/agent-workbench/page.tsx` created
+  - Acceptance: Tab navigation: Chat Agent, Job Fit Agent, Resume Data, Test Suite, History
+  - Acceptance: Each tab renders appropriate component (PromptEditor, TestRunner, etc.)
+  - Acceptance: Loads current prompts and version history on mount
+  - Acceptance: Clean, professional UI with shadcn/ui
+  - Acceptance: Mobile responsive
+  - Depends: T013, T014, T015, T016, T017
+  - Files: `src/app/admin/agent-workbench/page.tsx`
 
-- **Group 1**: 4 tasks in parallel (foundation)
-- **Group 2**: 2 tasks in parallel (API layer)
-- **Group 3**: 3 tasks in parallel (UI components)
-- **Group 4**: 3 tasks in parallel (pages)
-- **Group 5**: 2 tasks in parallel (integration)
-- **Group 6**: 3 tasks in parallel (polish)
+- [ ] **T019: Create prompt history viewer**
+  - Acceptance: `src/app/admin/agent-workbench/history/page.tsx` created
+  - Acceptance: Displays timeline of all prompt changes
+  - Acceptance: Shows version metadata: timestamp, description, token count
+  - Acceptance: "View Diff", "Rollback", "Test Version" actions per version
+  - Acceptance: Filter by agent type
+  - Acceptance: Integration with `/api/admin/prompt-history`
+  - Depends: T013
+  - Files: `src/app/admin/agent-workbench/history/page.tsx`
 
-**Total**: 17 tasks across 6 parallel groups
+### Group 7: Testing & Documentation (Depends on All Previous Groups)
+
+- [ ] **T020: Create integration tests for admin workflows**
+  - Acceptance: Test complete workflow: login → refine prompt → test → deploy
+  - Acceptance: Test resume update workflow: request → preview → apply
+  - Acceptance: Test rollback workflow: history → select version → deploy
+  - Acceptance: Test unauthorized access handling
+  - Acceptance: All tests pass with mocked AI and file system
+  - Depends: T018, T019
+  - Files: `src/app/admin/__tests__/workflows.integration.test.ts`
+
+- [ ] **T021: Update CLAUDE.md with admin workbench documentation**
+  - Acceptance: New section: "AI Agent Workbench"
+  - Acceptance: Documents authentication setup
+  - Acceptance: Documents all admin routes and their usage
+  - Acceptance: Documents prompt versioning system
+  - Acceptance: Documents test runner capabilities
+  - Acceptance: Security best practices for admin access
+  - Depends: T018, T019
+  - Files: `CLAUDE.md`
+
+## Parallel Execution Strategy
+
+- **Group 1** (4 tasks): Foundation - All run in parallel
+- **Group 2** (4 tasks): Prompt API routes - All run in parallel after Group 1
+- **Group 3** (2 tasks): Resume API routes - Run in parallel after Group 1
+- **Group 4** (2 tasks): Refactor existing routes - Run in parallel after Group 2
+- **Group 5** (5 tasks): UI Components - All run in parallel after Group 1
+- **Group 6** (2 tasks): Main pages - Run in parallel after Group 5
+- **Group 7** (2 tasks): Testing & docs - Run in parallel after Group 6
+
+**Total Tasks**: 21
+**Parallel Groups**: 7
+**Maximum Parallelism**: 5 tasks (Group 5)
 
 ## Notes
 
-- All tasks follow TDD: write tests first, then implementation
-- Use existing patterns from codebase (shadcn/ui, Biome formatting, bun:test)
-- Keep API keys in environment variables, never commit secrets
-- Maintain accessibility standards (WCAG 2.1 AA)
-- All components should support reduced motion preferences
+- All tasks follow TDD approach: tests first, then implementation
+- All tasks create colocated test files (*.test.ts)
+- Use existing patterns from `/api/chat` and `/api/fit-assessment` routes
+- Follow Biome formatting (2-space indentation)
+- Use shadcn/ui components (new-york style)
+- Mock AI SDK in all tests
+- Rate limiting for all admin API routes (5 req/min)

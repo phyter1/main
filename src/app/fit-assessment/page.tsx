@@ -45,9 +45,9 @@ export default function FitAssessmentPage() {
               Am I Right for the Role?
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Hiring managers and recruiters: paste your job description below to get
-              an honest AI-powered assessment of how well my experience and skills
-              match your requirements.
+              Hiring managers and recruiters: paste your job description below
+              to get an honest AI-powered assessment of how well my experience
+              and skills match your requirements.
             </p>
           </motion.div>
 
@@ -108,8 +108,8 @@ export default function FitAssessmentPage() {
                         Honest Assessment Philosophy:
                       </strong>{" "}
                       This tool provides transparent feedback. A "weak fit"
-                      doesn't mean I can't succeed—it means there may be
-                      roles that better align with my core strengths and experience.
+                      doesn't mean I can't succeed—it means there may be roles
+                      that better align with my core strengths and experience.
                     </span>
                   </p>
                 </div>

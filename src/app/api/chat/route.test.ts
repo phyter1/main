@@ -89,7 +89,9 @@ describe("T005: Chat API Route with Streaming", () => {
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       });
     });
-    mockFormatResumeAsLLMContext.mockImplementation(() => "# Test User\n\nTest context");
+    mockFormatResumeAsLLMContext.mockImplementation(
+      () => "# Test User\n\nTest context",
+    );
 
     // Reset getActiveVersion to return null by default
     mockGetActiveVersion.mockImplementation(() => Promise.resolve(null));

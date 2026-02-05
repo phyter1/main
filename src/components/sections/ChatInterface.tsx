@@ -8,9 +8,9 @@ import { GuardrailFeedback } from "@/components/ui/guardrail-feedback";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { TypingIndicator } from "@/components/ui/typing-indicator";
-import type { GuardrailViolation } from "@/types/guardrails";
 import { trackChatMessage } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import type { GuardrailViolation } from "@/types/guardrails";
 
 interface Message {
   id: string;
