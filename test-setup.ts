@@ -1,6 +1,11 @@
 import { mock } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createElement } from "react";
+import { config } from "dotenv";
+import { resolve } from "path";
+
+// Load test environment variables from .env.test
+config({ path: resolve(process.cwd(), ".env.test") });
 
 // Register Happy DOM for browser APIs
 GlobalRegistrator.register();
