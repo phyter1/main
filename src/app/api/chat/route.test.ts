@@ -60,14 +60,26 @@ mock.module("@/data/resume", () => ({
   formatResumeAsLLMContext: mockFormatResumeAsLLMContext,
 }));
 
+// Mock the prompt-versioning module
+const mockGetActiveVersion = mock(() => Promise.resolve(null));
+
+mock.module("@/lib/prompt-versioning", () => ({
+  getActiveVersion: mockGetActiveVersion,
+}));
+
 describe("T005: Chat API Route with Streaming", () => {
   let POST: (request: Request) => Promise<Response>;
 
   beforeEach(async () => {
     // Clear all mocks before each test
     mockStreamText.mockClear();
+    mockStreamText.mockRestore();
     mockStreamTextResult.toTextStreamResponse.mockClear();
+    mockStreamTextResult.toTextStreamResponse.mockRestore();
     mockFormatResumeAsLLMContext.mockClear();
+    mockFormatResumeAsLLMContext.mockRestore();
+    mockGetActiveVersion.mockClear();
+    mockGetActiveVersion.mockRestore();
 
     // Reset mock implementations to default
     mockStreamText.mockImplementation(() => mockStreamTextResult);
@@ -77,6 +89,10 @@ describe("T005: Chat API Route with Streaming", () => {
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       });
     });
+    mockFormatResumeAsLLMContext.mockImplementation(() => "# Test User\n\nTest context");
+
+    // Reset getActiveVersion to return null by default
+    mockGetActiveVersion.mockImplementation(() => Promise.resolve(null));
 
     // Dynamic import to get fresh module with mocks
     const module = await import("./route");
@@ -88,6 +104,7 @@ describe("T005: Chat API Route with Streaming", () => {
     mockStreamText.mockClear();
     mockStreamTextResult.toTextStreamResponse.mockClear();
     mockFormatResumeAsLLMContext.mockClear();
+    mockGetActiveVersion.mockClear();
   });
 
   describe("Request Handling", () => {
@@ -377,6 +394,95 @@ describe("T005: Chat API Route with Streaming", () => {
       const body = await response.json();
       expect(body).toHaveProperty("error");
       expect(typeof body.error).toBe("string");
+    });
+  });
+
+  describe("Prompt Loading (T011)", () => {
+    it("should load active prompt version when available", async () => {
+      // Mock getActiveVersion to return an active version
+      const mockPromptVersion = {
+        id: "test-version-id",
+        agentType: "chat" as const,
+        prompt: "Custom system prompt for testing",
+        description: "Test version",
+        author: "test-author",
+        tokenCount: 100,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      };
+
+      mockGetActiveVersion.mockImplementationOnce(() =>
+        Promise.resolve(mockPromptVersion),
+      );
+
+      const messages: Message[] = [{ id: "1", role: "user", content: "Hello" }];
+
+      const request = new Request("http://localhost:3000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+
+      await POST(request);
+
+      // Verify getActiveVersion was called with 'chat'
+      expect(mockGetActiveVersion).toHaveBeenCalledWith("chat");
+
+      // Verify streamText was called with custom prompt
+      expect(mockStreamText).toHaveBeenCalled();
+      const callArgs = mockStreamText.mock.calls[0][0];
+      expect(callArgs.system).toContain("Custom system prompt for testing");
+    });
+
+    it("should fall back to default prompt when no active version", async () => {
+      // Mock getActiveVersion to return null (no active version)
+      mockGetActiveVersion.mockImplementationOnce(() => Promise.resolve(null));
+
+      const messages: Message[] = [{ id: "1", role: "user", content: "Hello" }];
+
+      const request = new Request("http://localhost:3000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+
+      await POST(request);
+
+      // Verify getActiveVersion was called
+      expect(mockGetActiveVersion).toHaveBeenCalledWith("chat");
+
+      // Verify streamText was called with default prompt
+      expect(mockStreamText).toHaveBeenCalled();
+      const callArgs = mockStreamText.mock.calls[0][0];
+      // Default prompt should contain key phrases from the embedded prompt
+      expect(callArgs.system).toContain("You are Ryan Lowe");
+      expect(callArgs.system).toContain("KEY FACTS");
+    });
+
+    it("should fall back to default prompt when version loading fails", async () => {
+      // Mock getActiveVersion to throw an error
+      mockGetActiveVersion.mockImplementationOnce(() =>
+        Promise.reject(new Error("Failed to load version")),
+      );
+
+      const messages: Message[] = [{ id: "1", role: "user", content: "Hello" }];
+
+      const request = new Request("http://localhost:3000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+
+      await POST(request);
+
+      // Verify getActiveVersion was called
+      expect(mockGetActiveVersion).toHaveBeenCalledWith("chat");
+
+      // Verify streamText was called with default prompt (error handled gracefully)
+      expect(mockStreamText).toHaveBeenCalled();
+      const callArgs = mockStreamText.mock.calls[0][0];
+      expect(callArgs.system).toContain("You are Ryan Lowe");
+      expect(callArgs.system).toContain("KEY FACTS");
     });
   });
 
