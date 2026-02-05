@@ -1,15 +1,11 @@
 /**
  * Deploy Prompt API Route
- * POST endpoint for deploying prompt versions to production with git commit audit trail
+ * POST endpoint for deploying prompt versions to production (stored in Convex)
  */
 
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
 import { z } from "zod";
 import { type AgentType, rollbackVersion } from "@/lib/prompt-versioning";
 import type { Id } from "../../../../../convex/_generated/dataModel";
-
-const execAsync = promisify(exec);
 
 /**
  * Rate limiting configuration for admin endpoints
@@ -111,68 +107,17 @@ const RequestSchema = z.object({
 interface DeployPromptResponse {
   success: boolean;
   versionId: string;
-  commitHash?: string;
   message: string;
 }
 
-/**
- * Extract commit hash from git commit output
- * Git output format: "[branch commitHash] commit message"
- */
-function extractCommitHash(gitOutput: string | undefined): string | undefined {
-  if (!gitOutput) return undefined;
-
-  // Match pattern: [branch hash] or "commit hash"
-  const match = gitOutput.match(
-    /\[[\w\-/]+\s+([a-f0-9]+)\]|^commit\s+([a-f0-9]+)/i,
-  );
-  if (match) {
-    return match[1] || match[2];
-  }
-  return undefined;
-}
-
-/**
- * Create git commit for prompt deployment
- * Stages changes and creates commit with audit trail
- */
-async function createGitCommit(
-  agentType: AgentType,
-  versionId: string,
-  deployMessage?: string,
-): Promise<string | undefined> {
-  try {
-    // Stage prompt directory changes
-    await execAsync("git add .admin/prompts/");
-
-    // Build commit message with deployment details
-    const commitMessageLines = [
-      `deploy: activate ${agentType} prompt version ${versionId}`,
-      "",
-      deployMessage || `Deployed version ${versionId} to production`,
-    ];
-
-    const commitMessage = commitMessageLines.join("\n");
-
-    // Create commit
-    const { stdout } = await execAsync(`git commit -m "${commitMessage}"`);
-
-    // Extract commit hash from output
-    return extractCommitHash(stdout);
-  } catch (error) {
-    // Git errors are non-fatal (deployment still succeeded)
-    console.warn("Git commit failed:", error);
-    return undefined;
-  }
-}
 
 /**
  * POST /api/admin/deploy-prompt
  *
- * Deploys a prompt version to production and creates git commit for audit trail
+ * Deploys a prompt version to production (activates version in Convex)
  *
  * @param request - Request with agentType, versionId, and optional message
- * @returns JSON response with success status, versionId, optional commitHash, and message
+ * @returns JSON response with success status, versionId, and message
  */
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -226,22 +171,12 @@ export async function POST(request: Request): Promise<Response> {
     // Cast string to Convex Id type
     await rollbackVersion(agentType, versionId as Id<"promptVersions">);
 
-    // Create git commit for audit trail (non-blocking failure)
-    const commitHash = await createGitCommit(agentType, versionId, message);
-
     // Build success response
     const response: DeployPromptResponse = {
       success: true,
       versionId,
-      message: commitHash
-        ? `Prompt version ${versionId} activated and committed to git (${commitHash})`
-        : `Prompt version ${versionId} activated`,
+      message: `Prompt version ${versionId} activated`,
     };
-
-    // Include commit hash if available
-    if (commitHash) {
-      response.commitHash = commitHash;
-    }
 
     return Response.json(response, { status: 200 });
   } catch (error) {

@@ -218,7 +218,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
       render(<FitAssessmentPage />);
 
       // Verify page loaded
-      expect(screen.getByText("Job Fit Assessment")).toBeDefined();
+      expect(screen.getByText(/Am I Right for the Role/i)).toBeDefined();
 
       // Find job description textarea (using actual placeholder text)
       const textarea = screen.getByPlaceholderText(
@@ -503,7 +503,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
       );
       const { unmount: unmountFit } = render(<FitAssessmentPage />);
 
-      expect(screen.getByText("Job Fit Assessment")).toBeDefined();
+      expect(screen.getByText(/Am I Right for the Role/i)).toBeDefined();
 
       const fitTextarea = screen.getByPlaceholderText(
         /Paste the full job description/i,

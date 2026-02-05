@@ -4,9 +4,24 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import PromptHistoryPage from "./page";
+
+// Polyfill for pointer capture (not supported in happy-dom)
+if (typeof Element !== "undefined") {
+  if (!Element.prototype.hasPointerCapture) {
+    Element.prototype.hasPointerCapture = function () {
+      return false;
+    };
+  }
+  if (!Element.prototype.setPointerCapture) {
+    Element.prototype.setPointerCapture = function () {};
+  }
+  if (!Element.prototype.releasePointerCapture) {
+    Element.prototype.releasePointerCapture = function () {};
+  }
+}
 
 // Mock fetch globally
 const mockFetch = mock();
@@ -75,14 +90,28 @@ describe("PromptHistoryPage", () => {
     mockFetch.mockReset();
     mockPush.mockReset();
 
-    // Default successful fetch response
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ versions: mockVersions }),
-    } as Response);
+    // Smart mock that filters versions based on agentType query param
+    mockFetch.mockImplementation(async (url: string) => {
+      const urlStr = url.toString();
+      let filteredVersions = mockVersions;
+
+      if (urlStr.includes("agentType=chat")) {
+        filteredVersions = mockVersions.filter((v) => v.agentType === "chat");
+      } else if (urlStr.includes("agentType=fit-assessment")) {
+        filteredVersions = mockVersions.filter(
+          (v) => v.agentType === "fit-assessment",
+        );
+      }
+
+      return {
+        ok: true,
+        json: async () => ({ versions: filteredVersions }),
+      } as Response;
+    });
   });
 
   afterEach(() => {
+    cleanup();
     mock.restore();
   });
 
@@ -147,9 +176,9 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText("Initial version")).not.toBeNull();
-          expect(screen.queryByText("Updated version")).not.toBeNull();
-          expect(screen.queryByText("Fit assessment prompt")).not.toBeNull();
+          expect(screen.queryByText(/Initial version/)).not.toBeNull();
+          expect(screen.queryByText(/Updated version/)).not.toBeNull();
+          expect(screen.queryByText(/Fit assessment prompt/)).not.toBeNull();
         },
         { timeout: 3000 },
       );
@@ -160,8 +189,11 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText(/Author: Admin/)).not.toBeNull();
-          expect(screen.queryByText(/Tokens: 100/)).not.toBeNull();
+          const authorElements = screen.queryAllByText(/Author: Admin/);
+          expect(authorElements.length).toBeGreaterThan(0);
+
+          const tokenElements = screen.queryAllByText(/Tokens: 100/);
+          expect(tokenElements.length).toBeGreaterThan(0);
         },
         { timeout: 3000 },
       );
@@ -202,7 +234,7 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText("Initial version")).not.toBeNull();
+          expect(screen.queryByText(/Initial version/)).not.toBeNull();
         },
         { timeout: 3000 },
       );
@@ -242,7 +274,7 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText("Fit assessment prompt")).not.toBeNull();
+          expect(screen.queryByText(/Fit assessment prompt/)).not.toBeNull();
         },
         { timeout: 3000 },
       );
@@ -265,9 +297,9 @@ describe("PromptHistoryPage", () => {
       await waitFor(
         () => {
           // Fit assessment version should not be visible
-          expect(screen.queryByText("Fit assessment prompt")).toBeNull();
+          expect(screen.queryByText(/Fit assessment prompt/)).toBeNull();
           // Chat versions should be visible
-          expect(screen.queryByText("Initial version")).not.toBeNull();
+          expect(screen.queryByText(/Initial version/)).not.toBeNull();
         },
         { timeout: 3000 },
       );
@@ -317,7 +349,7 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText("Initial version")).not.toBeNull();
+          expect(screen.queryByText(/Initial version/)).not.toBeNull();
         },
         { timeout: 3000 },
       );
@@ -340,7 +372,7 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText("Initial version")).not.toBeNull();
+          expect(screen.queryByText(/Initial version/)).not.toBeNull();
         },
         { timeout: 3000 },
       );
@@ -364,7 +396,7 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText("Updated version")).not.toBeNull();
+          expect(screen.queryByText(/Updated version/)).not.toBeNull();
         },
         { timeout: 3000 },
       );
@@ -403,7 +435,7 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText("Updated version")).not.toBeNull();
+          expect(screen.queryByText(/Updated version/)).not.toBeNull();
         },
         { timeout: 3000 },
       );
@@ -458,7 +490,7 @@ describe("PromptHistoryPage", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByText("Updated version")).not.toBeNull();
+          expect(screen.queryByText(/Updated version/)).not.toBeNull();
         },
         { timeout: 3000 },
       );

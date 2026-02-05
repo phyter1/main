@@ -133,8 +133,9 @@ describe("T013: Update Navigation to include new pages", () => {
       expect(
         screen.getAllByRole("link", { name: "Projects" })[0],
       ).toBeDefined();
+      expect(screen.getAllByRole("link", { name: "Chat" })[0]).toBeDefined();
       expect(
-        screen.getAllByRole("link", { name: "Infrastructure" })[0],
+        screen.getAllByRole("link", { name: "Fit Assessment" })[0],
       ).toBeDefined();
     });
   });

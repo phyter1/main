@@ -1,30 +1,9 @@
 /**
  * Test Suite for Deploy Prompt API Route
- * Validates POST endpoint with prompt deployment, git integration, and rate limiting
+ * Validates POST endpoint with prompt deployment and rate limiting
  */
 
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-
-// Mock child_process for git commands
-const mockExec = mock(
-  (
-    command: string,
-    callback: (error: Error | null, stdout: string, stderr: string) => void,
-  ) => {
-    // Default success case: respond based on command
-    if (command.includes("git add")) {
-      callback(null, "", "");
-    } else if (command.includes("git commit")) {
-      callback(null, "[main abc123def456] deploy message\n", "");
-    } else {
-      callback(null, "", "");
-    }
-  },
-);
-
-mock.module("node:child_process", () => ({
-  exec: mockExec,
-}));
 
 // Mock prompt versioning module
 const mockRollbackVersion = mock(
@@ -50,25 +29,9 @@ describe("T007: Deploy Prompt API Route", () => {
 
   beforeEach(async () => {
     // Clear all mocks before each test
-    mockExec.mockClear();
     mockRollbackVersion.mockClear();
 
     // Reset mock implementations to default
-    mockExec.mockImplementation(
-      (
-        command: string,
-        callback: (error: Error | null, stdout: string, stderr: string) => void,
-      ) => {
-        if (command.includes("git add")) {
-          callback(null, "", "");
-        } else if (command.includes("git commit")) {
-          callback(null, "[main abc123def456] deploy message\n", "");
-        } else {
-          callback(null, "", "");
-        }
-      },
-    );
-
     mockRollbackVersion.mockImplementation(
       async (_agentType: string, _versionId: string) => {
         return Promise.resolve();
@@ -82,7 +45,6 @@ describe("T007: Deploy Prompt API Route", () => {
 
   afterEach(() => {
     // Clean up mocks after each test
-    mockExec.mockClear();
     mockRollbackVersion.mockClear();
   });
 
@@ -267,194 +229,9 @@ describe("T007: Deploy Prompt API Route", () => {
     });
   });
 
-  describe("Git Integration", () => {
-    it("should create git commit with correct message", async () => {
-      const request = new Request(
-        "http://localhost:3000/api/admin/deploy-prompt",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-forwarded-for": getUniqueIP(),
-          },
-          body: JSON.stringify({
-            agentType: "chat",
-            versionId: "version-123",
-            message: "Update chat prompt for better responses",
-          }),
-        },
-      );
-
-      await POST(request);
-
-      // Verify exec was called with git commands
-      expect(mockExec).toHaveBeenCalled();
-
-      // Check that git add and commit commands were executed
-      const calls = mockExec.mock.calls;
-      const addCall = calls.find((call) => call[0].includes("git add"));
-      const commitCall = calls.find((call) => call[0].includes("git commit"));
-
-      expect(addCall).toBeDefined();
-      expect(commitCall).toBeDefined();
-
-      // Verify commit message format
-      if (commitCall) {
-        expect(commitCall[0]).toContain("deploy:");
-        expect(commitCall[0]).toContain("chat");
-        expect(commitCall[0]).toContain("version-123");
-        expect(commitCall[0]).toContain(
-          "Update chat prompt for better responses",
-        );
-      }
-    });
-
-    it("should extract commit hash from git output", async () => {
-      mockExec.mockImplementation(
-        (
-          command: string,
-          callback: (
-            error: Error | null,
-            stdout: string,
-            stderr: string,
-          ) => void,
-        ) => {
-          if (command.includes("git add")) {
-            callback(null, "", "");
-          } else if (command.includes("git commit")) {
-            callback(
-              null,
-              "[main abc123def456] deploy: activate chat prompt\n",
-              "",
-            );
-          }
-        },
-      );
-
-      const request = new Request(
-        "http://localhost:3000/api/admin/deploy-prompt",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-forwarded-for": getUniqueIP(),
-          },
-          body: JSON.stringify({
-            agentType: "chat",
-            versionId: "version-123",
-          }),
-        },
-      );
-
-      const response = await POST(request);
-      const body = await response.json();
-
-      expect(body).toHaveProperty("commitHash");
-      expect(body.commitHash).toBe("abc123def456");
-    });
-
-    it("should handle git errors gracefully (non-git repo)", async () => {
-      mockExec.mockImplementation(
-        (
-          _command: string,
-          callback: (
-            error: Error | null,
-            stdout: string,
-            stderr: string,
-          ) => void,
-        ) => {
-          callback(
-            new Error("not a git repository"),
-            "",
-            "fatal: not a git repository",
-          );
-        },
-      );
-
-      const request = new Request(
-        "http://localhost:3000/api/admin/deploy-prompt",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-forwarded-for": getUniqueIP(),
-          },
-          body: JSON.stringify({
-            agentType: "chat",
-            versionId: "version-123",
-          }),
-        },
-      );
-
-      const response = await POST(request);
-
-      // Should still succeed (deployment worked, just no git commit)
-      expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body.success).toBe(true);
-      expect(body.commitHash).toBeUndefined();
-    });
-
-    it("should handle uncommitted changes error gracefully", async () => {
-      mockExec.mockImplementation(
-        (
-          _command: string,
-          callback: (
-            error: Error | null,
-            stdout: string,
-            stderr: string,
-          ) => void,
-        ) => {
-          callback(
-            new Error("nothing to commit, working tree clean"),
-            "",
-            "nothing to commit, working tree clean",
-          );
-        },
-      );
-
-      const request = new Request(
-        "http://localhost:3000/api/admin/deploy-prompt",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-forwarded-for": getUniqueIP(),
-          },
-          body: JSON.stringify({
-            agentType: "fit-assessment",
-            versionId: "version-456",
-          }),
-        },
-      );
-
-      const response = await POST(request);
-
-      expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body.success).toBe(true);
-    });
-  });
 
   describe("Response Format", () => {
-    it("should return success response with commit hash", async () => {
-      mockExec.mockImplementation(
-        (
-          command: string,
-          callback: (
-            error: Error | null,
-            stdout: string,
-            stderr: string,
-          ) => void,
-        ) => {
-          if (command.includes("git add")) {
-            callback(null, "", "");
-          } else if (command.includes("git commit")) {
-            callback(null, "[main abc123def456] deploy message\n", "");
-          }
-        },
-      );
-
+    it("should return success response with all required fields", async () => {
       const request = new Request(
         "http://localhost:3000/api/admin/deploy-prompt",
         {
@@ -477,45 +254,7 @@ describe("T007: Deploy Prompt API Route", () => {
       expect(body.success).toBe(true);
       expect(body).toHaveProperty("versionId");
       expect(body.versionId).toBe("version-123");
-      expect(body).toHaveProperty("commitHash");
       expect(body).toHaveProperty("message");
-    });
-
-    it("should return success response without commit hash when git fails", async () => {
-      mockExec.mockImplementation(
-        (
-          _command: string,
-          callback: (
-            error: Error | null,
-            stdout: string,
-            stderr: string,
-          ) => void,
-        ) => {
-          callback(new Error("git error"), "", "fatal: git error");
-        },
-      );
-
-      const request = new Request(
-        "http://localhost:3000/api/admin/deploy-prompt",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-forwarded-for": getUniqueIP(),
-          },
-          body: JSON.stringify({
-            agentType: "chat",
-            versionId: "version-123",
-          }),
-        },
-      );
-
-      const response = await POST(request);
-      const body = await response.json();
-
-      expect(body.success).toBe(true);
-      expect(body.versionId).toBe("version-123");
-      expect(body.commitHash).toBeUndefined();
       expect(body.message).toContain("activated");
     });
   });
@@ -716,7 +455,7 @@ describe("T007: Deploy Prompt API Route", () => {
       );
     });
 
-    it("AC4: Creates git commit with proper message format", async () => {
+    it("AC4: Activates prompt version using rollbackVersion", async () => {
       const request = new Request(
         "http://localhost:3000/api/admin/deploy-prompt",
         {
@@ -735,19 +474,10 @@ describe("T007: Deploy Prompt API Route", () => {
 
       await POST(request);
 
-      const commitCalls = mockExec.mock.calls.filter((call) =>
-        call[0].includes("git commit"),
-      );
-      expect(commitCalls.length).toBeGreaterThan(0);
-
-      const commitCall = commitCalls[0][0];
-      expect(commitCall).toContain("deploy:");
-      expect(commitCall).toContain("chat");
-      expect(commitCall).toContain("version-789");
-      expect(commitCall).toContain("Improve chat responses");
+      expect(mockRollbackVersion).toHaveBeenCalledWith("chat", "version-789");
     });
 
-    it("AC5: Response includes success, versionId, optional commitHash, and message", async () => {
+    it("AC5: Response includes success, versionId, and message", async () => {
       const request = new Request(
         "http://localhost:3000/api/admin/deploy-prompt",
         {

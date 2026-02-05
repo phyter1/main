@@ -72,7 +72,7 @@ describe("T010: /chat Page Implementation", () => {
     it("should render subtitle explaining AI training", () => {
       render(<ChatPage />);
 
-      const subtitle = screen.getByText(/trained on my experience/i);
+      const subtitle = screen.getByText(/trained on Ryan's experience/i);
       expect(subtitle).toBeDefined();
     });
 
@@ -158,7 +158,7 @@ describe("T010: /chat Page Implementation", () => {
       render(<ChatPage />);
 
       const title = screen.getByText("Ask Me Anything");
-      const subtitle = screen.getByText(/trained on my experience/i);
+      const subtitle = screen.getByText(/trained on Ryan's experience/i);
 
       expect(title.className).toContain("text-foreground");
       expect(subtitle.className).toContain("text-muted-foreground");
@@ -188,7 +188,7 @@ describe("T010: /chat Page Implementation", () => {
     it("should have subtitle explaining AI is trained on experience", () => {
       render(<ChatPage />);
 
-      const subtitle = screen.getByText(/trained on my experience/i);
+      const subtitle = screen.getByText(/trained on Ryan's experience/i);
       expect(subtitle).toBeDefined();
     });
 

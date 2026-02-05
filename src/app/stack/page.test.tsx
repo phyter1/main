@@ -1,9 +1,12 @@
-import { describe, expect, it } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "bun:test";
+import { cleanup, render, screen } from "@testing-library/react";
 import { stackItems } from "@/data/stack";
 import StackPage from "./page";
 
 describe("T005: Add AI Development Tools to Stack Page", () => {
+  afterEach(() => {
+    cleanup();
+  });
   describe("AI Development Tools in Data", () => {
     it("should include Claude Code in stack data", () => {
       const claudeCode = stackItems.find((item) => item.id === "claude-code");

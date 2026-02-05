@@ -1,6 +1,11 @@
 import { mock } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createElement } from "react";
+import { config } from "dotenv";
+import { resolve } from "path";
+
+// Load test environment variables from .env.test
+config({ path: resolve(process.cwd(), ".env.test") });
 
 // Register Happy DOM for browser APIs
 GlobalRegistrator.register();
@@ -45,6 +50,17 @@ mock.module("framer-motion", () => ({
 // Global mock for useReducedMotion hook
 mock.module("@/hooks/useReducedMotion", () => ({
   useReducedMotion: () => false,
+}));
+
+// Mock Convex client to prevent real database connections in tests
+mock.module("convex/browser", () => ({
+  ConvexHttpClient: mock(function ConvexHttpClient(url: string) {
+    return {
+      query: mock(() => Promise.resolve(null)),
+      mutation: mock(() => Promise.resolve(null)),
+      action: mock(() => Promise.resolve(null)),
+    };
+  }),
 }));
 
 // Note: Individual test files should mock AI SDK functions (streamText, generateObject)
