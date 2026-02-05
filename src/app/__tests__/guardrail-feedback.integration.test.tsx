@@ -334,10 +334,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
 
       // Type malicious script
       const input = screen.getByPlaceholderText(/Type your message/i);
-      await userEvent.type(
-        input,
-        '<script>alert("xss")</script>',
-      );
+      await userEvent.type(input, '<script>alert("xss")</script>');
 
       const sendButton = screen.getByRole("button", { name: /send message/i });
       await userEvent.click(sendButton);
@@ -372,7 +369,9 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
 
       // Verify GitHub link
       const sourceLink = screen.getByText(/input-sanitization\.ts/i);
-      expect(sourceLink.closest("a")?.getAttribute("href")).toContain("#L76-L99");
+      expect(sourceLink.closest("a")?.getAttribute("href")).toContain(
+        "#L76-L99",
+      );
     });
   });
 
@@ -438,9 +437,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
       expect(screen.getByText(/Content Validation/i)).toBeDefined();
 
       // Verify explanation
-      expect(
-        screen.getByText(/ensures that job descriptions/i),
-      ).toBeDefined();
+      expect(screen.getByText(/ensures that job descriptions/i)).toBeDefined();
 
       // Expand to see implementation
       const expandButton = screen.getByRole("button", {
@@ -580,9 +577,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
       await userEvent.click(expandButton);
 
       await waitFor(() => {
-        const link = screen
-          .getByText(/input-sanitization\.ts/i)
-          .closest("a");
+        const link = screen.getByText(/input-sanitization\.ts/i).closest("a");
         expect(link).toBeDefined();
         expect(link?.getAttribute("href")).toBe(
           "https://github.com/phyter1/main/blob/main/src/lib/input-sanitization.ts#L26-L71",

@@ -521,7 +521,8 @@ describe("JobFitAnalyzer Component", () => {
       );
 
       // Verify guardrail content is displayed
-      const lengthValidationElements = screen.getAllByText(/Length Validation/i);
+      const lengthValidationElements =
+        screen.getAllByText(/Length Validation/i);
       expect(lengthValidationElements.length).toBeGreaterThan(0);
       expect(screen.getByText(/What Was Detected/i)).toBeDefined();
     });
@@ -539,8 +540,10 @@ describe("JobFitAnalyzer Component", () => {
                 type: "prompt_injection",
                 severity: "high",
                 category: "System Instruction Override",
-                explanation: "Prevents malicious attempts to override system instructions",
-                detected: "Input contains patterns attempting to manipulate AI behavior",
+                explanation:
+                  "Prevents malicious attempts to override system instructions",
+                detected:
+                  "Input contains patterns attempting to manipulate AI behavior",
                 implementation: "Pattern-based detection with ML assistance",
                 sourceFile: "src/lib/input-sanitization.ts",
                 lineNumbers: "57-106",
@@ -583,7 +586,8 @@ describe("JobFitAnalyzer Component", () => {
                 type: "rate_limit",
                 severity: "medium",
                 category: "Request Rate Limiting",
-                explanation: "Rate limiting prevents abuse and ensures fair resource allocation",
+                explanation:
+                  "Rate limiting prevents abuse and ensures fair resource allocation",
                 detected: "Too many requests from your IP address",
                 implementation: "Token bucket algorithm with Redis backend",
                 sourceFile: "src/middleware/rate-limiter.ts",
@@ -740,7 +744,9 @@ describe("JobFitAnalyzer Component", () => {
       );
 
       // Verify the source link is rendered (it should be in the "How It Works" section)
-      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+      const expandButton = screen.getByRole("button", {
+        name: /How It Works/i,
+      });
       expect(expandButton).toBeDefined();
     });
   });

@@ -1,5 +1,5 @@
-import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { mock } from "bun:test";
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createElement } from "react";
 
 // Register Happy DOM for browser APIs
@@ -26,7 +26,8 @@ mock.module("framer-motion", () => ({
     h1: ({ children, ...props }: any) => createElement("h1", props, children),
     h2: ({ children, ...props }: any) => createElement("h2", props, children),
     p: ({ children, ...props }: any) => createElement("p", props, children),
-    span: ({ children, ...props }: any) => createElement("span", props, children),
+    span: ({ children, ...props }: any) =>
+      createElement("span", props, children),
     section: ({ children, ...props }: any) =>
       createElement("section", props, children),
     article: ({ children, ...props }: any) =>

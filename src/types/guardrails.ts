@@ -10,11 +10,11 @@
  * Types of security guardrails implemented in the system
  */
 export type GuardrailType =
-  | "prompt_injection"      // Attempts to override AI instructions
-  | "rate_limit"            // Request rate limiting
-  | "length_validation"     // Input length constraints
-  | "suspicious_pattern"    // Malicious code patterns (XSS, injection, etc.)
-  | "scope_enforcement";    // Off-topic or out-of-scope requests
+  | "prompt_injection" // Attempts to override AI instructions
+  | "rate_limit" // Request rate limiting
+  | "length_validation" // Input length constraints
+  | "suspicious_pattern" // Malicious code patterns (XSS, injection, etc.)
+  | "scope_enforcement"; // Off-topic or out-of-scope requests
 
 /**
  * Severity level of the guardrail violation

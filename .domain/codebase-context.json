@@ -4,113 +4,104 @@
     "runtime": "Bun",
     "framework": "Next.js 16 (App Router)",
     "react": "19.2.0 with React Compiler",
-    "styling": "Tailwind CSS 4 with OKLCH color space",
-    "uiLibrary": "shadcn/ui (new-york style)",
-    "testFramework": "bun:test with @testing-library/react",
-    "linting": "Biome (not ESLint/Prettier)",
-    "animations": "Framer Motion",
-    "icons": "lucide-react",
+    "styling": "Tailwind CSS 4",
+    "uiComponents": "shadcn/ui (new-york style)",
+    "testing": "bun:test with @happy-dom/global-registrator",
+    "linting": "Biome",
+    "aiSdk": "Vercel AI SDK with OpenAI provider (gpt-4.1-nano)",
     "fonts": "Fira Sans, Fira Mono (next/font/google)",
-    "monitoring": "Sentry"
+    "packageManager": "Bun"
   },
-  "projectStructure": {
-    "appDirectory": "src/app",
-    "componentsDirectory": "src/components",
-    "dataDirectory": "src/data",
-    "libDirectory": "src/lib",
-    "hooksDirectory": "src/hooks",
-    "testLocation": "colocated with source files (*.test.tsx)"
-  },
-  "importAliases": {
-    "@/*": "src/*",
-    "@/components": "src/components",
-    "@/lib": "src/lib",
-    "@/hooks": "src/hooks",
-    "@/data": "src/data"
-  },
-  "existingPages": [
-    "/",
-    "/about",
-    "/projects",
-    "/stack",
-    "/principles",
-    "/infrastructure"
-  ],
-  "existingComponents": {
-    "layout": ["Navigation", "Footer"],
-    "sections": ["Hero"],
-    "effects": [
-      "CursorGlow",
-      "GrainOverlay",
-      "TypeWriter",
-      "RotatingTypeWriter"
+  "existingAiImplementation": {
+    "routes": [
+      "src/app/api/chat/route.ts - Streaming chat with resume context",
+      "src/app/api/fit-assessment/route.ts - Structured job fit assessment"
     ],
-    "ui": ["badge", "button", "card", "separator"]
+    "config": "src/lib/ai-config.ts - OpenAI client creation, rate limits, model constants",
+    "resumeData": "src/data/resume.ts - Resume structure and LLM context formatting",
+    "inputValidation": "src/lib/input-sanitization.ts - 5-layer validation, prompt injection detection",
+    "systemPrompts": "Embedded in route files with KEY FACTS, VOICE, and SCOPE sections",
+    "model": "gpt-4.1-nano (locked, no parameters)",
+    "rateLimiting": "In-memory per-IP tracking, 10 req/min, GuardrailViolation responses"
   },
-  "dataModels": {
-    "projects": "src/data/projects.ts - Project interface with metrics, highlights",
-    "stack": "src/data/stack.ts - Tech stack items",
-    "principles": "src/data/principles.ts - Development principles",
-    "timeline": "src/data/timeline.ts - Career timeline"
+  "authenticationPatterns": {
+    "current": "None - no middleware.ts exists",
+    "required": "Environment variable password or NextAuth.js for /admin routes",
+    "middleware": "Need to create middleware.ts for path-based auth"
+  },
+  "directoryStructure": {
+    "app": "src/app/ - Next.js App Router pages and API routes",
+    "components": "src/components/ - React components (ui/, layout/, sections/, effects/)",
+    "lib": "src/lib/ - Utility functions and configs",
+    "data": "src/data/ - Resume data structures",
+    "hooks": "src/hooks/ - React custom hooks",
+    "types": "src/types/ - TypeScript type definitions"
   },
   "testingPatterns": {
     "framework": "bun:test",
-    "testingLibrary": "@testing-library/react",
-    "mockingStrategy": "mock.module() from bun:test",
-    "testNaming": "*.test.tsx colocated with components",
-    "testStructure": "describe blocks with acceptance criteria validation"
+    "mocking": "Mock AI SDK before imports, dynamic imports in beforeEach()",
+    "structure": "*.test.ts files colocated with source, *.integration.test.ts for integration tests",
+    "coverage": "Separate scripts for lib, components, api, pages, integration",
+    "aiMocking": "Mock streamText, generateObject with intelligent responses based on input"
   },
-  "codeQuality": {
-    "formatter": "Biome with 2-space indentation",
-    "linter": "Biome with React and Next.js rules",
-    "commands": {
-      "lint": "bun lint",
-      "format": "bun format"
-    }
+  "codeConventions": {
+    "importAlias": "@/* maps to src/*",
+    "indentation": "2 spaces (Biome)",
+    "testFiles": "*.test.ts colocated with source files",
+    "components": "React Server Components by default (rsc: true)",
+    "apiRoutes": "Named export POST/GET functions",
+    "errorHandling": "GuardrailViolation type with educational details"
   },
-  "relevantToIssue": {
-    "issueTitle": "LLM interface for interactive screening",
-    "requiredNewFeatures": [
-      "AI chat interface for querying experience",
-      "Job description fit assessment tool",
-      "Interactive context expansion for resume items",
-      "Skills section with gaps disclosure",
-      "LLM integration (likely OpenAI/Anthropic API)"
-    ],
-    "potentialNewPages": [
-      "/chat or /ask-me - AI chat interface",
-      "/fit-assessment - Job description analyzer"
-    ],
-    "potentialNewComponents": [
-      "ChatInterface - AI conversation UI",
-      "JobFitAnalyzer - Paste job description, get fit assessment",
-      "ExpandableContext - Click to reveal AI-generated context",
-      "SkillsMatrix - Strong/Moderate/Gaps display"
-    ],
-    "apiNeeded": true,
-    "apiDescription": "Need API routes for LLM calls (streaming chat, fit assessment)",
-    "dataNeeded": [
-      "Resume/experience data formatted for LLM context",
-      "Skills taxonomy with proficiency levels",
-      "Career highlights and project details for context"
-    ]
-  },
-  "securityConsiderations": [
-    "API key management (env vars)",
-    "Rate limiting for LLM calls",
-    "Input validation for job descriptions",
-    "No PII in public repo"
+  "newFilesToCreate": [
+    "middleware.ts - Auth middleware for /admin routes",
+    "src/app/admin/agent-workbench/page.tsx - Main workbench interface",
+    "src/app/admin/agent-workbench/layout.tsx - Auth wrapper layout",
+    "src/components/admin/PromptEditor.tsx - Conversational prompt editor",
+    "src/components/admin/TestRunner.tsx - Test suite interface",
+    "src/components/admin/PromptDiff.tsx - Diff viewer for prompts",
+    "src/components/admin/ResumeUpdater.tsx - Resume data editor",
+    "src/app/api/admin/refine-prompt/route.ts - Prompt refinement API",
+    "src/app/api/admin/test-prompt/route.ts - Testing API",
+    "src/app/api/admin/update-resume/route.ts - Resume update API",
+    "src/app/api/admin/deploy-prompt/route.ts - Deployment API",
+    "src/lib/prompt-versioning.ts - Version control utilities",
+    "src/lib/test-runner.ts - Test execution engine",
+    "src/lib/auth.ts - Authentication utilities"
+  ],
+  "filesToModify": [
+    "src/app/api/chat/route.ts - Make prompt configurable/loadable",
+    "src/app/api/fit-assessment/route.ts - Make prompt configurable/loadable",
+    "src/data/resume.ts - Support dynamic updates",
+    ".env.local.example - Add ADMIN_PASSWORD config"
+  ],
+  "issueKeywords": [
+    "agent workbench",
+    "prompt refinement",
+    "testing interface",
+    "authentication",
+    "admin routes",
+    "conversational editor",
+    "side-by-side comparison",
+    "version history",
+    "resume updates",
+    "test runner",
+    "diff viewer"
   ],
   "dependencies": {
-    "existingRelevant": [
-      "@xyflow/react - Could be used for knowledge graph visualization",
-      "framer-motion - For chat animations",
-      "lucide-react - Icons for chat interface"
+    "existing": [
+      "@ai-sdk/openai - OpenAI provider for Vercel AI SDK",
+      "ai - Vercel AI SDK for streamText/generateObject",
+      "zod - Schema validation",
+      "lucide-react - Icons",
+      "tailwind-merge - className utilities",
+      "framer-motion - Animations",
+      "date-fns - Date utilities"
     ],
-    "newNeeded": [
-      "AI SDK (Vercel AI SDK or OpenAI SDK or Anthropic SDK)",
-      "Markdown renderer for LLM responses",
-      "Streaming response handler"
+    "needed": [
+      "bcryptjs or argon2 - Password hashing for auth",
+      "next-themes - Dark mode support (if needed)",
+      "react-diff-viewer - Diff visualization (or build custom)",
+      "prismjs or highlight.js - Syntax highlighting for prompts"
     ]
   }
 }

@@ -1,19 +1,14 @@
 /**
  * Authentication Utilities for Admin Access
  * Provides password hashing, session token management, and cookie utilities
+ * Uses Web Crypto API for Edge Runtime compatibility
  */
-
-import { pbkdf2, randomBytes } from "node:crypto";
-import { promisify } from "node:util";
-
-const pbkdf2Async = promisify(pbkdf2);
 
 /**
  * Configuration constants
  */
 const PBKDF2_ITERATIONS = 100000;
 const PBKDF2_KEYLEN = 64;
-const PBKDF2_DIGEST = "sha512";
 const SALT_LENGTH = 16;
 const SESSION_TOKEN_LENGTH = 32;
 const SESSION_DURATION_DAYS = 7;
@@ -31,25 +26,19 @@ interface SessionToken {
 const activeSessions = new Map<string, SessionToken>();
 
 /**
- * Hash a password using PBKDF2 with random salt
+ * Hash a password using PBKDF2 with random salt (Web Crypto API)
  * @param password - Plain text password to hash
  * @returns Promise resolving to hash in format: salt:hash
  */
 export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(SALT_LENGTH);
-  const hash = await pbkdf2Async(
-    password,
-    salt,
-    PBKDF2_ITERATIONS,
-    PBKDF2_KEYLEN,
-    PBKDF2_DIGEST,
-  );
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+  const hash = await derivePBKDF2(password, salt);
 
-  return `${salt.toString("hex")}:${hash.toString("hex")}`;
+  return `${arrayToHex(salt)}:${arrayToHex(hash)}`;
 }
 
 /**
- * Verify a password against a hash
+ * Verify a password against a hash (Web Crypto API)
  * @param password - Plain text password to verify
  * @param storedHash - Hash in format: salt:hash
  * @returns Promise resolving to true if password matches
@@ -67,25 +56,20 @@ export async function verifyPassword(
     return false;
   }
 
-  const salt = Buffer.from(saltHex, "hex");
-  const hash = await pbkdf2Async(
-    password,
-    salt,
-    PBKDF2_ITERATIONS,
-    PBKDF2_KEYLEN,
-    PBKDF2_DIGEST,
-  );
+  const salt = hexToArray(saltHex);
+  const hash = await derivePBKDF2(password, salt);
+  const storedHashArray = hexToArray(hashHex);
 
-  const storedHashBuffer = Buffer.from(hashHex, "hex");
-  return hash.equals(storedHashBuffer);
+  return constantTimeEqual(hash, storedHashArray);
 }
 
 /**
- * Generate a cryptographically secure session token
+ * Generate a cryptographically secure session token (Web Crypto API)
  * @returns Random hex string of SESSION_TOKEN_LENGTH bytes
  */
 export function generateSessionToken(): string {
-  return randomBytes(SESSION_TOKEN_LENGTH).toString("hex");
+  const bytes = crypto.getRandomValues(new Uint8Array(SESSION_TOKEN_LENGTH));
+  return arrayToHex(bytes);
 }
 
 /**
@@ -243,6 +227,84 @@ export const authConfig = {
     return SESSION_DURATION_DAYS;
   },
 };
+
+/**
+ * Helper: Derive PBKDF2 key using Web Crypto API
+ * @param password - Password string
+ * @param salt - Salt as Uint8Array
+ * @returns Promise resolving to derived key as Uint8Array
+ */
+async function derivePBKDF2(
+  password: string,
+  salt: Uint8Array,
+): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const passwordBuffer = encoder.encode(password);
+
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    passwordBuffer,
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: PBKDF2_ITERATIONS,
+      hash: "SHA-512",
+    },
+    keyMaterial,
+    PBKDF2_KEYLEN * 8, // bits
+  );
+
+  return new Uint8Array(derivedBits);
+}
+
+/**
+ * Helper: Convert Uint8Array to hex string
+ * @param array - Byte array
+ * @returns Hex string
+ */
+function arrayToHex(array: Uint8Array): string {
+  return Array.from(array)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Helper: Convert hex string to Uint8Array
+ * @param hex - Hex string
+ * @returns Byte array
+ */
+function hexToArray(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = Number.parseInt(hex.substring(i, i + 2), 16);
+  }
+  return bytes;
+}
+
+/**
+ * Helper: Constant-time equality comparison
+ * @param a - First array
+ * @param b - Second array
+ * @returns True if arrays are equal
+ */
+function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a[i] ^ b[i];
+  }
+
+  return result === 0;
+}
 
 /**
  * Type exports for use in middleware and routes
