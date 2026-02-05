@@ -52,6 +52,17 @@ mock.module("@/hooks/useReducedMotion", () => ({
   useReducedMotion: () => false,
 }));
 
+// Mock Convex client to prevent real database connections in tests
+mock.module("convex/browser", () => ({
+  ConvexHttpClient: mock(function ConvexHttpClient(url: string) {
+    return {
+      query: mock(() => Promise.resolve(null)),
+      mutation: mock(() => Promise.resolve(null)),
+      action: mock(() => Promise.resolve(null)),
+    };
+  }),
+}));
+
 // Note: Individual test files should mock AI SDK functions (streamText, generateObject)
 // as needed since they have different behaviors per test
 
