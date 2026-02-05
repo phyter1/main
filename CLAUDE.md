@@ -707,3 +707,268 @@ const analysis = await generateObject({
    - Implement sliding window for smoother limiting
    - Consider tier-based limits for authenticated users
    - Monitor and optimize limits based on API quotas
+
+## Admin Workbench
+
+The application includes a secure administrative interface for managing portfolio content, analytics, and system configuration. Authentication is password-based with session management.
+
+### Overview
+
+The Admin Workbench provides:
+
+1. **Content Management**
+   - Edit resume data, projects, and experience
+   - Update skills and technologies
+   - Manage featured work and case studies
+
+2. **Analytics Dashboard**
+   - AI feature usage metrics
+   - Chat engagement statistics
+   - Job fit assessment trends
+   - Rate limit monitoring
+
+3. **System Configuration**
+   - AI model settings and quotas
+   - Rate limit adjustments
+   - Environment variable management (view only)
+   - Cache and performance tuning
+
+### Setup and Authentication
+
+#### Environment Configuration
+
+The admin system requires specific environment variables for authentication and security.
+
+**Required Environment Variables:**
+
+```bash
+# Admin password for authentication
+# CRITICAL: Use a strong password with at least 16 characters
+# Include mixed case letters, numbers, and symbols
+# Example: "MySecure#Admin2026Pass!"
+ADMIN_PASSWORD=your_secure_password_here
+
+# Session secret for encrypting session data
+# CRITICAL: Must be a random 64-character string
+# Generate using: openssl rand -base64 48
+# This encrypts session cookies to prevent tampering
+ADMIN_SESSION_SECRET=random_64_char_secret_for_session_encryption
+
+# Optional: Rate limiting for admin login attempts
+# Default: 5 requests per minute per IP
+# Prevents brute force password attacks
+ADMIN_MAX_REQUESTS_PER_MINUTE=5
+```
+
+**Setting Up Admin Access:**
+
+1. **Generate Session Secret**
+   ```bash
+   # On macOS/Linux:
+   openssl rand -base64 48
+
+   # Example output (DO NOT USE THIS EXACT VALUE):
+   # p8KjN2mR7vL3xQ9wY4tF6sD8aH1cE5nU2bV7iO3kG9rT4jM8lZ6xC1yP5wQ2sA7h
+   ```
+
+2. **Set Strong Admin Password**
+   - Minimum 16 characters
+   - Mix of uppercase, lowercase, numbers, and symbols
+   - Avoid common passwords, dictionary words, or personal information
+   - Use a password manager to generate and store
+
+3. **Update `.env.local`**
+   ```bash
+   # Copy example file if not already done
+   cp .env.local.example .env.local
+
+   # Edit .env.local and set:
+   ADMIN_PASSWORD=YourActualStrongPassword123!@#
+   ADMIN_SESSION_SECRET=<paste the 64-char secret from openssl command>
+
+   # Optional: Customize rate limiting
+   ADMIN_MAX_REQUESTS_PER_MINUTE=10  # Allow more requests if needed
+   ```
+
+4. **Restart Development Server**
+   ```bash
+   bun dev
+   ```
+
+5. **Access Admin Interface**
+   - Navigate to: http://localhost:3000/admin
+   - Enter your admin password
+   - Session lasts 24 hours (configurable)
+
+#### Security Architecture
+
+**Password-Based Authentication:**
+- Single admin password (no multi-user support)
+- Password hashed using bcrypt before comparison
+- Failed login attempts tracked per IP
+- Rate limiting prevents brute force attacks
+
+**Session Management:**
+- Encrypted session cookies using `ADMIN_SESSION_SECRET`
+- Sessions expire after 24 hours of inactivity
+- Sessions invalidated on logout
+- Secure cookie flags in production (httpOnly, secure, sameSite)
+
+**Rate Limiting:**
+- Default: 5 login attempts per minute per IP
+- Configurable via `ADMIN_MAX_REQUESTS_PER_MINUTE`
+- 429 response with `Retry-After` header on limit exceeded
+- Independent from AI endpoint rate limits
+
+### Security Best Practices
+
+#### Password Management
+
+1. **Password Strength**
+   - Use at least 16 characters
+   - Include uppercase, lowercase, numbers, and symbols
+   - Avoid patterns: "Admin123!", "Password2026", etc.
+   - Test with password strength checker
+
+2. **Password Rotation**
+   - Rotate admin password every 90 days
+   - Change immediately if compromised
+   - Update both `.env.local` and production environment
+   - Consider using different passwords for dev/staging/prod
+
+3. **Session Secret Rotation**
+   - Rotate `ADMIN_SESSION_SECRET` quarterly
+   - Invalidates all existing sessions on rotation
+   - Generate new secret using `openssl rand -base64 48`
+   - Coordinate rotation with low-traffic periods
+
+#### Environment Security
+
+1. **Never Commit Secrets**
+   - `.env.local` is in `.gitignore` (verify this)
+   - Never commit actual passwords or session secrets
+   - Use `.env.local.example` as template only
+   - Review commits before pushing to ensure no secrets leaked
+
+2. **Production Deployment**
+   - Use environment variables in hosting platform (Vercel, etc.)
+   - Never hardcode secrets in code
+   - Use different secrets for each environment
+   - Enable audit logging for secret access
+
+3. **Access Control**
+   - Limit who has access to production environment variables
+   - Use principle of least privilege
+   - Document who has admin access
+   - Revoke access when team members leave
+
+#### Attack Prevention
+
+1. **Brute Force Protection**
+   - Rate limiting enabled by default (5 attempts/minute)
+   - Consider implementing exponential backoff
+   - Monitor failed login attempts
+   - Alert on suspicious activity patterns
+
+2. **Session Security**
+   - Sessions encrypted with strong secret
+   - httpOnly cookies prevent XSS access
+   - Secure flag ensures HTTPS-only transmission
+   - SameSite attribute prevents CSRF attacks
+
+3. **Network Security**
+   - Use HTTPS in production (enforced)
+   - Consider IP allowlisting for admin routes
+   - Enable firewall rules if applicable
+   - Use VPN for sensitive admin operations
+
+### Quick Start Guide
+
+**First Time Setup:**
+
+```bash
+# 1. Generate session secret
+openssl rand -base64 48
+
+# 2. Copy example environment file
+cp .env.local.example .env.local
+
+# 3. Edit .env.local and set:
+#    - ADMIN_PASSWORD (your strong password)
+#    - ADMIN_SESSION_SECRET (output from step 1)
+
+# 4. Start development server
+bun dev
+
+# 5. Access admin interface
+# http://localhost:3000/admin
+```
+
+**Daily Usage:**
+
+1. Navigate to `/admin`
+2. Enter admin password
+3. Access dashboard and management tools
+4. Changes auto-save or use "Save" buttons
+5. Logout when finished (or session expires in 24h)
+
+**Troubleshooting:**
+
+**Problem:** "Invalid password" error on login
+
+**Solution:**
+1. Verify `ADMIN_PASSWORD` is set in `.env.local`
+2. Check for typos in password (case-sensitive)
+3. Ensure no extra whitespace in `.env.local`
+4. Restart dev server after changing environment variables
+
+**Problem:** "Session expired" immediately after login
+
+**Solution:**
+1. Verify `ADMIN_SESSION_SECRET` is set and at least 32 characters
+2. Regenerate secret using `openssl rand -base64 48`
+3. Clear browser cookies for localhost
+4. Restart dev server
+
+**Problem:** 429 "Too many requests" on login
+
+**Solution:**
+1. Wait 60 seconds for rate limit to reset
+2. Increase `ADMIN_MAX_REQUESTS_PER_MINUTE` in `.env.local` if needed
+3. Check if multiple IPs are trying to access (possible attack)
+4. Review server logs for suspicious activity
+
+**Problem:** Admin routes accessible without authentication
+
+**Solution:**
+1. Verify authentication middleware is applied to `/admin` routes
+2. Check session validation logic in `src/middleware.ts`
+3. Ensure cookies are enabled in browser
+4. Review Next.js middleware configuration
+
+### Development vs Production
+
+**Development Environment:**
+- Use simple password for convenience (still secure, just easier to type)
+- Higher rate limits (10-20 requests/minute)
+- Session logging enabled for debugging
+- Cookie secure flag disabled (http:// allowed)
+
+**Production Environment:**
+- Strong, unique password (16+ characters, complex)
+- Conservative rate limits (5 requests/minute)
+- Minimal logging (no password logging)
+- Cookie secure flag enabled (HTTPS required)
+- Consider IP allowlisting for admin routes
+- Enable monitoring and alerting for failed logins
+
+### Future Enhancements
+
+**Planned Features:**
+- Multi-user support with roles and permissions
+- Two-factor authentication (TOTP)
+- Audit logging for all admin actions
+- SSO integration (OAuth, SAML)
+- Advanced analytics and reporting
+- Automated backup and restore
+- Content versioning and rollback
