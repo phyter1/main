@@ -2,76 +2,56 @@
   "issue": {
     "org": "phyter1",
     "repo": "main",
-    "number": 7,
-    "title": "Feature: LLM interface trained on my previous work, experience, and expertise for interactive out-of-loop screening"
+    "number": 15
   },
-  "startedAt": "2026-02-04T00:00:00Z",
-  "completedAt": "2026-02-04T01:00:00Z",
+  "status": "complete",
   "phase": "complete",
-  "status": "all-tasks-complete",
-  "totalTasks": 17,
+  "startedAt": "2026-02-04T00:00:00.000Z",
+  "completedAt": "2026-02-04T02:15:00.000Z",
+  "totalTasks": 21,
+  "completedTasks": 21,
   "parallelGroups": [
     {
       "id": "group-1",
-      "name": "Foundation",
+      "name": "Foundation - Auth & Core Infrastructure",
       "status": "complete",
-      "tasks": ["T001", "T002", "T003", "T004"],
-      "dependencies": []
+      "tasks": ["T001", "T002", "T003", "T004"]
     },
     {
       "id": "group-2",
-      "name": "API Layer",
+      "name": "API Routes - Prompt Management",
       "status": "complete",
-      "tasks": ["T005", "T006"],
-      "dependencies": ["group-1"]
+      "tasks": ["T005", "T006", "T007", "T008"]
     },
     {
       "id": "group-3",
-      "name": "UI Components",
+      "name": "API Routes - Resume Management",
       "status": "complete",
-      "tasks": ["T007", "T008", "T009"],
-      "dependencies": ["group-2"]
+      "tasks": ["T009", "T010"]
     },
     {
       "id": "group-4",
-      "name": "Pages",
+      "name": "Make Existing Routes Configurable",
       "status": "complete",
-      "tasks": ["T010", "T011", "T012"],
-      "dependencies": ["group-3"]
+      "tasks": ["T011", "T012"]
     },
     {
       "id": "group-5",
-      "name": "Integration",
+      "name": "Admin UI Components",
       "status": "complete",
-      "tasks": ["T013", "T014"],
-      "dependencies": ["group-4"]
+      "tasks": ["T013", "T014", "T015", "T016", "T017"]
     },
     {
       "id": "group-6",
-      "name": "Polish & Documentation",
+      "name": "Main Workbench Pages",
       "status": "complete",
-      "tasks": ["T015", "T016", "T017"],
-      "dependencies": ["group-5"]
+      "tasks": ["T018", "T019"]
+    },
+    {
+      "id": "group-7",
+      "name": "Testing & Documentation",
+      "status": "complete",
+      "tasks": ["T020", "T021"]
     }
-  ],
-  "completedTasks": [
-    "T001",
-    "T002",
-    "T003",
-    "T004",
-    "T005",
-    "T006",
-    "T007",
-    "T008",
-    "T009",
-    "T010",
-    "T011",
-    "T012",
-    "T013",
-    "T014",
-    "T015",
-    "T016",
-    "T017"
-  ],
-  "failedTasks": []
+  ]
 }

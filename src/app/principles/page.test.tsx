@@ -36,8 +36,12 @@ describe("T007: Principles Page Component", () => {
       expect(screen.getAllByText(/Unicorn Project/i).length).toBeGreaterThan(0);
 
       // The Goal - Theory of Constraints
-      expect(screen.getAllByText(/Five Focusing Steps/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Theory of Constraints/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Five Focusing Steps/i).length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Theory of Constraints/i).length,
+      ).toBeGreaterThan(0);
     });
   });
 
@@ -46,13 +50,19 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // First Way
-      expect(screen.getAllByText(/First Way.*Systems Thinking/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/First Way.*Systems Thinking/i).length,
+      ).toBeGreaterThan(0);
 
       // Second Way
-      expect(screen.getAllByText(/Second Way.*Amplify Feedback/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Second Way.*Amplify Feedback/i).length,
+      ).toBeGreaterThan(0);
 
       // Third Way
-      expect(screen.getAllByText(/Third Way.*Experimentation/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Third Way.*Experimentation/i).length,
+      ).toBeGreaterThan(0);
     });
 
     it("should display principle descriptions and applications", () => {
@@ -69,16 +79,24 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // First Ideal
-      expect(screen.getAllByText(/Locality.*Simplicity/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Locality.*Simplicity/i).length,
+      ).toBeGreaterThan(0);
 
       // Second Ideal
-      expect(screen.getAllByText(/Focus.*Flow.*Joy/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Focus.*Flow.*Joy/i).length).toBeGreaterThan(
+        0,
+      );
 
       // Third Ideal
-      expect(screen.getAllByText(/Improvement.*Daily Work/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Improvement.*Daily Work/i).length,
+      ).toBeGreaterThan(0);
 
       // Fourth Ideal
-      expect(screen.getAllByText(/Psychological Safety/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Psychological Safety/i).length,
+      ).toBeGreaterThan(0);
 
       // Fifth Ideal
       expect(screen.getAllByText(/Customer Focus/i).length).toBeGreaterThan(0);
@@ -90,10 +108,16 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // All five steps
-      expect(screen.getAllByText(/Identify.*Constraint/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Exploit.*Constraint/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Identify.*Constraint/i).length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Exploit.*Constraint/i).length,
+      ).toBeGreaterThan(0);
       expect(screen.getAllByText(/Subordinate/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Elevate.*Constraint/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Elevate.*Constraint/i).length,
+      ).toBeGreaterThan(0);
       expect(screen.getAllByText(/Repeat.*Process/i).length).toBeGreaterThan(0);
     });
   });
@@ -146,7 +170,9 @@ describe("T007: Principles Page Component", () => {
       render(<PrinciplesPage />);
 
       // Component renders successfully with reduced motion support
-      expect(screen.getAllByRole("heading", { level: 1 }).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByRole("heading", { level: 1 }).length,
+      ).toBeGreaterThan(0);
     });
   });
 
@@ -177,7 +203,9 @@ describe("T007: Principles Page Component", () => {
       // Verify data is rendered correctly by checking for specific content
       // from principles.ts file
       expect(screen.getAllByText(/Hugo Health/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/systems thinking/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/systems thinking/i).length).toBeGreaterThan(
+        0,
+      );
     });
 
     it("should display principle groups in correct order", () => {

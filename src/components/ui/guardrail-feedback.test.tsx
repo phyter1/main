@@ -2,10 +2,10 @@
  * Tests for GuardrailFeedback Component
  */
 
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { render, screen } from "@testing-library/react";
-import { GuardrailFeedback } from "./guardrail-feedback";
 import type { GuardrailViolation } from "@/types/guardrails";
+import { GuardrailFeedback } from "./guardrail-feedback";
 
 describe("GuardrailFeedback", () => {
   describe("Rendering", () => {
@@ -16,7 +16,8 @@ describe("GuardrailFeedback", () => {
           type: "prompt_injection",
           severity: "high",
           category: "System Instruction Override",
-          explanation: "Your input contained patterns that attempt to override the AI's instructions.",
+          explanation:
+            "Your input contained patterns that attempt to override the AI's instructions.",
           detected: "Patterns attempting to change the AI's behavior.",
           implementation: "Pattern matching against 30+ known techniques.",
           sourceFile: "src/lib/input-sanitization.ts",
@@ -159,13 +160,17 @@ describe("GuardrailFeedback", () => {
       );
 
       // Click to expand
-      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+      const expandButton = screen.getByRole("button", {
+        name: /How It Works/i,
+      });
       expandButton.click();
 
       // Check for link
       const link = container.querySelector("a[href*='github.com']");
       expect(link).toBeDefined();
-      expect(link?.getAttribute("href")).toContain("src/lib/input-sanitization.ts");
+      expect(link?.getAttribute("href")).toContain(
+        "src/lib/input-sanitization.ts",
+      );
       expect(link?.getAttribute("href")).toContain("#L26-L71");
     });
   });
@@ -193,7 +198,9 @@ describe("GuardrailFeedback", () => {
       render(<GuardrailFeedback violation={violation} />);
 
       // Expand details
-      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+      const expandButton = screen.getByRole("button", {
+        name: /How It Works/i,
+      });
       expandButton.click();
 
       expect(screen.getByText(/Details:/i)).toBeDefined();
@@ -219,7 +226,9 @@ describe("GuardrailFeedback", () => {
 
       render(<GuardrailFeedback violation={violation} />);
 
-      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+      const expandButton = screen.getByRole("button", {
+        name: /How It Works/i,
+      });
       expect(expandButton.getAttribute("aria-expanded")).toBe("false");
 
       expandButton.click();
@@ -276,7 +285,9 @@ describe("GuardrailFeedback", () => {
 
       render(<GuardrailFeedback violation={violation} />);
 
-      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+      const expandButton = screen.getByRole("button", {
+        name: /How It Works/i,
+      });
 
       // Initially not expanded
       expect(expandButton.getAttribute("aria-expanded")).toBe("false");
@@ -309,7 +320,9 @@ describe("GuardrailFeedback", () => {
 
       render(<GuardrailFeedback violation={violation} />);
 
-      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+      const expandButton = screen.getByRole("button", {
+        name: /How It Works/i,
+      });
 
       // Button should have hover classes
       expect(expandButton.className).toContain("hover:");
@@ -331,7 +344,9 @@ describe("GuardrailFeedback", () => {
 
       render(<GuardrailFeedback violation={violation} />);
 
-      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+      const expandButton = screen.getByRole("button", {
+        name: /How It Works/i,
+      });
 
       // Button should be focusable
       expect(expandButton.getAttribute("type")).toBe("button");
@@ -353,7 +368,9 @@ describe("GuardrailFeedback", () => {
 
       const { container } = render(<GuardrailFeedback violation={violation} />);
 
-      const expandButton = screen.getByRole("button", { name: /How It Works/i });
+      const expandButton = screen.getByRole("button", {
+        name: /How It Works/i,
+      });
 
       // Click to expand
       expandButton.click();

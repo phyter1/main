@@ -45,7 +45,8 @@ export default function ChatPage() {
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
               I'm an AI assistant trained on Ryan's experience, projects, and
               engineering philosophy. Ask me about his work, technical skills,
-              AI-assisted development practices, or approach to software leadership.
+              AI-assisted development practices, or approach to software
+              leadership.
             </p>
           </motion.div>
 
