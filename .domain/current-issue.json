@@ -1,9 +1,0 @@
-{
-  "number": 20,
-  "title": "Bug: Stuck visual indicator for assistant typing",
-  "body": "<img width=\"1295\" height=\"921\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/29230d20-2c3f-489e-9061-f435d96c2df7\" />\n\nAfter the chat agent is finished typing and the message appears but then a agent typing visual indicator shows up as well and does not go away.\n\nAlso it should say Ryan is typing",
-  "labels": [],
-  "url": "https://github.com/phyter1/main/issues/20",
-  "createdAt": "2026-02-05T17:51:17Z",
-  "repository": "phyter1/main"
-}
