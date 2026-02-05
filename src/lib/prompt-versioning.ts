@@ -1,11 +1,11 @@
 /**
  * Prompt Versioning System
- * Manages versioning of AI agent system prompts with metadata tracking
+ * Manages versioning of AI agent system prompts with metadata tracking using Convex
  */
 
-import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 /**
  * Supported agent types for prompt versioning
@@ -13,28 +13,31 @@ import path from "node:path";
 export type AgentType = "chat" | "fit-assessment";
 
 /**
- * Prompt version metadata structure
+ * Prompt version metadata structure (Convex format)
  */
-export interface PromptVersion {
-  id: string;
+interface ConvexPromptVersion {
+  _id: Id<"promptVersions">;
   agentType: AgentType;
   prompt: string;
   description: string;
   author: string;
   tokenCount: number;
-  createdAt: string;
+  _creationTime: number;
   isActive: boolean;
+}
+
+/**
+ * Prompt version with compatibility properties for frontend
+ */
+export interface PromptVersion extends ConvexPromptVersion {
+  id: string; // Alias for _id
+  createdAt: string; // ISO string from _creationTime
 }
 
 /**
  * Valid agent types
  */
 const VALID_AGENT_TYPES: AgentType[] = ["chat", "fit-assessment"];
-
-/**
- * Base directory for prompt storage
- */
-const PROMPTS_BASE_DIR = ".admin/prompts";
 
 /**
  * Validates that the agent type is supported
@@ -55,17 +58,25 @@ function calculateTokenCount(text: string): number {
 }
 
 /**
- * Gets the directory path for a specific agent type
+ * Get Convex client instance for server-side operations
  */
-function getAgentDirectory(agentType: AgentType): string {
-  return path.join(process.cwd(), PROMPTS_BASE_DIR, agentType);
+function getConvexClient(): ConvexHttpClient {
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!convexUrl) {
+    throw new Error("NEXT_PUBLIC_CONVEX_URL is not set");
+  }
+  return new ConvexHttpClient(convexUrl);
 }
 
 /**
- * Gets the file path for a specific version
+ * Transform Convex version to include compatibility properties
  */
-function getVersionFilePath(agentType: AgentType, versionId: string): string {
-  return path.join(getAgentDirectory(agentType), `${versionId}.json`);
+function transformVersion(version: ConvexPromptVersion): PromptVersion {
+  return {
+    ...version,
+    id: version._id,
+    createdAt: new Date(version._creationTime).toISOString(),
+  };
 }
 
 /**
@@ -74,40 +85,34 @@ function getVersionFilePath(agentType: AgentType, versionId: string): string {
  * @param promptText - Full prompt text
  * @param description - Description of changes
  * @param author - Author of the version
- * @returns Promise resolving to the created version metadata
+ * @returns Promise resolving to the created version ID
  */
 export async function savePromptVersion(
   agentType: AgentType,
   promptText: string,
   description: string,
   author: string,
-): Promise<PromptVersion> {
+): Promise<Id<"promptVersions">> {
   validateAgentType(agentType);
 
+  const client = getConvexClient();
+
   // Check if this is the first version for this agent type
-  const existingVersions = await listVersions(agentType);
+  const existingVersions = await client.query(api.prompts.listVersions, {
+    agentType,
+  });
   const isFirstVersion = existingVersions.length === 0;
 
-  const version: PromptVersion = {
-    id: randomUUID(),
+  const versionId = await client.mutation(api.prompts.saveVersion, {
     agentType,
     prompt: promptText,
     description,
     author,
     tokenCount: calculateTokenCount(promptText),
-    createdAt: new Date().toISOString(),
     isActive: isFirstVersion, // First version is automatically active
-  };
+  });
 
-  // Ensure directory exists
-  const agentDir = getAgentDirectory(agentType);
-  await mkdir(agentDir, { recursive: true });
-
-  // Write version file
-  const filePath = getVersionFilePath(agentType, version.id);
-  await writeFile(filePath, JSON.stringify(version, null, 2), "utf-8");
-
-  return version;
+  return versionId;
 }
 
 /**
@@ -118,23 +123,14 @@ export async function savePromptVersion(
  */
 export async function loadPromptVersion(
   agentType: AgentType,
-  versionId: string,
-): Promise<PromptVersion> {
+  versionId: Id<"promptVersions">,
+): Promise<PromptVersion | null> {
   validateAgentType(agentType);
 
-  const filePath = getVersionFilePath(agentType, versionId);
+  const client = getConvexClient();
+  const version = await client.query(api.prompts.getVersion, { versionId });
 
-  try {
-    const content = await readFile(filePath, "utf-8");
-    return JSON.parse(content) as PromptVersion;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      throw new Error(
-        `Version not found: ${versionId} for agent type ${agentType}`,
-      );
-    }
-    throw error;
-  }
+  return version ? transformVersion(version as ConvexPromptVersion) : null;
 }
 
 /**
@@ -147,31 +143,10 @@ export async function listVersions(
 ): Promise<PromptVersion[]> {
   validateAgentType(agentType);
 
-  const agentDir = getAgentDirectory(agentType);
+  const client = getConvexClient();
+  const versions = await client.query(api.prompts.listVersions, { agentType });
 
-  try {
-    const files = await readdir(agentDir);
-    const jsonFiles = files.filter((file) => file.endsWith(".json"));
-
-    const versions = await Promise.all(
-      jsonFiles.map(async (file) => {
-        const filePath = path.join(agentDir, file);
-        const content = await readFile(filePath, "utf-8");
-        return JSON.parse(content) as PromptVersion;
-      }),
-    );
-
-    // Sort by createdAt timestamp, newest first
-    return versions.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return []; // Directory doesn't exist yet, no versions
-    }
-    throw error;
-  }
+  return (versions as ConvexPromptVersion[]).map(transformVersion);
 }
 
 /**
@@ -184,8 +159,12 @@ export async function getActiveVersion(
 ): Promise<PromptVersion | null> {
   validateAgentType(agentType);
 
-  const versions = await listVersions(agentType);
-  return versions.find((v) => v.isActive) ?? null;
+  const client = getConvexClient();
+  const version = await client.query(api.prompts.getActiveVersion, {
+    agentType,
+  });
+
+  return version ? transformVersion(version as ConvexPromptVersion) : null;
 }
 
 /**
@@ -195,34 +174,20 @@ export async function getActiveVersion(
  */
 export async function rollbackVersion(
   agentType: AgentType,
-  versionId: string,
+  versionId: Id<"promptVersions">,
 ): Promise<void> {
   validateAgentType(agentType);
 
-  const versions = await listVersions(agentType);
+  const client = getConvexClient();
 
-  // Verify the target version exists
-  const targetVersion = versions.find((v) => v.id === versionId);
-  if (!targetVersion) {
+  // Verify the version exists
+  const version = await client.query(api.prompts.getVersion, { versionId });
+  if (!version) {
     throw new Error(
       `Version not found: ${versionId} for agent type ${agentType}`,
     );
   }
 
-  // Update all versions: activate target, deactivate others
-  await Promise.all(
-    versions.map(async (version) => {
-      const updatedVersion = {
-        ...version,
-        isActive: version.id === versionId,
-      };
-
-      const filePath = getVersionFilePath(agentType, version.id);
-      await writeFile(
-        filePath,
-        JSON.stringify(updatedVersion, null, 2),
-        "utf-8",
-      );
-    }),
-  );
+  // Set as active (this will deactivate others)
+  await client.mutation(api.prompts.setActive, { versionId, agentType });
 }
