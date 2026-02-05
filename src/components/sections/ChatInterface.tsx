@@ -132,6 +132,9 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
           ),
         );
       }
+
+      // Clean up loading state after streaming completes
+      setIsLoading(false);
     } catch (err) {
       console.error("Chat error:", err);
 
@@ -188,7 +191,7 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
               <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-muted max-w-[80%]">
                 <TypingIndicator size="sm" showLabel={false} />
                 <span className="text-sm text-muted-foreground">
-                  Assistant is typing...
+                  Ryan is typing...
                 </span>
               </div>
             )}
