@@ -4,6 +4,7 @@ import { ConvexClientProvider } from "./ConvexClientProvider";
 import { Footer } from "@/components/layout/Footer";
 import { Navigation } from "@/components/layout/Navigation";
 import { firaMono, firaSans } from "@/lib/fonts";
+import { Analytics } from "@vercel/analytics/react";
 
 const siteUrl = "https://ryn.phytertek.com";
 const siteTitle = "Ryan Lowe | Tech Lead • AI-First Development";
@@ -117,6 +118,7 @@ export default function RootLayout({
           <Navigation />
           <main>{children}</main>
           <Footer />
+          <Analytics />
         </ConvexClientProvider>
       </body>
     </html>
