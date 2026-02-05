@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   AiOutlineGithub,
   AiOutlineLinkedin,
@@ -43,7 +46,13 @@ const techStack = [
  * Footer - Minimal footer with social links and tech stack
  */
 export function Footer() {
+  const pathname = usePathname();
   const currentYear = new Date().getFullYear();
+
+  // Don't render on admin routes
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <footer className="border-t border-border/40 bg-background">
