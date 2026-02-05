@@ -7,6 +7,7 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { z } from "zod";
 import { type AgentType, rollbackVersion } from "@/lib/prompt-versioning";
+import type { Id } from "../../../../../convex/_generated/dataModel";
 
 const execAsync = promisify(exec);
 
@@ -222,7 +223,8 @@ export async function POST(request: Request): Promise<Response> {
     recordRequest(clientIP);
 
     // Activate prompt version using rollbackVersion
-    await rollbackVersion(agentType, versionId);
+    // Cast string to Convex Id type
+    await rollbackVersion(agentType, versionId as Id<"promptVersions">);
 
     // Create git commit for audit trail (non-blocking failure)
     const commitHash = await createGitCommit(agentType, versionId, message);

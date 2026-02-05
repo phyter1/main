@@ -319,6 +319,28 @@ export const stackItems: StackItem[] = [
     yearsUsed: 2,
   },
   {
+    id: "langchain",
+    label: "LangChain",
+    category: "devtool",
+    proficiency: "proficient",
+    context: "personal",
+    personalStack: true,
+    description:
+      "Framework for building LLM applications with RAG, agents, and multi-step workflows",
+    yearsUsed: 1,
+  },
+  {
+    id: "huggingface",
+    label: "Hugging Face",
+    category: "devtool",
+    proficiency: "proficient",
+    context: "personal",
+    personalStack: true,
+    description:
+      "Platform for SLM experimentation, local model deployment, and model evaluation",
+    yearsUsed: 1,
+  },
+  {
     id: "git",
     label: "Git",
     category: "devtool",
