@@ -58,14 +58,28 @@ function calculateTokenCount(text: string): number {
 }
 
 /**
- * Get Convex client instance for server-side operations
+ * Singleton Convex client instance for server-side operations
+ * IMPORTANT: The client itself is reused, but queries are NOT cached.
+ * Every query call fetches fresh data from Convex in real-time.
+ */
+let convexClientInstance: ConvexHttpClient | null = null;
+
+/**
+ * Get or create Convex client instance for server-side operations
+ * @returns ConvexHttpClient instance (queries always fetch fresh data)
  */
 function getConvexClient(): ConvexHttpClient {
+  if (convexClientInstance) {
+    return convexClientInstance;
+  }
+
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
   if (!convexUrl) {
     throw new Error("NEXT_PUBLIC_CONVEX_URL is not set");
   }
-  return new ConvexHttpClient(convexUrl);
+
+  convexClientInstance = new ConvexHttpClient(convexUrl);
+  return convexClientInstance;
 }
 
 /**
