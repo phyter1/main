@@ -13,7 +13,7 @@
     "test:lib": "bun test src/lib/ src/data/ src/hooks/",
     "test:components": "bun test src/components/",
     "test:api": "bun test src/app/api/",
-    "test:pages": "bun test src/app/about/page.test.tsx && bun test src/app/chat/page.test.tsx && bun test src/app/fit-assessment/page.test.tsx && bun test src/app/infrastructure/page.test.tsx && bun test src/app/principles/page.test.tsx && bun test src/app/projects/page.test.tsx && bun test src/app/stack/page.test.tsx",
+    "test:pages": "bun test src/app/about/page.test.tsx && bun test src/app/chat/page.test.tsx && bun test src/app/fit-assessment/page.test.tsx && bun test src/app/principles/page.test.tsx && bun test src/app/projects/page.test.tsx && bun test src/app/stack/page.test.tsx",
     "test:integration": "bun test src/app/__tests__/",
     "test:watch": "bun test --watch"
   },
