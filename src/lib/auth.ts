@@ -23,7 +23,17 @@ interface SessionToken {
   expiresAt: number;
 }
 
-const activeSessions = new Map<string, SessionToken>();
+// Use global singleton to persist sessions across module reloads in development
+const globalForSessions = globalThis as unknown as {
+  activeSessions: Map<string, SessionToken> | undefined;
+};
+
+const activeSessions =
+  globalForSessions.activeSessions ?? new Map<string, SessionToken>();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForSessions.activeSessions = activeSessions;
+}
 
 /**
  * Hash a password using PBKDF2 with random salt (Web Crypto API)
@@ -252,7 +262,7 @@ async function derivePBKDF2(
   const derivedBits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt as BufferSource,
       iterations: PBKDF2_ITERATIONS,
       hash: "SHA-512",
     },

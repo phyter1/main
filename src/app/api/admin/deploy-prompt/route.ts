@@ -99,11 +99,7 @@ function getSecondsUntilReset(ip: string): number {
  * Request validation schema
  */
 const RequestSchema = z.object({
-  agentType: z.enum(["chat", "fit-assessment"], {
-    errorMap: () => ({
-      message: "agentType must be 'chat' or 'fit-assessment'",
-    }),
-  }),
+  agentType: z.enum(["chat", "fit-assessment"]),
   versionId: z.string().min(1, "versionId is required"),
   message: z.string().optional(),
 });
@@ -158,7 +154,7 @@ async function createGitCommit(
     const commitMessage = commitMessageLines.join("\n");
 
     // Create commit
-    const stdout = await execAsync(`git commit -m "${commitMessage}"`);
+    const { stdout } = await execAsync(`git commit -m "${commitMessage}"`);
 
     // Extract commit hash from output
     return extractCommitHash(stdout);
