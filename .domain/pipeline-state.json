@@ -1,57 +1,31 @@
 {
-  "issue": {
+  "issue": "phyter1/main#20",
+  "phase": "preparation",
+  "status": "in_progress",
+  "startedAt": "2026-02-05T17:51:17Z",
+  "repository": {
     "org": "phyter1",
     "repo": "main",
-    "number": 15
+    "path": "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main"
   },
-  "status": "complete",
-  "phase": "complete",
-  "startedAt": "2026-02-04T00:00:00.000Z",
-  "completedAt": "2026-02-04T02:15:00.000Z",
-  "totalTasks": 21,
-  "completedTasks": 21,
-  "parallelGroups": [
-    {
-      "id": "group-1",
-      "name": "Foundation - Auth & Core Infrastructure",
-      "status": "complete",
-      "tasks": ["T001", "T002", "T003", "T004"]
+  "phases": {
+    "preparation": {
+      "status": "in_progress",
+      "steps": {
+        "issue-fetch": "complete",
+        "context-gather": "complete",
+        "task-breakdown": "pending"
+      }
     },
-    {
-      "id": "group-2",
-      "name": "API Routes - Prompt Management",
-      "status": "complete",
-      "tasks": ["T005", "T006", "T007", "T008"]
+    "execution": {
+      "status": "pending",
+      "groups": []
     },
-    {
-      "id": "group-3",
-      "name": "API Routes - Resume Management",
-      "status": "complete",
-      "tasks": ["T009", "T010"]
+    "quality-gates": {
+      "status": "pending"
     },
-    {
-      "id": "group-4",
-      "name": "Make Existing Routes Configurable",
-      "status": "complete",
-      "tasks": ["T011", "T012"]
-    },
-    {
-      "id": "group-5",
-      "name": "Admin UI Components",
-      "status": "complete",
-      "tasks": ["T013", "T014", "T015", "T016", "T017"]
-    },
-    {
-      "id": "group-6",
-      "name": "Main Workbench Pages",
-      "status": "complete",
-      "tasks": ["T018", "T019"]
-    },
-    {
-      "id": "group-7",
-      "name": "Testing & Documentation",
-      "status": "complete",
-      "tasks": ["T020", "T021"]
+    "pr-creation": {
+      "status": "pending"
     }
-  ]
+  }
 }
