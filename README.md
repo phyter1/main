@@ -12,7 +12,6 @@ A modern, high-performance portfolio website showcasing professional and persona
 - **🎨 Beautiful UI/UX**: Custom animations, grain overlay effects, and cursor glow
 - **📂 Project Showcase**: Filterable portfolio with professional and personal projects
 - **📊 Tech Stack Visualization**: Interactive technology stack with AI development tools and categorization
-- **🏗️ Infrastructure Timeline**: Visual representation of infrastructure and AI-powered DevOps automation
 - **📚 Engineering Principles**: Dedicated page showcasing principles from The Phoenix Project, The Unicorn Project, and The Goal, with focus on AI-first development and team leadership
 - **👥 Agentic AI Leadership**: Showcasing experience leading teams of humans and autonomous AI agents
 - **⚡ Performance Optimized**: React 19 with React Compiler enabled
@@ -57,7 +56,6 @@ src/
 │   ├── principles/          # Engineering principles page
 │   ├── projects/            # Projects showcase with filters
 │   ├── stack/               # Tech stack visualization
-│   ├── infrastructure/      # Infrastructure & DevOps timeline
 │   └── globals.css          # Global styles and theme variables
 ├── components/
 │   ├── effects/             # Visual effects (grain, glow, typewriter)
@@ -196,7 +194,7 @@ Each project includes:
 
 ## 📦 Build & Deployment
 
-The application is optimized for production deployment:
+The application is deployed on **Vercel** for optimal Next.js performance and simplified operations.
 
 ```bash
 # Production build

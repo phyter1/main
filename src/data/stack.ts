@@ -394,6 +394,17 @@ export const stackItems: StackItem[] = [
     yearsUsed: 1,
   },
   {
+    id: "vercel",
+    label: "Vercel",
+    category: "infrastructure",
+    proficiency: "expert",
+    context: "personal",
+    personalStack: true,
+    description:
+      "Managed deployment platform for Next.js - consolidated from self-hosted infrastructure for simplicity",
+    yearsUsed: 3,
+  },
+  {
     id: "kubernetes",
     label: "Kubernetes",
     category: "infrastructure",
