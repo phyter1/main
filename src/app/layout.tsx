@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ConvexClientProvider } from "./ConvexClientProvider";
+import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/layout/Footer";
 import { Navigation } from "@/components/layout/Navigation";
 import { firaMono, firaSans } from "@/lib/fonts";
-import { Analytics } from "@vercel/analytics/react";
+import { ConvexClientProvider } from "./ConvexClientProvider";
 
 const siteUrl = "https://ryn.phytertek.com";
 const siteTitle = "Ryan Lowe | Tech Lead • AI-First Development";
@@ -102,12 +102,8 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <script
-          defer
-          src="https://umami.phytertek.com/script.js"
-          data-website-id="81d82483-e533-456e-beaa-85e1c2858092"
-        ></script>
-        <script
           type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safe
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
