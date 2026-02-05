@@ -7,6 +7,7 @@ import Link from "next/link";
 import { PromptEditor } from "@/components/admin/PromptEditor";
 import { ResumeUpdater } from "@/components/admin/ResumeUpdater";
 import TestRunner from "@/components/admin/TestRunner";
+import { DirectEditTab } from "@/components/admin/workbench/DirectEditTab";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { resume } from "@/data/resume";
@@ -35,11 +36,12 @@ export default async function AgentWorkbenchPage() {
 
       {/* Tab-based navigation */}
       <Tabs defaultValue="chat" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="chat">Chat Agent</TabsTrigger>
           <TabsTrigger value="fit-assessment">Job Fit Agent</TabsTrigger>
           <TabsTrigger value="resume">Resume Data</TabsTrigger>
           <TabsTrigger value="tests">Test Suite</TabsTrigger>
+          <TabsTrigger value="direct-edit">Direct Edit</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
@@ -88,6 +90,13 @@ export default async function AgentWorkbenchPage() {
               Run test cases against AI prompts to validate responses
             </p>
             <TestRunner agentType="chat" promptText={chatPromptText} />
+          </div>
+        </TabsContent>
+
+        {/* Direct Edit Tab */}
+        <TabsContent value="direct-edit" className="space-y-4">
+          <div className="rounded-lg border bg-card p-6">
+            <DirectEditTab />
           </div>
         </TabsContent>
 
