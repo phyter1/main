@@ -34,8 +34,8 @@ mock.module("../../convex/_generated/api", () => ({
       listVersions: "prompts:listVersions",
       saveVersion: "prompts:saveVersion",
       getVersion: "prompts:getVersion",
+      getActiveVersion: "prompts:getActiveVersion",
       setActive: "prompts:setActive",
-      rollback: "prompts:rollback",
     },
   },
 }));
@@ -315,7 +315,7 @@ describe("T002: Prompt Versioning System", () => {
 
       await rollbackVersion("chat", "version-1" as any);
 
-      expect(mockMutation).toHaveBeenCalledWith("prompts:rollback", {
+      expect(mockMutation).toHaveBeenCalledWith("prompts:setActive", {
         agentType: "chat",
         versionId: "version-1",
       });
