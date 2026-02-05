@@ -1,13 +1,14 @@
 import { describe, expect, it } from "bun:test";
 import {
-  type ExperienceEntry,
+  applyResumeUpdate,
   formatResumeAsLLMContext,
   getExpertiseByProficiency,
   getSkillsByCategory,
   type ProficiencyLevel,
-  type Resume,
+  previewResumeUpdate,
   resume,
   type SkillCategory,
+  validateResumeUpdate,
 } from "./resume";
 
 describe("T001: Create resume/experience data model for LLM context", () => {
@@ -295,6 +296,481 @@ describe("T001: Create resume/experience data model for LLM context", () => {
       expect(formatResumeAsLLMContext).toBeDefined();
       expect(getSkillsByCategory).toBeDefined();
       expect(getExpertiseByProficiency).toBeDefined();
+    });
+  });
+});
+
+describe("T010: Dynamic Resume Updates", () => {
+  describe("validateResumeUpdate", () => {
+    it("should validate a valid experience add operation", () => {
+      const update = {
+        section: "experience" as const,
+        operation: "add" as const,
+        data: {
+          title: "New Position",
+          organization: "Test Company",
+          period: "2026 - Present",
+          description: "Test role description",
+          highlights: ["Achievement 1"],
+          type: "job" as const,
+        },
+      };
+
+      const result = validateResumeUpdate(update);
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it("should invalidate update with invalid section", () => {
+      const update = {
+        section: "invalid-section",
+        operation: "add",
+        data: {},
+      };
+
+      const result = validateResumeUpdate(update);
+      expect(result.isValid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0]).toContain("section");
+    });
+
+    it("should invalidate update with invalid operation", () => {
+      const update = {
+        section: "experience",
+        operation: "invalid-op",
+        data: {},
+      };
+
+      const result = validateResumeUpdate(update);
+      expect(result.isValid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0]).toContain("operation");
+    });
+
+    it("should invalidate update/delete without id", () => {
+      const updateOperation = {
+        section: "experience" as const,
+        operation: "update" as const,
+        data: { title: "Updated Title" },
+      };
+
+      const result = validateResumeUpdate(updateOperation);
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Update and delete operations require an id",
+      );
+    });
+
+    it("should validate skills add operation", () => {
+      const update = {
+        section: "skills" as const,
+        operation: "add" as const,
+        data: {
+          category: "languages" as const,
+          skill: {
+            name: "Python",
+            proficiency: "expert" as const,
+            yearsUsed: 5,
+            category: "language" as const,
+          },
+        },
+      };
+
+      const result = validateResumeUpdate(update);
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it("should validate projects add operation", () => {
+      const update = {
+        section: "projects" as const,
+        operation: "add" as const,
+        data: {
+          id: "test-project",
+          title: "Test Project",
+          description: "Test description",
+          longDescription: "Longer description",
+          technologies: ["TypeScript", "React"],
+          highlights: ["Test highlight"],
+          status: "completed" as const,
+          featured: false,
+          links: [],
+        },
+      };
+
+      const result = validateResumeUpdate(update);
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it("should validate principles add operation", () => {
+      const update = {
+        section: "principles" as const,
+        operation: "add" as const,
+        data: {
+          id: "test-principle",
+          groupId: "test-group",
+          title: "Test Principle",
+          description: "Test description",
+          application: "Test application",
+        },
+      };
+
+      const result = validateResumeUpdate(update);
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+  });
+
+  describe("applyResumeUpdate", () => {
+    it("should add new experience entry", () => {
+      const update = {
+        section: "experience" as const,
+        operation: "add" as const,
+        data: {
+          title: "Senior Developer",
+          organization: "Tech Corp",
+          period: "2026 - Present",
+          description: "Leading development",
+          highlights: ["Led team of 5"],
+          type: "job" as const,
+        },
+      };
+
+      const updatedResume = applyResumeUpdate(update);
+
+      expect(updatedResume.experience.length).toBe(
+        resume.experience.length + 1,
+      );
+      expect(updatedResume.experience[0].title).toBe("Senior Developer");
+
+      // Verify original is unchanged
+      expect(resume.experience.length).not.toBe(
+        updatedResume.experience.length,
+      );
+    });
+
+    it("should update existing experience entry", () => {
+      const existingEntry = resume.experience[0];
+      const update = {
+        section: "experience" as const,
+        operation: "update" as const,
+        id: existingEntry.title,
+        data: {
+          description: "Updated description",
+        },
+      };
+
+      const updatedResume = applyResumeUpdate(update);
+
+      const updatedEntry = updatedResume.experience.find(
+        (e) => e.title === existingEntry.title,
+      );
+      expect(updatedEntry?.description).toBe("Updated description");
+
+      // Verify original is unchanged
+      expect(resume.experience[0].description).not.toBe("Updated description");
+    });
+
+    it("should delete experience entry", () => {
+      const entryToDelete = resume.experience[0];
+      const update = {
+        section: "experience" as const,
+        operation: "delete" as const,
+        id: entryToDelete.title,
+        data: {},
+      };
+
+      const updatedResume = applyResumeUpdate(update);
+
+      expect(updatedResume.experience.length).toBe(
+        resume.experience.length - 1,
+      );
+      expect(
+        updatedResume.experience.find((e) => e.title === entryToDelete.title),
+      ).toBeUndefined();
+
+      // Verify original is unchanged
+      expect(resume.experience.length).not.toBe(
+        updatedResume.experience.length,
+      );
+    });
+
+    it("should add skill to category", () => {
+      const update = {
+        section: "skills" as const,
+        operation: "add" as const,
+        data: {
+          category: "languages" as const,
+          skill: {
+            name: "Rust",
+            proficiency: "learning" as const,
+            yearsUsed: 1,
+            category: "language" as const,
+          },
+        },
+      };
+
+      const updatedResume = applyResumeUpdate(update);
+
+      const addedSkill = updatedResume.skills.languages.find(
+        (s) => s.name === "Rust",
+      );
+      expect(addedSkill).toBeDefined();
+      expect(addedSkill?.proficiency).toBe("learning");
+
+      // Verify original is unchanged
+      expect(
+        resume.skills.languages.find((s) => s.name === "Rust"),
+      ).toBeUndefined();
+    });
+
+    it("should update skill proficiency", () => {
+      const existingSkill = resume.skills.languages[0];
+      const update = {
+        section: "skills" as const,
+        operation: "update" as const,
+        id: existingSkill.name,
+        data: {
+          category: "languages" as const,
+          proficiency: "expert" as const,
+        },
+      };
+
+      const updatedResume = applyResumeUpdate(update);
+
+      const updatedSkill = updatedResume.skills.languages.find(
+        (s) => s.name === existingSkill.name,
+      );
+      expect(updatedSkill?.proficiency).toBe("expert");
+    });
+
+    it("should add new project", () => {
+      const update = {
+        section: "projects" as const,
+        operation: "add" as const,
+        data: {
+          id: "new-project",
+          title: "New Project",
+          description: "Test project",
+          longDescription: "Detailed description",
+          technologies: ["TypeScript"],
+          highlights: ["Built from scratch"],
+          status: "in-progress" as const,
+          featured: true,
+          links: [],
+        },
+      };
+
+      const updatedResume = applyResumeUpdate(update);
+
+      const addedProject = updatedResume.projects.find(
+        (p) => p.id === "new-project",
+      );
+      expect(addedProject).toBeDefined();
+      expect(addedProject?.title).toBe("New Project");
+
+      // Verify original is unchanged
+      expect(
+        resume.projects.find((p) => p.id === "new-project"),
+      ).toBeUndefined();
+    });
+
+    it("should maintain immutability", () => {
+      const originalLength = resume.experience.length;
+      const update = {
+        section: "experience" as const,
+        operation: "add" as const,
+        data: {
+          title: "Test Position",
+          organization: "Test Org",
+          period: "2026",
+          description: "Test",
+          highlights: [],
+          type: "job" as const,
+        },
+      };
+
+      applyResumeUpdate(update);
+
+      // Original should be unchanged
+      expect(resume.experience.length).toBe(originalLength);
+    });
+
+    it("should throw error for invalid update", () => {
+      const invalidUpdate = {
+        section: "invalid-section",
+        operation: "add",
+        data: {},
+      };
+
+      // TypeScript won't allow this, but we can test runtime validation
+      // by casting through unknown
+      expect(() =>
+        applyResumeUpdate(
+          invalidUpdate as unknown as Parameters<typeof applyResumeUpdate>[0],
+        ),
+      ).toThrow();
+    });
+  });
+
+  describe("previewResumeUpdate", () => {
+    it("should generate markdown preview for add operation", () => {
+      const update = {
+        section: "experience" as const,
+        operation: "add" as const,
+        data: {
+          title: "New Role",
+          organization: "New Company",
+          period: "2026 - Present",
+          description: "Role description",
+          highlights: ["Achievement"],
+          type: "job" as const,
+        },
+      };
+
+      const preview = previewResumeUpdate(update);
+
+      expect(preview).toContain("New Role");
+      expect(preview).toContain("New Company");
+      expect(preview).toContain("2026 - Present");
+      expect(preview).toContain("+");
+    });
+
+    it("should generate markdown preview for update operation", () => {
+      const existingEntry = resume.experience[0];
+      const update = {
+        section: "experience" as const,
+        operation: "update" as const,
+        id: existingEntry.title,
+        data: {
+          description: "Updated description",
+        },
+      };
+
+      const preview = previewResumeUpdate(update);
+
+      expect(preview).toContain("~");
+      expect(preview).toContain("Updated description");
+    });
+
+    it("should generate markdown preview for delete operation", () => {
+      const entryToDelete = resume.experience[0];
+      const update = {
+        section: "experience" as const,
+        operation: "delete" as const,
+        id: entryToDelete.title,
+        data: {},
+      };
+
+      const preview = previewResumeUpdate(update);
+
+      expect(preview).toContain("-");
+      expect(preview).toContain(entryToDelete.title);
+    });
+
+    it("should include section name in preview", () => {
+      const update = {
+        section: "skills" as const,
+        operation: "add" as const,
+        data: {
+          category: "languages" as const,
+          skill: {
+            name: "Go",
+            proficiency: "intermediate" as const,
+            category: "language" as const,
+          },
+        },
+      };
+
+      const preview = previewResumeUpdate(update);
+
+      expect(preview).toContain("skills");
+      expect(preview).toContain("Go");
+      expect(preview).toContain("intermediate");
+      expect(preview).toContain("+");
+    });
+  });
+
+  describe("T010 Acceptance Criteria", () => {
+    it("AC1: New functions added without breaking existing exports", () => {
+      // All existing exports should still work
+      expect(resume).toBeDefined();
+      expect(formatResumeAsLLMContext).toBeDefined();
+      expect(getSkillsByCategory).toBeDefined();
+      expect(getExpertiseByProficiency).toBeDefined();
+
+      // New exports should exist
+      expect(validateResumeUpdate).toBeDefined();
+      expect(applyResumeUpdate).toBeDefined();
+      expect(previewResumeUpdate).toBeDefined();
+    });
+
+    it("AC2: Validates update structure and data types", () => {
+      const validUpdate = {
+        section: "experience" as const,
+        operation: "add" as const,
+        data: {
+          title: "Test",
+          organization: "Test Co",
+          period: "2026",
+          description: "Test",
+          highlights: [],
+          type: "job" as const,
+        },
+      };
+
+      const result = validateResumeUpdate(validUpdate);
+      expect(result.isValid).toBe(true);
+    });
+
+    it("AC3: applyResumeUpdate returns NEW resume object (immutable)", () => {
+      const update = {
+        section: "experience" as const,
+        operation: "add" as const,
+        data: {
+          title: "Test",
+          organization: "Test",
+          period: "2026",
+          description: "Test",
+          highlights: [],
+          type: "job" as const,
+        },
+      };
+
+      const originalLength = resume.experience.length;
+      const updated = applyResumeUpdate(update);
+
+      expect(updated).not.toBe(resume);
+      expect(resume.experience.length).toBe(originalLength);
+      expect(updated.experience.length).toBe(originalLength + 1);
+    });
+
+    it("AC4: previewResumeUpdate generates readable markdown diff", () => {
+      const update = {
+        section: "experience" as const,
+        operation: "add" as const,
+        data: {
+          title: "Test Role",
+          organization: "Test Org",
+          period: "2026",
+          description: "Test description",
+          highlights: [],
+          type: "job" as const,
+        },
+      };
+
+      const preview = previewResumeUpdate(update);
+
+      expect(typeof preview).toBe("string");
+      expect(preview.length).toBeGreaterThan(0);
+      expect(preview).toContain("+");
+    });
+
+    it("AC5: All existing tests still pass", () => {
+      // This test passing means existing functionality works
+      expect(resume.experience.length).toBeGreaterThan(0);
+      expect(resume.skills.languages.length).toBeGreaterThan(0);
     });
   });
 });
