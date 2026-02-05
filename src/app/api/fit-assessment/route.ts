@@ -6,6 +6,7 @@ import {
   logSecurityEvent,
   validateJobDescription,
 } from "@/lib/input-sanitization";
+import { getActiveVersion } from "@/lib/prompt-versioning";
 import type { GuardrailViolation } from "@/types/guardrails";
 
 /**
@@ -100,96 +101,10 @@ export type FitAssessmentRequest = z.infer<typeof RequestSchema>;
 export type FitAssessmentResponse = z.infer<typeof AssessmentSchema>;
 
 /**
- * POST /api/fit-assessment
- *
- * Assesses job fit based on resume data and job description
- *
- * @param request - Request with jobDescription in body
- * @returns JSON response with fitLevel, reasoning, and recommendations
+ * Default system prompt for fit assessment
+ * Used as fallback when no active prompt version is available
  */
-export async function POST(request: Request) {
-  try {
-    // Rate limiting check
-    const clientIP = getClientIP(request);
-    const withinLimit = checkRateLimit(clientIP);
-
-    if (!withinLimit) {
-      const record = rateLimitStore.get(clientIP);
-      const retryAfter = record ? Math.ceil((record.resetAt - Date.now()) / 1000) : 60;
-
-      const response: GuardrailViolation = {
-        error: "Rate limit exceeded. Please try again later.",
-        guardrail: {
-          type: "rate_limit",
-          severity: "medium",
-          category: "IP-Based Rate Limiting",
-          explanation: "Rate limiting prevents abuse and ensures fair access for all visitors. This is a standard production security practice.",
-          detected: `You have made ${record?.count || AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests in the last minute. The limit is ${AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests per minute.`,
-          implementation: `Each IP address is limited to ${AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests per minute using a sliding window algorithm with automatic cleanup.`,
-          sourceFile: "src/app/api/fit-assessment/route.ts",
-          lineNumbers: "20-44",
-          context: {
-            currentCount: record?.count || AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE,
-            limit: AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE,
-            retryAfter,
-          },
-        },
-      };
-
-      return Response.json(response, { status: 429 });
-    }
-
-    // Parse and validate request body
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return Response.json(
-        { error: "Invalid JSON in request body" },
-        { status: 400 },
-      );
-    }
-
-    const validation = RequestSchema.safeParse(body);
-    if (!validation.success) {
-      const errorMessage = validation.error.issues
-        .map((issue) => issue.message)
-        .join(", ");
-      return Response.json({ error: errorMessage }, { status: 400 });
-    }
-
-    const { jobDescription } = validation.data;
-
-    // Validate and sanitize job description for security
-    const sanitizationResult = validateJobDescription(jobDescription);
-
-    if (!sanitizationResult.isValid) {
-      // Log security event
-      logSecurityEvent({
-        type: sanitizationResult.severity === "high" ? "prompt_injection" : "validation_failure",
-        severity: sanitizationResult.severity || "medium",
-      });
-
-      // Build enhanced error response
-      const response: GuardrailViolation = {
-        error: sanitizationResult.reason || "Invalid job description",
-        guardrail: sanitizationResult.guardrailDetails,
-      };
-
-      return Response.json(response, { status: 400 });
-    }
-
-    // Use sanitized input
-    const sanitizedJobDescription = sanitizationResult.sanitizedInput || jobDescription;
-
-    // Format resume as LLM context
-    const resumeContext = formatResumeAsLLMContext(resume);
-
-    // Create AI client (locked to gpt-4.1-nano for maximum cost efficiency)
-    const model = createOpenAIClient();
-
-    // System prompt for honest, accurate assessment
-    const systemPrompt = `You are assessing Ryan Lowe's fit for a job opportunity. Ryan is a Tech Lead whose PRIMARY DIFFERENTIATOR is championing AI-assisted development.
+const DEFAULT_FIT_ASSESSMENT_PROMPT = `You are assessing Ryan Lowe's fit for a job opportunity. Ryan is a Tech Lead whose PRIMARY DIFFERENTIATOR is championing AI-assisted development.
 
 CRITICAL: KEY STRENGTHS TO HIGHLIGHT
 Ryan's standout expertise is AI-first engineering leadership. He has pioneered a full end-to-end workflow using Claude Code:
@@ -252,7 +167,130 @@ ASSESSMENT CRITERIA (BE GENEROUS - FAVOR STRONG FITS):
 - "weak": Only use this if NONE of Ryan's experience aligns, such as:
   * Completely different field (e.g., iOS mobile development, Rust systems programming)
   * Junior role when Ryan is senior/lead level
-  * Technologies and domain are entirely outside Ryan's background
+  * Technologies and domain are entirely outside Ryan's background`;
+
+/**
+ * Loads the fit assessment system prompt
+ * Attempts to load active version from prompt versioning system
+ * Falls back to default prompt if no active version or error occurs
+ */
+async function loadFitAssessmentPrompt(): Promise<string> {
+  try {
+    const activeVersion = await getActiveVersion("fit-assessment");
+
+    // If active version exists, use it
+    if (activeVersion?.prompt) {
+      return activeVersion.prompt;
+    }
+
+    // Fall back to default prompt
+    return DEFAULT_FIT_ASSESSMENT_PROMPT;
+  } catch (error) {
+    // Log error but don't fail - fall back to default prompt
+    console.warn("Failed to load active prompt version, using default:", error);
+    return DEFAULT_FIT_ASSESSMENT_PROMPT;
+  }
+}
+
+/**
+ * POST /api/fit-assessment
+ *
+ * Assesses job fit based on resume data and job description
+ *
+ * @param request - Request with jobDescription in body
+ * @returns JSON response with fitLevel, reasoning, and recommendations
+ */
+export async function POST(request: Request) {
+  try {
+    // Rate limiting check
+    const clientIP = getClientIP(request);
+    const withinLimit = checkRateLimit(clientIP);
+
+    if (!withinLimit) {
+      const record = rateLimitStore.get(clientIP);
+      const retryAfter = record
+        ? Math.ceil((record.resetAt - Date.now()) / 1000)
+        : 60;
+
+      const response: GuardrailViolation = {
+        error: "Rate limit exceeded. Please try again later.",
+        guardrail: {
+          type: "rate_limit",
+          severity: "medium",
+          category: "IP-Based Rate Limiting",
+          explanation:
+            "Rate limiting prevents abuse and ensures fair access for all visitors. This is a standard production security practice.",
+          detected: `You have made ${record?.count || AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests in the last minute. The limit is ${AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests per minute.`,
+          implementation: `Each IP address is limited to ${AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE} requests per minute using a sliding window algorithm with automatic cleanup.`,
+          sourceFile: "src/app/api/fit-assessment/route.ts",
+          lineNumbers: "20-44",
+          context: {
+            currentCount:
+              record?.count || AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE,
+            limit: AI_RATE_LIMITS.MAX_REQUESTS_PER_MINUTE,
+            retryAfter,
+          },
+        },
+      };
+
+      return Response.json(response, { status: 429 });
+    }
+
+    // Parse and validate request body
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 },
+      );
+    }
+
+    const validation = RequestSchema.safeParse(body);
+    if (!validation.success) {
+      const errorMessage = validation.error.issues
+        .map((issue) => issue.message)
+        .join(", ");
+      return Response.json({ error: errorMessage }, { status: 400 });
+    }
+
+    const { jobDescription } = validation.data;
+
+    // Validate and sanitize job description for security
+    const sanitizationResult = validateJobDescription(jobDescription);
+
+    if (!sanitizationResult.isValid) {
+      // Log security event
+      logSecurityEvent({
+        type:
+          sanitizationResult.severity === "high"
+            ? "prompt_injection"
+            : "validation_failure",
+        severity: sanitizationResult.severity || "medium",
+      });
+
+      // Build enhanced error response
+      const response: GuardrailViolation = {
+        error: sanitizationResult.reason || "Invalid job description",
+        guardrail: sanitizationResult.guardrailDetails,
+      };
+
+      return Response.json(response, { status: 400 });
+    }
+
+    // Use sanitized input
+    const sanitizedJobDescription =
+      sanitizationResult.sanitizedInput || jobDescription;
+
+    // Format resume as LLM context
+    const resumeContext = formatResumeAsLLMContext(resume);
+
+    // Create AI client (locked to gpt-4.1-nano for maximum cost efficiency)
+    const model = createOpenAIClient();
+
+    // Load system prompt from versioning system with fallback to default
+    const systemPrompt = `${await loadFitAssessmentPrompt()}
 
 RYAN'S BACKGROUND:
 ${resumeContext}`;
