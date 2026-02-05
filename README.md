@@ -128,6 +128,67 @@ bun lint
 bun format
 ```
 
+### Testing
+
+The project includes a comprehensive test suite with proper environment configuration.
+
+#### Running Tests
+
+```bash
+# Run all tests
+bun test
+
+# Run all tests with bail on first failure
+bun test:all
+
+# Run specific test suites
+bun test:lib          # Library and utility tests
+bun test:components   # Component tests
+bun test:api          # API route tests
+bun test:pages        # Page component tests
+bun test:integration  # Integration tests
+
+# Run tests in watch mode
+bun test:watch
+```
+
+#### Test Environment Setup
+
+The test suite uses a dedicated `.env.test` file for test-specific environment variables. **This file is committed to the repository** and contains safe mock values for testing.
+
+**Key Points:**
+- `.env.test` - Committed to repository, contains mock/test values
+- `.env.local` - **NOT committed**, contains real credentials for local development
+- `.env.local.example` - Template for creating your `.env.local`
+
+The test environment is automatically loaded by `test-setup.ts` before tests run.
+
+**Environment Variables in .env.test:**
+```bash
+# Mock values for testing (NOT real credentials)
+OPENAI_API_KEY=test_key_for_testing_only_sk_mock_1234567890
+ADMIN_PASSWORD=TestPassword123!@#ForTests
+ADMIN_SESSION_SECRET=test_session_secret_64_characters_long_for_testing_purposes_only_1234
+
+# Mock Convex URL (NOT real Convex instance)
+NEXT_PUBLIC_CONVEX_URL=https://test-convex-url.convex.cloud
+
+# Test rate limiting
+AI_MAX_REQUESTS_PER_MINUTE=1000
+AI_MAX_TOKENS_PER_REQUEST=4096
+```
+
+**Why .env.test is committed:**
+- Ensures consistent test environment across all developers
+- Required for CI/CD pipeline reliability
+- Contains only safe mock values (no real secrets or URLs)
+- Tests use mocking for external services
+
+**For local development:**
+1. Copy `.env.local.example` to `.env.local`
+2. Add your actual API keys and credentials
+3. Never commit `.env.local` to version control
+
 ## 🎯 Key Features Explained
 
 ### Engineering Principles Page
