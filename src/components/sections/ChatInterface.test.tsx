@@ -463,6 +463,121 @@ describe("ChatInterface Component - T007", () => {
     });
   });
 
+  describe("Typing Indicator (Issue #20 Fixes)", () => {
+    it("should show 'Ryan is typing...' label during streaming", async () => {
+      global.fetch = mock(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({
+                ok: true,
+                body: new ReadableStream({
+                  start(controller) {
+                    controller.enqueue(
+                      new TextEncoder().encode("Response text"),
+                    );
+                    controller.close();
+                  },
+                }),
+              });
+            }, 100);
+          }),
+      ) as typeof fetch;
+
+      render(<ChatInterface />);
+
+      const textarea = screen.getByRole("textbox");
+      const sendButton = screen.getByRole("button", { name: /send/i });
+
+      fireEvent.change(textarea, { target: { value: "Hello" } });
+      fireEvent.click(sendButton);
+
+      // Should show "Ryan is typing..." label
+      await waitFor(() => {
+        const typingLabel = screen.getByText("Ryan is typing...");
+        expect(typingLabel).toBeDefined();
+      });
+    });
+
+    it("should hide typing indicator after streaming completes", async () => {
+      global.fetch = mock(() =>
+        Promise.resolve({
+          ok: true,
+          body: new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode("Complete response"));
+              controller.close();
+            },
+          }),
+        }),
+      ) as typeof fetch;
+
+      render(<ChatInterface />);
+
+      const textarea = screen.getByRole("textbox");
+      const sendButton = screen.getByRole("button", { name: /send/i });
+
+      fireEvent.change(textarea, { target: { value: "Test message" } });
+      fireEvent.click(sendButton);
+
+      // Typing indicator should appear initially
+      await waitFor(() => {
+        const typingLabel = screen.queryByText("Ryan is typing...");
+        expect(typingLabel).toBeDefined();
+      });
+
+      // Typing indicator should disappear after stream completes
+      await waitFor(
+        () => {
+          const typingLabel = screen.queryByText("Ryan is typing...");
+          expect(typingLabel).toBeNull();
+        },
+        { timeout: 3000 },
+      );
+
+      // Input should be re-enabled
+      await waitFor(() => {
+        expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
+      });
+    });
+
+    it("should properly cleanup loading state on successful stream", async () => {
+      global.fetch = mock(() =>
+        Promise.resolve({
+          ok: true,
+          body: new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode("Response"));
+              controller.close();
+            },
+          }),
+        }),
+      ) as typeof fetch;
+
+      render(<ChatInterface />);
+
+      const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
+      const sendButton = screen.getByRole("button", {
+        name: /send/i,
+      }) as HTMLButtonElement;
+
+      fireEvent.change(textarea, { target: { value: "Hello" } });
+      fireEvent.click(sendButton);
+
+      // Wait for stream to complete and loading state to be cleaned up
+      await waitFor(
+        () => {
+          expect(textarea.disabled).toBe(false);
+        },
+        { timeout: 3000 },
+      );
+
+      // Should be able to send another message (button enabled with input)
+      fireEvent.change(textarea, { target: { value: "Second message" } });
+      expect(sendButton.disabled).toBe(false);
+    });
+  });
+
   describe("API Integration", () => {
     it("should call /api/chat endpoint with correct payload", async () => {
       const mockFetch = mock(() =>

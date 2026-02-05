@@ -1,4 +1,7 @@
 {
+  "timestamp": "2026-02-05T18:00:00Z",
+  "issue": "phyter1/main#20",
+  "issueTitle": "Bug: Stuck visual indicator for assistant typing",
   "techStack": {
     "language": "TypeScript",
     "runtime": "Bun",
@@ -8,100 +11,121 @@
     "uiComponents": "shadcn/ui (new-york style)",
     "testing": "bun:test with @happy-dom/global-registrator",
     "linting": "Biome",
-    "aiSdk": "Vercel AI SDK with OpenAI provider (gpt-4.1-nano)",
+    "aiSdk": "Vercel AI SDK with Anthropic provider",
     "fonts": "Fira Sans, Fira Mono (next/font/google)",
     "packageManager": "Bun"
   },
-  "existingAiImplementation": {
-    "routes": [
-      "src/app/api/chat/route.ts - Streaming chat with resume context",
-      "src/app/api/fit-assessment/route.ts - Structured job fit assessment"
+  "bugAnalysis": {
+    "primaryIssue": "Typing indicator stays visible after assistant finishes streaming response",
+    "secondaryIssue": "Typing indicator label says 'Assistant is typing...' but should say 'Ryan is typing...'",
+    "rootCauses": [
+      "Missing setIsLoading(false) after streaming completes successfully in ChatInterface.tsx",
+      "Hardcoded label text doesn't match app branding where assistant is called 'Ryan'"
+    ]
+  },
+  "relevantFiles": {
+    "chatInterface": {
+      "component": "src/components/sections/ChatInterface.tsx",
+      "test": "src/components/sections/ChatInterface.test.tsx",
+      "page": "src/app/chat/page.tsx",
+      "issues": [
+        {
+          "file": "src/components/sections/ChatInterface.tsx",
+          "line": 191,
+          "issue": "Label says 'Assistant is typing...' instead of 'Ryan is typing...'",
+          "fix": "Change text to 'Ryan is typing...'"
+        },
+        {
+          "file": "src/components/sections/ChatInterface.tsx",
+          "line": "after 134",
+          "issue": "Missing setIsLoading(false) after stream completes",
+          "fix": "Add setIsLoading(false) after the while loop that reads stream chunks"
+        }
+      ]
+    },
+    "typingIndicator": {
+      "component": "src/components/ui/typing-indicator.tsx",
+      "test": "src/components/ui/typing-indicator.test.tsx",
+      "description": "Well-designed component with accessibility features and custom label support"
+    },
+    "chatMessage": {
+      "component": "src/components/ui/chat-message.tsx",
+      "note": "Shows 'Ryan' for assistant role (line 41), establishing the branding"
+    },
+    "apiRoute": {
+      "route": "src/app/api/chat/route.ts",
+      "description": "Streaming chat endpoint using Vercel AI SDK streamText()"
+    }
+  },
+  "stateManagement": {
+    "location": "src/components/sections/ChatInterface.tsx",
+    "loadingStateVariable": "isLoading",
+    "setToTrue": [
+      "Line 63: When message is sent"
     ],
-    "config": "src/lib/ai-config.ts - OpenAI client creation, rate limits, model constants",
-    "resumeData": "src/data/resume.ts - Resume structure and LLM context formatting",
-    "inputValidation": "src/lib/input-sanitization.ts - 5-layer validation, prompt injection detection",
-    "systemPrompts": "Embedded in route files with KEY FACTS, VOICE, and SCOPE sections",
-    "model": "gpt-4.1-nano (locked, no parameters)",
-    "rateLimiting": "In-memory per-IP tracking, 10 req/min, GuardrailViolation responses"
+    "setToFalse": [
+      "Line 92: When API error occurs",
+      "Line 147: When exception is caught"
+    ],
+    "missing": "setIsLoading(false) after streaming completes successfully (after line 134)"
   },
-  "authenticationPatterns": {
-    "current": "None - no middleware.ts exists",
-    "required": "Environment variable password or NextAuth.js for /admin routes",
-    "middleware": "Need to create middleware.ts for path-based auth"
-  },
-  "directoryStructure": {
-    "app": "src/app/ - Next.js App Router pages and API routes",
-    "components": "src/components/ - React components (ui/, layout/, sections/, effects/)",
-    "lib": "src/lib/ - Utility functions and configs",
-    "data": "src/data/ - Resume data structures",
-    "hooks": "src/hooks/ - React custom hooks",
-    "types": "src/types/ - TypeScript type definitions"
-  },
-  "testingPatterns": {
-    "framework": "bun:test",
-    "mocking": "Mock AI SDK before imports, dynamic imports in beforeEach()",
-    "structure": "*.test.ts files colocated with source, *.integration.test.ts for integration tests",
-    "coverage": "Separate scripts for lib, components, api, pages, integration",
-    "aiMocking": "Mock streamText, generateObject with intelligent responses based on input"
+  "streamingFlow": {
+    "description": "Uses ReadableStream API to read chunks from API response",
+    "location": "src/components/sections/ChatInterface.tsx lines 118-134",
+    "process": [
+      "Create TextDecoder for UTF-8",
+      "Read chunks in while loop",
+      "Decode each chunk",
+      "Append to current message content",
+      "Update messages state"
+    ],
+    "bug": "No cleanup after loop completes - isLoading stays true"
   },
   "codeConventions": {
     "importAlias": "@/* maps to src/*",
     "indentation": "2 spaces (Biome)",
-    "testFiles": "*.test.ts colocated with source files",
+    "testFiles": "*.test.tsx colocated with source files",
     "components": "React Server Components by default (rsc: true)",
-    "apiRoutes": "Named export POST/GET functions",
-    "errorHandling": "GuardrailViolation type with educational details"
+    "stateManagement": "useState hooks for local component state",
+    "branding": "Assistant is referred to as 'Ryan' throughout the app"
   },
-  "newFilesToCreate": [
-    "middleware.ts - Auth middleware for /admin routes",
-    "src/app/admin/agent-workbench/page.tsx - Main workbench interface",
-    "src/app/admin/agent-workbench/layout.tsx - Auth wrapper layout",
-    "src/components/admin/PromptEditor.tsx - Conversational prompt editor",
-    "src/components/admin/TestRunner.tsx - Test suite interface",
-    "src/components/admin/PromptDiff.tsx - Diff viewer for prompts",
-    "src/components/admin/ResumeUpdater.tsx - Resume data editor",
-    "src/app/api/admin/refine-prompt/route.ts - Prompt refinement API",
-    "src/app/api/admin/test-prompt/route.ts - Testing API",
-    "src/app/api/admin/update-resume/route.ts - Resume update API",
-    "src/app/api/admin/deploy-prompt/route.ts - Deployment API",
-    "src/lib/prompt-versioning.ts - Version control utilities",
-    "src/lib/test-runner.ts - Test execution engine",
-    "src/lib/auth.ts - Authentication utilities"
-  ],
-  "filesToModify": [
-    "src/app/api/chat/route.ts - Make prompt configurable/loadable",
-    "src/app/api/fit-assessment/route.ts - Make prompt configurable/loadable",
-    "src/data/resume.ts - Support dynamic updates",
-    ".env.local.example - Add ADMIN_PASSWORD config"
-  ],
-  "issueKeywords": [
-    "agent workbench",
-    "prompt refinement",
-    "testing interface",
-    "authentication",
-    "admin routes",
-    "conversational editor",
-    "side-by-side comparison",
-    "version history",
-    "resume updates",
-    "test runner",
-    "diff viewer"
-  ],
-  "dependencies": {
-    "existing": [
-      "@ai-sdk/openai - OpenAI provider for Vercel AI SDK",
-      "ai - Vercel AI SDK for streamText/generateObject",
-      "zod - Schema validation",
-      "lucide-react - Icons",
-      "tailwind-merge - className utilities",
-      "framer-motion - Animations",
-      "date-fns - Date utilities"
+  "testingStrategy": {
+    "framework": "bun:test",
+    "location": "Tests colocated with components",
+    "coverage": [
+      "ChatInterface.test.tsx - Component behavior, message handling, streaming",
+      "typing-indicator.test.tsx - Indicator rendering, accessibility"
     ],
-    "needed": [
-      "bcryptjs or argon2 - Password hashing for auth",
-      "next-themes - Dark mode support (if needed)",
-      "react-diff-viewer - Diff visualization (or build custom)",
-      "prismjs or highlight.js - Syntax highlighting for prompts"
+    "mocking": "Mock AI SDK and API responses for predictable tests"
+  },
+  "fixStrategy": {
+    "tasks": [
+      {
+        "id": "T001",
+        "title": "Fix typing indicator label text",
+        "file": "src/components/sections/ChatInterface.tsx",
+        "line": 191,
+        "change": "Change 'Assistant is typing...' to 'Ryan is typing...'",
+        "testImpact": "Update ChatInterface.test.tsx to verify new label text"
+      },
+      {
+        "id": "T002",
+        "title": "Set loading state to false after streaming completes",
+        "file": "src/components/sections/ChatInterface.tsx",
+        "location": "After line 134 (after the while loop)",
+        "change": "Add setIsLoading(false) to cleanup loading state",
+        "testImpact": "Update/add test to verify typing indicator disappears after stream completes"
+      },
+      {
+        "id": "T003",
+        "title": "Update tests to validate fixes",
+        "file": "src/components/sections/ChatInterface.test.tsx",
+        "changes": [
+          "Verify 'Ryan is typing...' label appears during loading",
+          "Verify typing indicator disappears after streaming completes",
+          "Verify loading state is properly cleaned up"
+        ]
+      }
     ]
   }
 }

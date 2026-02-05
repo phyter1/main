@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# pipeline/automation
+.domain/
+.pipeline/
+TASKS/
+.playwright-mcp/

@@ -121,6 +121,12 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
 
         // Decode chunk as plain text
         const chunk = decoder.decode(value, { stream: true });
+
+        // Hide loading indicator as soon as first chunk arrives
+        if (assistantMessage === "") {
+          setIsLoading(false);
+        }
+
         assistantMessage += chunk;
 
         // Update the assistant message with accumulated content
@@ -188,7 +194,7 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
               <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-muted max-w-[80%]">
                 <TypingIndicator size="sm" showLabel={false} />
                 <span className="text-sm text-muted-foreground">
-                  Assistant is typing...
+                  Ryan is typing...
                 </span>
               </div>
             )}

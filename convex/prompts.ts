@@ -22,7 +22,9 @@ export const saveVersion = mutation({
     if (validated.isActive) {
       const existingVersions = await ctx.db
         .query("promptVersions")
-        .withIndex("by_agent_type", (q) => q.eq("agentType", validated.agentType))
+        .withIndex("by_agent_type", (q) =>
+          q.eq("agentType", validated.agentType),
+        )
         .collect();
 
       for (const version of existingVersions) {
