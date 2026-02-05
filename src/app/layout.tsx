@@ -72,7 +72,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",

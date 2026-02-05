@@ -15,7 +15,9 @@ export default defineSchema({
     author: v.string(),
     tokenCount: v.number(),
     isActive: v.boolean(),
-  }).index("by_agent_type", ["agentType"]).index("by_active", ["agentType", "isActive"]),
+  })
+    .index("by_agent_type", ["agentType"])
+    .index("by_active", ["agentType", "isActive"]),
 
   // Test cases table
   testCases: defineTable({
