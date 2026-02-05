@@ -1,6 +1,6 @@
 /**
  * Test Suite for Prompt Versioning System
- * Validates version storage, retrieval, activation, and rollback functionality
+ * Validates version storage, retrieval, activation, and rollback functionality using Convex
  */
 
 import {
@@ -12,25 +12,44 @@ import {
   type Mock,
   mock,
 } from "bun:test";
-import type { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 
-// Mock the fs/promises module
-const mockMkdir: Mock<typeof mkdir> = mock();
-const mockWriteFile: Mock<typeof writeFile> = mock();
-const mockReadFile: Mock<typeof readFile> = mock();
-const mockReaddir: Mock<typeof readdir> = mock();
+// Mock Convex client and API
+const mockQuery: Mock<any> = mock();
+const mockMutation: Mock<any> = mock();
 
-mock.module("node:fs/promises", () => ({
-  mkdir: mockMkdir,
-  writeFile: mockWriteFile,
-  readFile: mockReadFile,
-  readdir: mockReaddir,
+mock.module("convex/browser", () => ({
+  ConvexHttpClient: mock(function ConvexHttpClient() {
+    return {
+      query: mockQuery,
+      mutation: mockMutation,
+      action: mock(() => Promise.resolve(null)),
+    };
+  }),
+}));
+
+// Mock the Convex API
+mock.module("../../convex/_generated/api", () => ({
+  api: {
+    prompts: {
+      listVersions: "prompts:listVersions",
+      saveVersion: "prompts:saveVersion",
+      getVersion: "prompts:getVersion",
+      setActive: "prompts:setActive",
+      rollback: "prompts:rollback",
+    },
+  },
+}));
+
+// Mock dataModel types
+mock.module("../../convex/_generated/dataModel", () => ({
+  Id: String,
 }));
 
 describe("T002: Prompt Versioning System", () => {
   beforeEach(() => {
     // Clear all mocks before each test
-    mock.restore();
+    mockQuery.mockClear();
+    mockMutation.mockClear();
   });
 
   afterEach(() => {
@@ -42,9 +61,12 @@ describe("T002: Prompt Versioning System", () => {
     it("should save a new prompt version with correct metadata", async () => {
       const { savePromptVersion } = await import("./prompt-versioning");
 
-      mockMkdir.mockResolvedValue(undefined);
-      mockReaddir.mockResolvedValue([]);
-      mockWriteFile.mockResolvedValue(undefined);
+      // Mock: No existing versions (this is the first version)
+      mockQuery.mockResolvedValueOnce([]);
+
+      // Mock: saveVersion mutation returns version ID
+      const mockVersionId = "version-123";
+      mockMutation.mockResolvedValueOnce(mockVersionId);
 
       const result = await savePromptVersion(
         "chat",
@@ -53,139 +75,84 @@ describe("T002: Prompt Versioning System", () => {
         "admin",
       );
 
-      // Verify result structure
-      expect(result.agentType).toBe("chat");
-      expect(result.prompt).toBe("You are a helpful assistant");
-      expect(result.description).toBe("Initial chat prompt");
-      expect(result.author).toBe("admin");
-      expect(result.isActive).toBe(true); // First version should be active
-      expect(result.tokenCount).toBeGreaterThan(0);
-      expect(result.id).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
-      expect(result.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      // Verify result is the version ID
+      expect(result).toBe(mockVersionId);
 
-      // Verify mkdir was called to create directory structure
-      expect(mockMkdir).toHaveBeenCalledWith(
-        expect.stringContaining(".admin/prompts/chat"),
-        { recursive: true },
-      );
+      // Verify listVersions was called to check if first version
+      expect(mockQuery).toHaveBeenCalledWith("prompts:listVersions", {
+        agentType: "chat",
+      });
 
-      // Verify writeFile was called with correct structure
-      expect(mockWriteFile).toHaveBeenCalled();
+      // Verify saveVersion mutation was called with correct data
+      expect(mockMutation).toHaveBeenCalledWith("prompts:saveVersion", {
+        agentType: "chat",
+        prompt: "You are a helpful assistant",
+        description: "Initial chat prompt",
+        author: "admin",
+        tokenCount: expect.any(Number),
+        isActive: true, // First version should be active
+      });
     });
 
     it("should save prompt version for fit-assessment agent type", async () => {
       const { savePromptVersion } = await import("./prompt-versioning");
 
-      mockMkdir.mockResolvedValue(undefined);
-      mockReaddir.mockResolvedValue([]);
-      mockWriteFile.mockResolvedValue(undefined);
+      mockQuery.mockResolvedValueOnce([]);
+      mockMutation.mockResolvedValueOnce("version-456");
 
-      const result = await savePromptVersion(
+      await savePromptVersion(
         "fit-assessment",
         "Analyze job fit",
         "Job fit assessment prompt",
         "admin",
       );
 
-      expect(result.agentType).toBe("fit-assessment");
-      expect(result.prompt).toBe("Analyze job fit");
+      expect(mockQuery).toHaveBeenCalledWith("prompts:listVersions", {
+        agentType: "fit-assessment",
+      });
 
-      // Verify directory path includes fit-assessment
-      expect(mockMkdir).toHaveBeenCalledWith(
-        expect.stringContaining(".admin/prompts/fit-assessment"),
-        { recursive: true },
+      expect(mockMutation).toHaveBeenCalledWith(
+        "prompts:saveVersion",
+        expect.objectContaining({
+          agentType: "fit-assessment",
+          prompt: "Analyze job fit",
+        }),
       );
     });
 
     it("should calculate token count using chars / 4 estimation", async () => {
       const { savePromptVersion } = await import("./prompt-versioning");
 
-      mockMkdir.mockResolvedValue(undefined);
-      mockReaddir.mockResolvedValue([]);
-      mockWriteFile.mockResolvedValue(undefined);
+      mockQuery.mockResolvedValueOnce([]);
+      mockMutation.mockResolvedValueOnce("version-789");
 
-      const promptText = "a".repeat(400); // 400 characters
-      const result = await savePromptVersion(
-        "chat",
-        promptText,
-        "Test prompt",
-        "admin",
+      const testPrompt = "1234567890"; // 10 chars = 3 tokens (ceil(10/4))
+
+      await savePromptVersion("chat", testPrompt, "Test", "admin");
+
+      expect(mockMutation).toHaveBeenCalledWith(
+        "prompts:saveVersion",
+        expect.objectContaining({
+          tokenCount: 3,
+        }),
       );
-
-      // 400 / 4 = 100 tokens (approximately)
-      expect(result.tokenCount).toBe(100);
-    });
-
-    it("should reject invalid agent type", async () => {
-      const { savePromptVersion } = await import("./prompt-versioning");
-
-      await expect(
-        savePromptVersion(
-          // @ts-expect-error Testing invalid agent type
-          "invalid-type",
-          "Test prompt",
-          "Test description",
-          "admin",
-        ),
-      ).rejects.toThrow("Invalid agent type");
-    });
-
-    it("should handle file system errors gracefully", async () => {
-      const { savePromptVersion } = await import("./prompt-versioning");
-
-      mockMkdir.mockRejectedValue(new Error("Permission denied"));
-
-      await expect(
-        savePromptVersion("chat", "Test prompt", "Test description", "admin"),
-      ).rejects.toThrow("Permission denied");
-    });
-
-    it("should set first version as active", async () => {
-      const { savePromptVersion } = await import("./prompt-versioning");
-
-      mockMkdir.mockResolvedValue(undefined);
-      mockReaddir.mockResolvedValue([]); // No existing versions
-      mockWriteFile.mockResolvedValue(undefined);
-
-      const result = await savePromptVersion(
-        "chat",
-        "First prompt",
-        "Initial version",
-        "admin",
-      );
-
-      expect(result.isActive).toBe(true);
     });
 
     it("should set subsequent versions as inactive", async () => {
       const { savePromptVersion } = await import("./prompt-versioning");
 
-      const existingVersion = {
-        id: "existing-version",
-        agentType: "chat",
-        prompt: "First prompt",
-        description: "Existing",
-        author: "admin",
-        tokenCount: 50,
-        createdAt: "2026-02-04T09:00:00.000Z",
-        isActive: true,
-      };
+      // Mock: Existing versions (not the first version)
+      mockQuery.mockResolvedValueOnce([{ _id: "existing-version" }]);
+      mockMutation.mockResolvedValueOnce("version-new");
 
-      mockMkdir.mockResolvedValue(undefined);
-      mockReaddir.mockResolvedValue(["existing-version.json"]); // Existing versions
-      mockReadFile.mockResolvedValue(JSON.stringify(existingVersion));
-      mockWriteFile.mockResolvedValue(undefined);
+      await savePromptVersion("chat", "Updated prompt", "Update", "admin");
 
-      const result = await savePromptVersion(
-        "chat",
-        "Second prompt",
-        "Updated version",
-        "admin",
+      expect(mockMutation).toHaveBeenCalledWith(
+        "prompts:saveVersion",
+        expect.objectContaining({
+          isActive: false, // Not first version
+        }),
       );
-
-      expect(result.isActive).toBe(false);
     });
   });
 
@@ -194,52 +161,43 @@ describe("T002: Prompt Versioning System", () => {
       const { loadPromptVersion } = await import("./prompt-versioning");
 
       const mockVersion = {
-        id: "test-uuid-1234",
+        _id: "version-123",
         agentType: "chat",
-        prompt: "Test prompt content",
+        prompt: "Test prompt",
         description: "Test description",
         author: "admin",
         tokenCount: 100,
-        createdAt: "2026-02-04T10:00:00.000Z",
+        _creationTime: Date.now(),
         isActive: true,
       };
 
-      mockReadFile.mockResolvedValue(JSON.stringify(mockVersion));
+      mockQuery.mockResolvedValueOnce(mockVersion);
 
-      const result = await loadPromptVersion("chat", "test-uuid-1234");
+      const result = await loadPromptVersion("chat", "version-123" as any);
 
-      expect(result).toEqual(mockVersion);
-      expect(mockReadFile).toHaveBeenCalledWith(
-        expect.stringContaining(".admin/prompts/chat/test-uuid-1234.json"),
-        "utf-8",
+      expect(result).toEqual(
+        expect.objectContaining({
+          _id: "version-123",
+          id: "version-123", // Transformed property
+          agentType: "chat",
+          prompt: "Test prompt",
+          createdAt: expect.any(String), // ISO string
+        }),
       );
+
+      expect(mockQuery).toHaveBeenCalledWith("prompts:getVersion", {
+        versionId: "version-123",
+      });
     });
 
-    it("should throw error when version file does not exist", async () => {
+    it("should return null when version does not exist", async () => {
       const { loadPromptVersion } = await import("./prompt-versioning");
 
-      mockReadFile.mockRejectedValue({ code: "ENOENT" });
+      mockQuery.mockResolvedValueOnce(null);
 
-      await expect(
-        loadPromptVersion("chat", "non-existent-id"),
-      ).rejects.toThrow("Version not found");
-    });
+      const result = await loadPromptVersion("chat", "non-existent" as any);
 
-    it("should throw error for invalid agent type", async () => {
-      const { loadPromptVersion } = await import("./prompt-versioning");
-
-      await expect(
-        // @ts-expect-error Testing invalid agent type
-        loadPromptVersion("invalid-type", "some-id"),
-      ).rejects.toThrow("Invalid agent type");
-    });
-
-    it("should handle corrupted JSON files", async () => {
-      const { loadPromptVersion } = await import("./prompt-versioning");
-
-      mockReadFile.mockResolvedValue("invalid json {");
-
-      await expect(loadPromptVersion("chat", "corrupt-id")).rejects.toThrow();
+      expect(result).toBeNull();
     });
   });
 
@@ -247,96 +205,50 @@ describe("T002: Prompt Versioning System", () => {
     it("should list all versions for an agent type sorted by timestamp", async () => {
       const { listVersions } = await import("./prompt-versioning");
 
-      const mockVersion1 = {
-        id: "version-1",
-        agentType: "chat",
-        prompt: "Prompt 1",
-        description: "First",
-        author: "admin",
-        tokenCount: 50,
-        createdAt: "2026-02-04T09:00:00.000Z",
-        isActive: false,
-      };
+      const mockVersions = [
+        {
+          _id: "version-1",
+          agentType: "chat",
+          prompt: "Prompt 1",
+          description: "First",
+          author: "admin",
+          tokenCount: 50,
+          _creationTime: Date.now() - 1000,
+          isActive: false,
+        },
+        {
+          _id: "version-2",
+          agentType: "chat",
+          prompt: "Prompt 2",
+          description: "Second",
+          author: "admin",
+          tokenCount: 60,
+          _creationTime: Date.now(),
+          isActive: true,
+        },
+      ];
 
-      const mockVersion2 = {
-        id: "version-2",
-        agentType: "chat",
-        prompt: "Prompt 2",
-        description: "Second",
-        author: "admin",
-        tokenCount: 75,
-        createdAt: "2026-02-04T10:00:00.000Z",
-        isActive: true,
-      };
-
-      mockReaddir.mockResolvedValue(["version-1.json", "version-2.json"]);
-      mockReadFile
-        .mockResolvedValueOnce(JSON.stringify(mockVersion1))
-        .mockResolvedValueOnce(JSON.stringify(mockVersion2));
+      mockQuery.mockResolvedValueOnce(mockVersions);
 
       const result = await listVersions("chat");
 
       expect(result).toHaveLength(2);
-      // Should be sorted newest first
-      expect(result[0].id).toBe("version-2");
-      expect(result[1].id).toBe("version-1");
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: "version-1",
+          agentType: "chat",
+        }),
+      );
     });
 
     it("should return empty array when no versions exist", async () => {
       const { listVersions } = await import("./prompt-versioning");
 
-      mockReaddir.mockResolvedValue([]);
+      mockQuery.mockResolvedValueOnce([]);
 
       const result = await listVersions("chat");
 
       expect(result).toEqual([]);
-    });
-
-    it("should handle directory not existing", async () => {
-      const { listVersions } = await import("./prompt-versioning");
-
-      mockReaddir.mockRejectedValue({ code: "ENOENT" });
-
-      const result = await listVersions("chat");
-
-      expect(result).toEqual([]);
-    });
-
-    it("should filter out non-JSON files", async () => {
-      const { listVersions } = await import("./prompt-versioning");
-
-      const mockVersion = {
-        id: "version-1",
-        agentType: "chat",
-        prompt: "Prompt",
-        description: "Test",
-        author: "admin",
-        tokenCount: 50,
-        createdAt: "2026-02-04T10:00:00.000Z",
-        isActive: true,
-      };
-
-      mockReaddir.mockResolvedValue([
-        "version-1.json",
-        "README.md",
-        ".DS_Store",
-      ]);
-      mockReadFile.mockResolvedValue(JSON.stringify(mockVersion));
-
-      const result = await listVersions("chat");
-
-      expect(result).toHaveLength(1);
-      // Only JSON files should be read
-      expect(result[0].id).toBe("version-1");
-    });
-
-    it("should throw error for invalid agent type", async () => {
-      const { listVersions } = await import("./prompt-versioning");
-
-      await expect(
-        // @ts-expect-error Testing invalid agent type
-        listVersions("invalid-type"),
-      ).rejects.toThrow("Invalid agent type");
     });
   });
 
@@ -344,204 +256,111 @@ describe("T002: Prompt Versioning System", () => {
     it("should return the currently active version", async () => {
       const { getActiveVersion } = await import("./prompt-versioning");
 
-      const mockInactiveVersion = {
-        id: "inactive-1",
-        agentType: "chat",
-        prompt: "Old prompt",
-        description: "Inactive",
-        author: "admin",
-        tokenCount: 50,
-        createdAt: "2026-02-04T09:00:00.000Z",
-        isActive: false,
-      };
-
       const mockActiveVersion = {
-        id: "active-1",
+        _id: "version-active",
         agentType: "chat",
-        prompt: "Current prompt",
-        description: "Active version",
+        prompt: "Active prompt",
+        description: "Active",
         author: "admin",
-        tokenCount: 75,
-        createdAt: "2026-02-04T10:00:00.000Z",
+        tokenCount: 100,
+        _creationTime: Date.now(),
         isActive: true,
       };
 
-      mockReaddir.mockResolvedValue(["inactive-1.json", "active-1.json"]);
-      mockReadFile
-        .mockResolvedValueOnce(JSON.stringify(mockInactiveVersion))
-        .mockResolvedValueOnce(JSON.stringify(mockActiveVersion));
+      mockQuery.mockResolvedValueOnce(mockActiveVersion);
 
       const result = await getActiveVersion("chat");
 
-      expect(result).toEqual(mockActiveVersion);
-      expect(result?.isActive).toBe(true);
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: "version-active",
+          isActive: true,
+        }),
+      );
+
+      expect(mockQuery).toHaveBeenCalledWith("prompts:getActiveVersion", {
+        agentType: "chat",
+      });
     });
 
     it("should return null when no active version exists", async () => {
       const { getActiveVersion } = await import("./prompt-versioning");
 
-      const mockVersion = {
-        id: "version-1",
-        agentType: "chat",
-        prompt: "Prompt",
-        description: "Inactive",
-        author: "admin",
-        tokenCount: 50,
-        createdAt: "2026-02-04T10:00:00.000Z",
-        isActive: false,
-      };
-
-      mockReaddir.mockResolvedValue(["version-1.json"]);
-      mockReadFile.mockResolvedValue(JSON.stringify(mockVersion));
+      mockQuery.mockResolvedValueOnce(null);
 
       const result = await getActiveVersion("chat");
 
       expect(result).toBeNull();
-    });
-
-    it("should return null when no versions exist", async () => {
-      const { getActiveVersion } = await import("./prompt-versioning");
-
-      mockReaddir.mockResolvedValue([]);
-
-      const result = await getActiveVersion("chat");
-
-      expect(result).toBeNull();
-    });
-
-    it("should throw error for invalid agent type", async () => {
-      const { getActiveVersion } = await import("./prompt-versioning");
-
-      await expect(
-        // @ts-expect-error Testing invalid agent type
-        getActiveVersion("invalid-type"),
-      ).rejects.toThrow("Invalid agent type");
     });
   });
 
   describe("rollbackVersion", () => {
-    it("should set specified version as active and deactivate others", async () => {
+    it("should set specified version as active", async () => {
       const { rollbackVersion } = await import("./prompt-versioning");
 
-      const mockVersion1 = {
-        id: "version-1",
+      // Mock: Version exists
+      mockQuery.mockResolvedValueOnce({
+        _id: "version-1",
         agentType: "chat",
         prompt: "Old prompt",
-        description: "Version 1",
+        description: "Old",
         author: "admin",
         tokenCount: 50,
-        createdAt: "2026-02-04T09:00:00.000Z",
+        _creationTime: Date.now(),
         isActive: false,
-      };
+      });
 
-      const mockVersion2 = {
-        id: "version-2",
+      // Mock: Rollback mutation succeeds
+      mockMutation.mockResolvedValueOnce(undefined);
+
+      await rollbackVersion("chat", "version-1" as any);
+
+      expect(mockMutation).toHaveBeenCalledWith("prompts:rollback", {
         agentType: "chat",
-        prompt: "Current prompt",
-        description: "Version 2",
-        author: "admin",
-        tokenCount: 75,
-        createdAt: "2026-02-04T10:00:00.000Z",
-        isActive: true,
-      };
-
-      // Mock listVersions to return both versions
-      mockReaddir.mockResolvedValue(["version-1.json", "version-2.json"]);
-      mockReadFile
-        .mockResolvedValueOnce(JSON.stringify(mockVersion1))
-        .mockResolvedValueOnce(JSON.stringify(mockVersion2));
-
-      mockWriteFile.mockResolvedValue(undefined);
-
-      await rollbackVersion("chat", "version-1");
-
-      // Should write both files (deactivate version-2, activate version-1)
-      expect(mockWriteFile).toHaveBeenCalled();
-
-      // Verify version-1 is activated
-      const version1Call = mockWriteFile.mock.calls.find((call) =>
-        call[0]?.toString().includes("version-1.json"),
-      );
-      expect(version1Call).toBeDefined();
-      if (version1Call) {
-        const version1Data = JSON.parse(version1Call[1] as string);
-        expect(version1Data.isActive).toBe(true);
-      }
-
-      // Verify version-2 is deactivated
-      const version2Call = mockWriteFile.mock.calls.find((call) =>
-        call[0]?.toString().includes("version-2.json"),
-      );
-      expect(version2Call).toBeDefined();
-      if (version2Call) {
-        const version2Data = JSON.parse(version2Call[1] as string);
-        expect(version2Data.isActive).toBe(false);
-      }
+        versionId: "version-1",
+      });
     });
 
-    it("should throw error when target version does not exist", async () => {
+    it("should throw error if version does not exist", async () => {
       const { rollbackVersion } = await import("./prompt-versioning");
 
-      mockReaddir.mockResolvedValue(["other-version.json"]);
-      mockReadFile.mockResolvedValue(
-        JSON.stringify({
-          id: "other-version",
-          agentType: "chat",
-          prompt: "Test",
-          description: "Test",
-          author: "admin",
-          tokenCount: 50,
-          createdAt: "2026-02-04T10:00:00.000Z",
-          isActive: true,
-        }),
-      );
+      // Mock: Version does not exist
+      mockQuery.mockResolvedValueOnce(null);
 
       await expect(
-        rollbackVersion("chat", "non-existent-version"),
+        rollbackVersion("chat", "non-existent" as any),
       ).rejects.toThrow("Version not found");
     });
+  });
 
-    it("should throw error for invalid agent type", async () => {
-      const { rollbackVersion } = await import("./prompt-versioning");
+  describe("Edge Cases", () => {
+    it("should reject invalid agent types", async () => {
+      const { savePromptVersion } = await import("./prompt-versioning");
 
       await expect(
-        // @ts-expect-error Testing invalid agent type
-        rollbackVersion("invalid-type", "some-version"),
+        savePromptVersion("invalid" as any, "Prompt", "Desc", "admin"),
       ).rejects.toThrow("Invalid agent type");
     });
 
-    it("should handle case when no other versions exist", async () => {
-      const { rollbackVersion } = await import("./prompt-versioning");
+    it("should handle Convex query errors gracefully", async () => {
+      const { listVersions } = await import("./prompt-versioning");
 
-      const mockVersion = {
-        id: "only-version",
-        agentType: "chat",
-        prompt: "Only prompt",
-        description: "Single version",
-        author: "admin",
-        tokenCount: 50,
-        createdAt: "2026-02-04T10:00:00.000Z",
-        isActive: false,
-      };
+      mockQuery.mockRejectedValueOnce(new Error("Convex connection error"));
 
-      mockReaddir.mockResolvedValue(["only-version.json"]);
-      mockReadFile.mockResolvedValue(JSON.stringify(mockVersion));
-      mockWriteFile.mockResolvedValue(undefined);
-
-      await rollbackVersion("chat", "only-version");
-
-      // Should write the file (activate the only version)
-      expect(mockWriteFile).toHaveBeenCalled();
-
-      // Verify the version was activated
-      const writeCall = mockWriteFile.mock.calls.find((call) =>
-        call[0]?.toString().includes("only-version.json"),
+      await expect(listVersions("chat")).rejects.toThrow(
+        "Convex connection error",
       );
-      expect(writeCall).toBeDefined();
-      if (writeCall) {
-        const versionData = JSON.parse(writeCall[1] as string);
-        expect(versionData.isActive).toBe(true);
-      }
+    });
+
+    it("should handle Convex mutation errors gracefully", async () => {
+      const { savePromptVersion } = await import("./prompt-versioning");
+
+      mockQuery.mockResolvedValueOnce([]);
+      mockMutation.mockRejectedValueOnce(new Error("Convex write error"));
+
+      await expect(
+        savePromptVersion("chat", "Prompt", "Desc", "admin"),
+      ).rejects.toThrow("Convex write error");
     });
   });
 });

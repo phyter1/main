@@ -76,7 +76,21 @@ mock.module("ai", () => ({
 }));
 
 // Mock the prompt versioning system
-const mockGetActiveVersion = mock(() => null);
+const mockGetActiveVersion = mock(() =>
+  Promise.resolve({
+    _id: "version-456" as any,
+    id: "version-456",
+    agentType: "fit-assessment" as const,
+    prompt:
+      "You are a job fit assessment AI. Analyze job descriptions and provide honest assessments.",
+    description: "Default test prompt",
+    author: "test",
+    tokenCount: 100,
+    _creationTime: Date.now(),
+    createdAt: new Date().toISOString(),
+    isActive: true,
+  }),
+);
 
 mock.module("@/lib/prompt-versioning", () => ({
   getActiveVersion: mockGetActiveVersion,
@@ -88,7 +102,21 @@ describe("T006: Job Fit Assessment API Route", () => {
   beforeEach(() => {
     // Reset mock state before each test
     mockGetActiveVersion.mockClear();
-    mockGetActiveVersion.mockReturnValue(null);
+    mockGetActiveVersion.mockReturnValue(
+      Promise.resolve({
+        _id: "version-456" as any,
+        id: "version-456",
+        agentType: "fit-assessment" as const,
+        prompt:
+          "You are a job fit assessment AI. Analyze job descriptions and provide honest assessments.",
+        description: "Default test prompt",
+        author: "test",
+        tokenCount: 100,
+        _creationTime: Date.now(),
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      }),
+    );
   });
 
   describe("T012: Prompt Loading", () => {
@@ -138,7 +166,7 @@ describe("T006: Job Fit Assessment API Route", () => {
       expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
     });
 
-    it("should fall back to default prompt when no active version", async () => {
+    it("should return error when no active version exists", async () => {
       // Mock no active version
       mockGetActiveVersion.mockReturnValue(Promise.resolve(null));
 
@@ -169,12 +197,17 @@ describe("T006: Job Fit Assessment API Route", () => {
 
       const response = await POST(request);
 
-      // Should still work with default prompt
-      expect(response.status).toBe(200);
+      // Should return error when no active prompt exists
+      expect(response.status).toBe(500);
+
+      const data = await response.json();
+      expect(data.error).toBeDefined();
+      expect(data.error).toContain("Failed to process");
+
       expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
     });
 
-    it("should fall back to default prompt when version loading fails", async () => {
+    it("should return error when version loading fails", async () => {
       // Mock error during version loading
       mockGetActiveVersion.mockImplementation(() => {
         throw new Error("Failed to load prompt version");
@@ -207,8 +240,12 @@ describe("T006: Job Fit Assessment API Route", () => {
 
       const response = await POST(request);
 
-      // Should still work with default prompt fallback
-      expect(response.status).toBe(200);
+      // Should return error when version loading fails
+      expect(response.status).toBe(500);
+
+      const data = await response.json();
+      expect(data.error).toBeDefined();
+
       expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
     });
   });

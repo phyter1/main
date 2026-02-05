@@ -93,8 +93,22 @@ describe("T005: Chat API Route with Streaming", () => {
       () => "# Test User\n\nTest context",
     );
 
-    // Reset getActiveVersion to return null by default
-    mockGetActiveVersion.mockImplementation(() => Promise.resolve(null));
+    // Reset getActiveVersion to return a valid active version by default
+    mockGetActiveVersion.mockImplementation(() =>
+      Promise.resolve({
+        _id: "version-123" as any,
+        id: "version-123",
+        agentType: "chat" as const,
+        prompt:
+          "You are a helpful AI assistant. Use the provided resume context to answer questions accurately.",
+        description: "Default test prompt",
+        author: "test",
+        tokenCount: 100,
+        _creationTime: Date.now(),
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      }),
+    );
 
     // Dynamic import to get fresh module with mocks
     const module = await import("./route");
@@ -436,7 +450,7 @@ describe("T005: Chat API Route with Streaming", () => {
       expect(callArgs.system).toContain("Custom system prompt for testing");
     });
 
-    it("should fall back to default prompt when no active version", async () => {
+    it("should return error when no active version exists", async () => {
       // Mock getActiveVersion to return null (no active version)
       mockGetActiveVersion.mockImplementationOnce(() => Promise.resolve(null));
 
@@ -448,7 +462,14 @@ describe("T005: Chat API Route with Streaming", () => {
         body: JSON.stringify({ messages }),
       });
 
-      await POST(request);
+      const response = await POST(request);
+
+      // Should return 500 error when no active prompt
+      expect(response.status).toBe(500);
+
+      const data = await response.json();
+      expect(data.error).toBeDefined();
+      expect(data.error).toContain("No active chat prompt");
 
       // Verify getActiveVersion was called
       expect(mockGetActiveVersion).toHaveBeenCalledWith("chat");
@@ -461,7 +482,7 @@ describe("T005: Chat API Route with Streaming", () => {
       expect(callArgs.system).toContain("KEY FACTS");
     });
 
-    it("should fall back to default prompt when version loading fails", async () => {
+    it("should return error when version loading fails", async () => {
       // Mock getActiveVersion to throw an error
       mockGetActiveVersion.mockImplementationOnce(() =>
         Promise.reject(new Error("Failed to load version")),
@@ -475,7 +496,13 @@ describe("T005: Chat API Route with Streaming", () => {
         body: JSON.stringify({ messages }),
       });
 
-      await POST(request);
+      const response = await POST(request);
+
+      // Should return 500 error when version loading fails
+      expect(response.status).toBe(500);
+
+      const data = await response.json();
+      expect(data.error).toBeDefined();
 
       // Verify getActiveVersion was called
       expect(mockGetActiveVersion).toHaveBeenCalledWith("chat");
