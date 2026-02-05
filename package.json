@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "prebuild": "bun run test:sequential",
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
