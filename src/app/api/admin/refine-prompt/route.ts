@@ -91,11 +91,7 @@ function getSecondsUntilReset(ip: string): number {
  * Request validation schema
  */
 const RequestSchema = z.object({
-  agentType: z.enum(["chat", "fit-assessment"], {
-    errorMap: () => ({
-      message: "agentType must be 'chat' or 'fit-assessment'",
-    }),
-  }),
+  agentType: z.enum(["chat", "fit-assessment"]),
   currentPrompt: z.string().optional(),
   refinementRequest: z
     .string()
