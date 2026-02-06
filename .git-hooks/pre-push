@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+
+# Pre-push hook for test suite validation
+# Runs full test suite to ensure no failing tests are pushed
+
+echo "Running pre-push checks..."
+
+# Run full test suite sequentially
+# This ensures all tests run in the same order as CI/CD
+bun run test:sequential
+
+# Capture the exit code
+TEST_EXIT_CODE=$?
+
+# Check if tests passed
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+  echo ""
+  echo "❌ Pre-push checks failed!"
+  echo "Please fix the failing tests above before pushing."
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "✅ All pre-push checks passed!"
+echo ""
+exit 0

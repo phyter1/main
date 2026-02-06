@@ -99,6 +99,134 @@ src/
 
 Always use `bun lint` and `bun format` (not `npm run lint` or other package managers).
 
+### Git Hooks
+
+This project uses git hooks to enforce code quality and testing standards automatically. These hooks are the guardrails that prevent shortcuts from making it into the codebase.
+
+#### What's Installed
+
+**Pre-commit Hook** (`.git-hooks/pre-commit`)
+- Runs `lint-staged` to check only staged files
+- Executes Biome lint and format on `*.{ts,tsx,js,jsx}` files
+- Automatically fixes auto-fixable issues
+- Prevents commit if unfixable issues remain
+
+**Pre-push Hook** (`.git-hooks/pre-push`)
+- Runs full test suite via `bun test`
+- Validates all tests pass before code reaches remote
+- Catches test failures before they break CI/CD
+- Enforces the "Green" phase of TDD before sharing code
+
+**Automatic Installation**
+- Hooks install automatically on `bun install` via `postinstall` script
+- Uses `simple-git-hooks` for lightweight, zero-dependency hook management
+- New team members get hooks automatically when cloning and installing
+
+#### How They Enforce "No Shortcuts"
+
+The hooks are your pair programmer who won't let you cut corners:
+
+**Preventing Common Shortcuts:**
+- "I'll fix the lint errors later" → Pre-commit catches it now
+- "I'll format it before the PR" → Pre-commit formats it now
+- "I'll add tests after I see if this works" → Pre-push requires tests to pass
+- "Nobody will notice this broken test" → Pre-push blocks the push
+- "Moving too fast for quality checks" → Hooks slow you down (intentionally)
+
+**Supporting TDD Workflow:**
+1. **Red**: Write failing test → Can still commit (test can fail locally)
+2. **Green**: Make test pass → Pre-push validates this before sharing
+3. **Refactor**: Clean up code → Pre-commit ensures clean formatting
+
+The hooks don't prevent you from having failing tests locally (that's part of TDD), but they do prevent you from pushing code that would break the build for others.
+
+#### Using --no-verify: True Emergencies Only
+
+The `--no-verify` flag exists. Use it extremely rarely.
+
+**Acceptable Use Cases (Document in Commit Message):**
+```bash
+# Production is down, hotfix needed immediately, will fix tests in follow-up
+git commit --no-verify -m "hotfix: patch critical security vulnerability
+
+Bypassing pre-commit due to production emergency.
+Follow-up PR #123 will address test failures."
+
+# Hook itself is broken and blocking all commits
+git commit --no-verify -m "fix: repair broken pre-commit hook
+
+Hook was incorrectly failing on valid code.
+Bypassing to fix the hook itself."
+```
+
+**NEVER Use --no-verify For:**
+- "The lint errors are annoying" → Fix the errors or update Biome config
+- "I don't have time for tests right now" → You have time, you're choosing not to
+- "It's just a small change" → Small changes need quality too
+- "I'll fix it in the next commit" → Fix it in this commit
+- "The tests are flaky" → Fix the flaky tests, don't bypass them
+
+**When You Reach for --no-verify, Ask:**
+1. Is production actually down right now?
+2. Have I documented why I'm bypassing in the commit message?
+3. Have I created a follow-up issue/PR to fix what I'm bypassing?
+4. Would I be okay explaining this to the team in a retrospective?
+
+If you can't answer "yes" to all four, you don't need `--no-verify`.
+
+#### Philosophy: Hooks as Guardrails, Not Gatekeepers
+
+These hooks exist to make your life easier, not harder:
+
+**What They Prevent:**
+- Embarrassing "oops, forgot to lint" commits
+- Pushing broken code that fails CI
+- Context-switching to fix issues discovered in CI
+- Breaking the build for other developers
+- Accumulating technical debt from "I'll fix it later"
+
+**What They Don't Prevent:**
+- Committing work-in-progress (tests can fail locally)
+- Experimenting with new approaches
+- Rapid iteration during development
+- The creative problem-solving process
+
+Think of hooks as the spell-checker in your editor - mildly annoying when they catch something, but you're glad they did before someone else saw it.
+
+#### Troubleshooting
+
+**Hook doesn't run:**
+```bash
+# Reinstall hooks
+bun run postinstall
+
+# Verify hooks are installed
+ls -la .git/hooks/pre-commit .git/hooks/pre-push
+```
+
+**Hook fails on valid code:**
+```bash
+# Check what's failing
+bunx lint-staged  # For pre-commit issues
+bun test         # For pre-push issues
+
+# Fix the underlying issue, don't bypass the hook
+```
+
+**Hook is too slow:**
+- Pre-commit only checks staged files (fast by design)
+- Pre-push runs all tests (intentionally thorough)
+- If pre-push is slow, optimize your tests, don't bypass the hook
+
+**Need to bypass for legitimate reason:**
+```bash
+# Document why in the commit message
+git commit --no-verify -m "type: description
+
+Detailed explanation of why --no-verify is necessary.
+Link to follow-up issue/PR to address what's bypassed."
+```
+
 ## Next.js Configuration
 
 - React Compiler enabled (`reactCompiler: true`)
