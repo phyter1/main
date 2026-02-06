@@ -304,6 +304,259 @@ Edit `src/data/projects.ts` to add new projects:
 - Theme variables: CSS custom properties in `globals.css`
 - Tailwind config: Uses Tailwind CSS 4 with postcss plugin
 
+## 🛡️ Git Hooks
+
+This project uses automated git hooks to enforce code quality gates before commits and pushes, aligning with the "No Shortcuts" development philosophy. Git hooks are scripts that run automatically at specific points in the git workflow, helping maintain code quality and prevent broken code from entering the repository.
+
+### What Are Git Hooks?
+
+Git hooks are automated quality checks that run when you perform git operations:
+
+- **Pre-commit hook**: Runs before creating a commit (checks code quality)
+- **Pre-push hook**: Runs before pushing to remote (validates tests)
+
+These hooks are automatically installed when you run `bun install` via the `postinstall` script.
+
+### Pre-Commit Hook
+
+**What it checks:**
+- **Biome lint**: Checks for code quality issues, unused variables, and potential bugs
+- **Biome format**: Ensures consistent code formatting (2-space indentation, proper spacing)
+
+**How it works:**
+- Only checks **staged files** using `lint-staged` for fast execution
+- Automatically fixes auto-fixable issues (formatting, import organization)
+- Blocks commit if unfixable issues are found
+- Runs: `bunx lint-staged`
+
+**Example output:**
+```bash
+Running pre-commit checks...
+✔ Preparing lint-staged...
+✔ Running tasks for staged files...
+✔ Applying modifications...
+✔ Cleaning up...
+
+✅ All pre-commit checks passed!
+```
+
+**On failure:**
+```bash
+❌ Pre-commit checks failed!
+Please fix the issues above before committing.
+
+# Fix the issues shown in the output, then try again
+```
+
+### Pre-Push Hook
+
+**What it checks:**
+- **Full test suite**: Runs all tests to ensure nothing is broken
+- Validates all unit tests, integration tests, and component tests
+- Blocks push if any tests fail
+
+**How it works:**
+- Runs complete test suite via `bun test`
+- Ensures no failing tests reach the remote repository
+- Prevents breaking changes from being shared with the team
+
+**Example output:**
+```bash
+Running pre-push checks...
+
+bun test v1.0.0
+
+✓ src/lib/utils.test.ts > cn > combines class names
+✓ src/lib/utils.test.ts > cn > handles conditional classes
+... (all tests)
+
+✅ All pre-push checks passed!
+```
+
+**On failure:**
+```bash
+❌ Pre-push checks failed!
+Please fix the failing tests above before pushing.
+
+# Fix the failing tests, then try again
+```
+
+### Automatic Installation
+
+Git hooks are automatically installed when you run:
+
+```bash
+bun install
+```
+
+The `postinstall` script runs `simple-git-hooks` which:
+1. Copies hook scripts from `.git-hooks/` to `.git/hooks/`
+2. Makes them executable
+3. Configures them to run on commit and push
+
+**First-time setup:**
+```bash
+# Clone the repository
+git clone https://github.com/phyter1/main.git
+cd main
+
+# Install dependencies (automatically installs hooks)
+bun install
+
+# Hooks are now active and will run on commit/push
+```
+
+### Bypassing Hooks (Use Sparingly)
+
+You can bypass git hooks using the `--no-verify` flag:
+
+```bash
+# Skip pre-commit hook
+git commit -m "message" --no-verify
+
+# Skip pre-push hook
+git push --no-verify
+```
+
+**⚠️ Warning: Use this flag sparingly and only when necessary**
+
+Bypassing hooks defeats the purpose of automated quality gates and can lead to:
+- Broken code in the repository
+- Failing tests on main branch
+- Inconsistent code formatting
+- Technical debt accumulation
+
+**Acceptable use cases:**
+- Emergency hotfix where hooks are blocking critical fix
+- Temporary work-in-progress commits on feature branch
+- Known false positive in linting rules (file a bug after)
+
+**Not acceptable use cases:**
+- "I'll fix it later" (fix it now)
+- "Moving too fast for tests" (slow down, write tests)
+- "Linter is annoying" (linter is right, fix your code)
+
+Following the "No Shortcuts" philosophy, fix the issues instead of bypassing the checks.
+
+### Troubleshooting
+
+#### Hooks Not Running
+
+**Problem:** Committing without hooks executing
+
+**Solutions:**
+1. Verify hooks are installed:
+   ```bash
+   ls -la .git/hooks/pre-commit .git/hooks/pre-push
+   # Should show executable files
+   ```
+
+2. Reinstall hooks manually:
+   ```bash
+   bunx simple-git-hooks
+   ```
+
+3. Check if hooks are executable:
+   ```bash
+   chmod +x .git/hooks/pre-commit .git/hooks/pre-push
+   ```
+
+#### Permission Errors
+
+**Problem:** `permission denied` when running hooks
+
+**Solution:**
+```bash
+# Make hook scripts executable
+chmod +x .git-hooks/pre-commit .git-hooks/pre-push
+
+# Reinstall hooks
+bunx simple-git-hooks
+```
+
+#### Lint-Staged Errors
+
+**Problem:** `lint-staged` command not found
+
+**Solutions:**
+1. Ensure `lint-staged` is installed:
+   ```bash
+   bun install
+   ```
+
+2. Run manually to diagnose:
+   ```bash
+   bunx lint-staged
+   ```
+
+#### Test Failures on Push
+
+**Problem:** Pre-push hook fails with test errors
+
+**Solutions:**
+1. Run tests locally to see failures:
+   ```bash
+   bun test
+   ```
+
+2. Fix failing tests before pushing
+
+3. Ensure test environment is configured (see Testing section)
+
+4. If tests pass locally but fail in hook:
+   - Check for environment variable issues
+   - Ensure `.env.test` is present
+   - Clear test cache: `rm -rf node_modules/.cache`
+
+#### Skipping Hooks Temporarily
+
+**Problem:** Need to bypass hooks for legitimate reason
+
+**Solution:**
+```bash
+# Commit with hook bypass (use sparingly)
+git commit -m "WIP: feature in progress" --no-verify
+
+# Push with hook bypass (use very sparingly)
+git push --no-verify
+```
+
+**Remember:** Document why you bypassed hooks and fix issues ASAP.
+
+### Configuration
+
+Hook configuration is defined in `package.json`:
+
+```json
+{
+  "simple-git-hooks": {
+    "pre-commit": ".git-hooks/pre-commit",
+    "pre-push": ".git-hooks/pre-push"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "biome check --write --unsafe",
+      "biome format --write"
+    ]
+  }
+}
+```
+
+**Hook scripts location:** `.git-hooks/` directory
+**Installed hooks location:** `.git/hooks/` directory (auto-generated)
+
+### Philosophy: No Shortcuts
+
+Git hooks embody the "No Shortcuts" development philosophy:
+
+- **Quality gates prevent mistakes:** Catch issues before they become expensive
+- **Automated enforcement:** Humans forget, computers don't
+- **Fast feedback:** Find issues in seconds, not hours
+- **Shared standards:** Everyone follows the same quality bar
+- **Build discipline:** Good habits compound over time
+
+Don't fight the hooks. Embrace them. They're saving you from yourself.
+
 ## 📄 License
 
 This project is private and proprietary. All rights reserved.
