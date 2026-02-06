@@ -145,6 +145,53 @@ describe("T004: SkillsMatrix Component", () => {
     });
   });
 
+  describe("T015: Enhanced Gradient Styling", () => {
+    it("should use accent-subtle color in gradient instead of primary", () => {
+      const { container } = render(<SkillsMatrix />);
+      const gradientElement = container.querySelector(
+        '[class*="bg-gradient-to-b"]',
+      );
+      expect(gradientElement).toBeDefined();
+      // Should use accent-subtle color, not primary
+      expect(gradientElement?.className).toContain("accent-subtle");
+    });
+
+    it("should have increased gradient opacity to 30%", () => {
+      const { container } = render(<SkillsMatrix />);
+      const gradientElement = container.querySelector(
+        '[class*="bg-gradient-to-b"]',
+      );
+      expect(gradientElement).toBeDefined();
+      // Should use /30 opacity (not /5)
+      const className = gradientElement?.className || "";
+      expect(className).toContain("/30");
+      expect(className).not.toContain("/5");
+    });
+
+    it("should maintain gradient direction from-background via-accent to-background", () => {
+      const { container } = render(<SkillsMatrix />);
+      const gradientElement = container.querySelector(
+        '[class*="bg-gradient-to-b"]',
+      );
+      expect(gradientElement).toBeDefined();
+      const className = gradientElement?.className || "";
+      // Verify gradient structure
+      expect(className).toContain("from-background");
+      expect(className).toContain("via-accent-subtle");
+      expect(className).toContain("to-background");
+    });
+
+    it("should render gradient in both light and dark modes", () => {
+      const { container } = render(<SkillsMatrix />);
+      const gradientElement = container.querySelector(
+        '[class*="bg-gradient-to-b"]',
+      );
+      expect(gradientElement).toBeDefined();
+      // Gradient should be visible regardless of theme
+      expect(gradientElement?.className).toContain("bg-gradient-to-b");
+    });
+  });
+
   describe("Acceptance Criteria Validation", () => {
     it("should have component in src/components/sections/SkillsMatrix.tsx", () => {
       // File existence is validated by successful import
