@@ -120,20 +120,20 @@ describe("CursorGlow Component - T005", () => {
       expect(mockObserver.disconnect).toHaveBeenCalled();
     });
 
-    it("should use theme-aware colors via inline style computation", () => {
-      // Test light mode color computation
+    it("should use theme-aware colors via design system accent", () => {
+      // Test light mode color computation using accent with opacity
       document.documentElement.classList.remove("dark");
-      const lightColor = document.documentElement.classList.contains("dark")
-        ? "rgba(0, 245, 212, 0.08)"
-        : "rgba(0, 245, 212, 0.06)";
-      expect(lightColor).toBe("rgba(0, 245, 212, 0.06)");
+      const lightOpacity = document.documentElement.classList.contains("dark")
+        ? "0.08"
+        : "0.06";
+      expect(lightOpacity).toBe("0.06");
 
-      // Test dark mode color computation
+      // Test dark mode color computation using accent with opacity
       document.documentElement.classList.add("dark");
-      const darkColor = document.documentElement.classList.contains("dark")
-        ? "rgba(0, 245, 212, 0.08)"
-        : "rgba(0, 245, 212, 0.06)";
-      expect(darkColor).toBe("rgba(0, 245, 212, 0.08)");
+      const darkOpacity = document.documentElement.classList.contains("dark")
+        ? "0.08"
+        : "0.06";
+      expect(darkOpacity).toBe("0.08");
     });
 
     it("should not have hardcoded default color in prop definition", async () => {
@@ -162,9 +162,10 @@ describe("CursorGlow Component - T005", () => {
       expect(sourceCode).toContain("MutationObserver");
       expect(sourceCode).toContain('attributeFilter: ["class"]');
 
-      // Verify theme-aware color logic
-      expect(sourceCode).toContain("rgba(0, 245, 212, 0.08)"); // Dark mode
-      expect(sourceCode).toContain("rgba(0, 245, 212, 0.06)"); // Light mode
+      // Verify theme-aware color logic using design system accent
+      expect(sourceCode).toContain("var(--accent)"); // Uses accent color
+      expect(sourceCode).toContain("0.08"); // Dark mode opacity
+      expect(sourceCode).toContain("0.06"); // Light mode opacity
 
       // Verify color prop takes precedence
       expect(sourceCode).toContain("color ||");
