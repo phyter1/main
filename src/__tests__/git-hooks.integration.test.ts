@@ -14,6 +14,12 @@ import { join } from "node:path";
  *
  * NOTE: These are integration tests that interact with the actual git repository
  * and hooks. They run actual git commands and verify hook behavior.
+ *
+ * CI/CD Compatibility:
+ * - Tests work in GitHub Actions and other CI environments
+ * - Configures git user.name and user.email if not set
+ * - Creates isolated test branch to avoid conflicts
+ * - Cleans up all changes after test completion
  */
 
 describe("Git Hooks Integration Tests", () => {
@@ -37,12 +43,14 @@ describe("Git Hooks Integration Tests", () => {
     }
 
     // Configure git user if not already configured (for CI environments)
+    // GitHub Actions and other CI systems may not have git user configured
     try {
       execSync("git config user.email", {
         cwd: projectRoot,
         encoding: "utf-8",
       });
     } catch {
+      // No git user configured, set one for testing
       execSync('git config user.email "test@example.com"', {
         cwd: projectRoot,
       });
