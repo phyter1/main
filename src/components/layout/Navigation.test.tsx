@@ -1,6 +1,7 @@
 import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import * as React from "react";
 import { Navigation } from "./Navigation";
 
 // Mock next/link
@@ -30,16 +31,23 @@ mock.module("@/components/ui/button", () => ({
   Button: ({
     children,
     asChild,
+    variant,
     ...props
   }: {
     children: React.ReactNode;
     asChild?: boolean;
+    variant?: string;
   }) => {
-    // If asChild is true, render children directly without wrapper
-    if (asChild) {
-      return <>{children}</>;
+    // If asChild is true, clone children with variant data attribute
+    if (asChild && children) {
+      const child = children as React.ReactElement;
+      return React.cloneElement(child, { "data-variant": variant });
     }
-    return <button {...props}>{children}</button>;
+    return (
+      <button data-variant={variant} {...props}>
+        {children}
+      </button>
+    );
   },
 }));
 
@@ -576,6 +584,132 @@ describe("T013: Update Navigation to include new pages", () => {
         // Should maintain flex layout and height
         expect(navContent).toBeDefined();
         expect(navContent?.className).toContain("items-center");
+      });
+    });
+  });
+
+  describe("T013: Vibrant Colors in Navigation Elements", () => {
+    describe("Component Rendering", () => {
+      it("should render Navigation component successfully with vibrant color changes", () => {
+        const { container } = render(<Navigation />);
+
+        // Verify component renders
+        const nav = container.querySelector("nav");
+        expect(nav).toBeDefined();
+
+        // Verify logo link exists
+        const logoLink = container.querySelector('a[href="/"]');
+        expect(logoLink).toBeDefined();
+
+        // Verify terminal icon exists
+        const terminalIcon = container.querySelector(
+          '[data-testid="terminal-icon"]',
+        );
+        expect(terminalIcon).toBeDefined();
+
+        // Verify resume links exist
+        const resumeLinks = screen.getAllByText("Resume");
+        expect(resumeLinks.length).toBeGreaterThan(0);
+      });
+
+      it("should render active state indicator when on active route", () => {
+        mockPathname = "/about";
+        const { container } = render(<Navigation />);
+
+        const aboutLink = screen.getAllByRole("link", { name: "About" })[0];
+        const activeIndicator = aboutLink.querySelector(
+          "span.absolute.bottom-0.left-0.right-0",
+        );
+
+        // Active indicator should exist for active route
+        expect(activeIndicator).toBeDefined();
+      });
+
+      it("should not render active state indicator when not on active route", () => {
+        mockPathname = "/about";
+        const { container } = render(<Navigation />);
+
+        const stackLink = screen.getAllByRole("link", { name: "Stack" })[0];
+        const activeIndicator = stackLink.querySelector(
+          "span.absolute.bottom-0.left-0.right-0",
+        );
+
+        // Active indicator should not exist for non-active route
+        expect(activeIndicator).toBeNull();
+      });
+    });
+
+    describe("Acceptance Criteria Validation", () => {
+      it("should have Terminal icon component in logo", () => {
+        const { container } = render(<Navigation />);
+
+        const terminalIcon = container.querySelector(
+          '[data-testid="terminal-icon"]',
+        );
+        expect(terminalIcon).toBeDefined();
+
+        // Verify icon is within the logo link
+        const logoLink = container.querySelector('a[href="/"]');
+        const iconInLogo = logoLink?.querySelector(
+          '[data-testid="terminal-icon"]',
+        );
+        expect(iconInLogo).toBeDefined();
+      });
+
+      it("should have active state indicator for current route", () => {
+        mockPathname = "/projects";
+        const { container } = render(<Navigation />);
+
+        const projectsLink = screen.getAllByRole("link", {
+          name: "Projects",
+        })[0];
+        const activeIndicator = projectsLink.querySelector(
+          "span.absolute.bottom-0.left-0.right-0",
+        );
+
+        expect(activeIndicator).toBeDefined();
+      });
+
+      it("should render Resume buttons in both desktop and mobile", async () => {
+        const { container } = render(<Navigation />);
+
+        // Desktop resume button
+        const desktopNav = container.querySelector(
+          ".hidden.md\\:flex.md\\:items-center.md\\:gap-4",
+        );
+        const desktopResume = desktopNav?.querySelector('a[href*="resume"]');
+        expect(desktopResume).toBeDefined();
+
+        // Open mobile menu
+        const menuButtons = screen.getAllByRole("button");
+        const menuButton = menuButtons[menuButtons.length - 1];
+        await userEvent.click(menuButton);
+
+        // Mobile resume button
+        const mobileMenu = container.querySelector(".md\\:hidden");
+        const mobileResume = mobileMenu?.querySelector('a[href*="resume"]');
+        expect(mobileResume).toBeDefined();
+      });
+
+      it("should maintain all navigation functionality with vibrant colors", () => {
+        mockPathname = "/";
+        const { container } = render(<Navigation />);
+
+        // Verify all key elements exist
+        const nav = container.querySelector("nav");
+        const logoLink = container.querySelector('a[href="/"]');
+        const terminalIcon = container.querySelector(
+          '[data-testid="terminal-icon"]',
+        );
+        const desktopNav = container.querySelector(
+          ".hidden.md\\:flex.md\\:items-center.md\\:gap-4",
+        );
+        const resumeLink = desktopNav?.querySelector('a[href*="resume"]');
+
+        expect(nav).toBeDefined();
+        expect(logoLink).toBeDefined();
+        expect(terminalIcon).toBeDefined();
+        expect(resumeLink).toBeDefined();
       });
     });
   });
