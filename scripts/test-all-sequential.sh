@@ -92,6 +92,7 @@ echo ""
 
 # Section Component Tests
 echo "📦 Section Component Tests"
+run_test "src/components/sections/AIFeatureCards.test.tsx" "AIFeatureCards"
 run_test "src/components/sections/ChatInterface.test.tsx" "ChatInterface"
 run_test "src/components/sections/Hero.test.tsx" "Hero"
 run_test "src/components/sections/JobFitAnalyzer.test.tsx" "JobFitAnalyzer"
