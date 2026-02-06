@@ -33,11 +33,19 @@ run_test() {
 
   if [ "$fail" -gt 0 ]; then
     echo "    ⚠️  $pass pass, $fail fail"
+    echo ""
+    echo "    📋 Full test output:"
+    echo "$output" | sed 's/^/    /'
+    echo ""
     failed_files+=("$label ($fail failed)")
   elif [ "$pass" -gt 0 ]; then
     echo "    ✅ $pass pass"
   else
     echo "    ❌ No tests found or error"
+    echo ""
+    echo "    📋 Full output:"
+    echo "$output" | sed 's/^/    /'
+    echo ""
     failed_files+=("$label (error)")
   fi
 }
