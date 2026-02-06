@@ -381,8 +381,8 @@ return 'test';
       const prePushHookPath = join(projectRoot, ".git-hooks", "pre-push");
       const hookContent = readFileSync(prePushHookPath, "utf-8");
 
-      // Verify hook runs test command
-      expect(hookContent).toContain("bun test");
+      // Verify hook runs test command (sequential for consistency with CI)
+      expect(hookContent).toContain("bun run test:sequential");
     });
 
     it.skipIf(skipTests)("should block push when tests fail", () => {
