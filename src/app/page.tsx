@@ -3,12 +3,9 @@
 import { useEffect } from "react";
 import { CursorGlow } from "@/components/effects/CursorGlow";
 import { GrainOverlay } from "@/components/effects/GrainOverlay";
-import { ScrollNavigation } from "@/components/navigation/ScrollNavigation";
 import { FeaturedProjects } from "@/components/sections/FeaturedProjects";
 import { Hero } from "@/components/sections/Hero";
 import { PrinciplesPreview } from "@/components/sections/PrinciplesPreview";
-
-const sections = ["hero", "featured-projects", "principles-preview"];
 
 export default function Home() {
   // Add scroll-snap to html element for homepage only
@@ -42,9 +39,6 @@ export default function Home() {
       <section id="principles-preview" className="snap-start">
         <PrinciplesPreview />
       </section>
-
-      {/* Scroll navigation FAB */}
-      <ScrollNavigation sections={sections} />
     </>
   );
 }

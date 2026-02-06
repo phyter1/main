@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ExternalLink, Github } from "lucide-react";
+import { ChevronDown, ExternalLink, Github } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -140,6 +140,31 @@ export function FeaturedProjects({ variants }: FeaturedProjectsProps) {
         <Button size="lg" variant="outline" asChild>
           <a href="/projects">View All Projects</a>
         </Button>
+      </div>
+
+      {/* Scroll indicator */}
+      <div className="mt-16 flex justify-center">
+        <button
+          onClick={() => {
+            const nextSection = document.getElementById("principles-preview");
+            nextSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+          aria-label="Scroll to principles preview"
+          className="cursor-pointer transition-opacity hover:opacity-70"
+        >
+          <motion.div
+            animate={{
+              y: reducedMotion ? 0 : [0, 10, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "easeInOut",
+            }}
+          >
+            <ChevronDown className="h-8 w-8 text-muted-foreground" />
+          </motion.div>
+        </button>
       </div>
     </motion.section>
   );
