@@ -91,6 +91,22 @@ export const getPostBySlug = query({
 });
 
 /**
+ * Get a single blog post by its ID
+ *
+ * Returns the full post data or null if not found.
+ * Used for admin edit pages to load post by ID.
+ */
+export const getPostById = query({
+  args: {
+    id: v.id("blogPosts"),
+  },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.id);
+    return post || null;
+  },
+});
+
+/**
  * Get featured published posts
  *
  * Returns all published posts marked as featured,

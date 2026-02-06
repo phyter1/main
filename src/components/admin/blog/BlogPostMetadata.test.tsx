@@ -11,7 +11,7 @@
  * - All fields properly controlled
  */
 
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock Convex hooks BEFORE any imports
 const mockUseQuery = mock(() => []);
@@ -64,10 +64,9 @@ mock.module("@/lib/blog-utils", () => ({
 }));
 
 // Now import the components AFTER all mocks are set up
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BlogPostMetadata } from "./BlogPostMetadata";
-import type { SEOMetadata } from "@/types/blog";
 
 describe("BlogPostMetadata", () => {
   const mockOnChange = mock(() => {});
@@ -373,9 +372,7 @@ describe("BlogPostMetadata", () => {
 
     it("should create new category and select it", async () => {
       const user = userEvent.setup();
-      const mockCreateCategory = mock(() =>
-        Promise.resolve("new-category-id"),
-      );
+      const mockCreateCategory = mock(() => Promise.resolve("new-category-id"));
       mockUseMutation.mockReturnValue(mockCreateCategory);
 
       render(
@@ -594,9 +591,7 @@ describe("BlogPostMetadata", () => {
         />,
       );
 
-      expect(
-        screen.queryByAltText(/cover image preview/i),
-      ).toBeNull();
+      expect(screen.queryByAltText(/cover image preview/i)).toBeNull();
       expect(screen.getByText(/no cover image/i)).toBeDefined();
     });
   });
@@ -620,7 +615,9 @@ describe("BlogPostMetadata", () => {
         />,
       );
 
-      const titleInput = screen.getByLabelText(/meta title/i) as HTMLInputElement;
+      const titleInput = screen.getByLabelText(
+        /meta title/i,
+      ) as HTMLInputElement;
       expect(titleInput.value).toBe("SEO Title");
 
       const descInput = screen.getByLabelText(

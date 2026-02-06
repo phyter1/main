@@ -13,19 +13,22 @@
  * - All fields properly controlled
  */
 
-import { useState, useId } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { X, Plus, Image as ImageIcon } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
+import { Image as ImageIcon, Plus, X } from "lucide-react";
 import Image from "next/image";
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
-import type { SEOMetadata } from "@/types/blog";
-import { generateSlug, validateSlug } from "@/lib/blog-utils";
+import { useId, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -33,14 +36,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { generateSlug, validateSlug } from "@/lib/blog-utils";
+import type { SEOMetadata } from "@/types/blog";
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 export interface BlogPostMetadataProps {
   title: string;
@@ -52,9 +52,7 @@ export interface BlogPostMetadataProps {
     coverImage?: string;
     seoMetadata: SEOMetadata;
   };
-  onChange: (
-    metadata: BlogPostMetadataProps["metadata"],
-  ) => void;
+  onChange: (metadata: BlogPostMetadataProps["metadata"]) => void;
 }
 
 export function BlogPostMetadata({
@@ -92,7 +90,7 @@ export function BlogPostMetadata({
 
   // Auto-generate slug from title
   const handleGenerateSlug = () => {
-    if (metadata.slug && metadata.slug.trim()) {
+    if (metadata.slug?.trim()) {
       // Show warning if slug already exists
       setShowSlugOverwriteWarning(true);
       return;
@@ -167,9 +165,7 @@ export function BlogPostMetadata({
     if (value.trim()) {
       // Filter existing tags for suggestions
       const suggestions = existingTags
-        .filter((tag) =>
-          tag.name.toLowerCase().includes(value.toLowerCase()),
-        )
+        .filter((tag) => tag.name.toLowerCase().includes(value.toLowerCase()))
         .map((tag) => tag.name)
         .slice(0, 5);
 
@@ -252,11 +248,7 @@ export function BlogPostMetadata({
               <p className="text-destructive text-sm mt-1">{slugError}</p>
             )}
           </div>
-          <Button
-            type="button"
-            onClick={handleGenerateSlug}
-            variant="outline"
-          >
+          <Button type="button" onClick={handleGenerateSlug} variant="outline">
             Generate
           </Button>
         </div>
@@ -503,7 +495,7 @@ export function BlogPostMetadata({
             maxLength={60}
           />
           <p className="text-muted-foreground text-xs">
-            {(metadata.seoMetadata.metaTitle?.length || 0)} / 60 characters
+            {metadata.seoMetadata.metaTitle?.length || 0} / 60 characters
             (recommended: 50-60)
           </p>
         </div>
@@ -514,9 +506,7 @@ export function BlogPostMetadata({
           <Textarea
             id={metaDescId}
             value={metadata.seoMetadata.metaDescription || ""}
-            onChange={(e) =>
-              handleSeoChange("metaDescription", e.target.value)
-            }
+            onChange={(e) => handleSeoChange("metaDescription", e.target.value)}
             placeholder="Brief description for search engines..."
             rows={3}
             maxLength={200}
