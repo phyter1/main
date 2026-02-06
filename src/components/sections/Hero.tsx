@@ -126,23 +126,32 @@ export function Hero() {
         {/* AI Feature Showcase */}
         <AIFeatureCards variants={itemVariants} />
 
-        {/* Scroll indicator */}
+        {/* Scroll indicator button */}
         <motion.div
           variants={itemVariants}
           className="absolute bottom-8 left-1/2 -translate-x-1/2"
         >
-          <motion.div
-            animate={{
-              y: reducedMotion ? 0 : [0, 10, 0],
+          <button
+            onClick={() => {
+              const nextSection = document.getElementById("featured-projects");
+              nextSection?.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
-            transition={{
-              duration: 2,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }}
+            aria-label="Scroll to featured projects"
+            className="cursor-pointer transition-opacity hover:opacity-70"
           >
-            <ChevronDown className="h-8 w-8 text-muted-foreground" />
-          </motion.div>
+            <motion.div
+              animate={{
+                y: reducedMotion ? 0 : [0, 10, 0],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
+              }}
+            >
+              <ChevronDown className="h-8 w-8 text-muted-foreground" />
+            </motion.div>
+          </button>
         </motion.div>
       </motion.div>
     </section>
