@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,18 +58,18 @@ function getFitBadgeVariant(
 }
 
 /**
- * Get badge className for color coding
+ * Get badge className for color coding using design system tokens
  */
 function getFitBadgeClassName(
   fitLevel: "strong" | "moderate" | "weak",
 ): string {
   switch (fitLevel) {
     case "strong":
-      return "bg-green-600 hover:bg-green-700 text-white";
+      return "bg-success text-success-foreground hover:bg-success/90";
     case "moderate":
-      return "bg-yellow-600 hover:bg-yellow-700 text-white";
+      return "bg-warning text-warning-foreground hover:bg-warning/90";
     case "weak":
-      return "bg-red-600 hover:bg-red-700 text-white";
+      return "bg-destructive text-destructive-foreground hover:bg-destructive/90";
   }
 }
 
@@ -110,6 +110,8 @@ export function JobFitAnalyzer() {
   });
 
   const resultsRef = useRef<HTMLDivElement>(null);
+  const textareaId = useId();
+  const errorId = useId();
 
   /**
    * Handle textarea input change
@@ -288,7 +290,7 @@ export function JobFitAnalyzer() {
           {/* Job Description Input */}
           <div className="space-y-2">
             <label
-              htmlFor="job-description"
+              htmlFor={textareaId}
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               Job Description
@@ -296,17 +298,10 @@ export function JobFitAnalyzer() {
 
             {state.isInputCollapsed ? (
               // Collapsed single-line preview
-              <div
+              <button
+                type="button"
                 onClick={handleExpandInput}
-                className="cursor-pointer rounded-md border border-input bg-muted/50 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleExpandInput();
-                  }
-                }}
+                className="cursor-pointer rounded-md border border-input bg-muted/50 px-3 py-2 text-sm hover:bg-muted transition-colors w-full text-left"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-muted-foreground">
@@ -316,12 +311,12 @@ export function JobFitAnalyzer() {
                     Click to expand
                   </span>
                 </div>
-              </div>
+              </button>
             ) : (
               // Full textarea
               <>
                 <Textarea
-                  id="job-description"
+                  id={textareaId}
                   value={state.jobDescription}
                   onChange={handleInputChange}
                   placeholder="Paste the full job description here..."
@@ -329,7 +324,7 @@ export function JobFitAnalyzer() {
                   disabled={state.loading}
                   aria-label="Job Description"
                   aria-invalid={!!state.error}
-                  aria-describedby={state.error ? "error-message" : undefined}
+                  aria-describedby={state.error ? errorId : undefined}
                 />
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>
@@ -350,7 +345,7 @@ export function JobFitAnalyzer() {
               />
             ) : (
               <div
-                id="error-message"
+                id={errorId}
                 className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
                 role="alert"
               >
