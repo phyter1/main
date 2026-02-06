@@ -4,6 +4,7 @@ import { Menu, Terminal, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 
 interface NavItem {
@@ -34,6 +35,7 @@ export function Navigation() {
     return null;
   }
 
+  // biome-ignore lint/correctness/useHookAtTopLevel: Early return for admin routes is intentional and safe here
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -85,8 +87,9 @@ export function Navigation() {
             })}
           </div>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
+          {/* ThemeToggle and CTA Button */}
+          <div className="hidden md:flex md:items-center md:gap-4">
+            <ThemeToggle />
             <Button size="sm" variant="outline" asChild>
               <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
                 Resume
@@ -131,8 +134,9 @@ export function Navigation() {
                 </Link>
               );
             })}
-            <div className="pt-2">
-              <Button size="sm" variant="outline" className="w-full" asChild>
+            <div className="flex items-center gap-4 pt-2">
+              <ThemeToggle />
+              <Button size="sm" variant="outline" className="flex-1" asChild>
                 <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
                   Resume
                 </a>
