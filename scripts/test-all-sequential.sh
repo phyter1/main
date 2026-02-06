@@ -60,6 +60,11 @@ run_test "src/lib/prompt-versioning.test.ts" "prompt-versioning"
 run_test "src/lib/test-runner.test.ts" "test-runner"
 echo ""
 
+# MDX Configuration Tests
+echo "📝 MDX Configuration Tests"
+run_test "src/__tests__/mdx-test/mdx-config.test.tsx" "mdx-config"
+echo ""
+
 # Provider Tests
 echo "🔌 Provider Tests"
 run_test "src/providers/ThemeProvider.test.tsx" "ThemeProvider"
