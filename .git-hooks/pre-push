@@ -7,7 +7,7 @@ echo "Running pre-push checks..."
 
 # Run full test suite sequentially
 # This ensures all tests run in the same order as CI/CD
-bun run test:sequential
+bun run test
 
 # Capture the exit code
 TEST_EXIT_CODE=$?
