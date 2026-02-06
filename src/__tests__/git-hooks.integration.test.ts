@@ -16,11 +16,34 @@ import { join } from "node:path";
  * and hooks. They run actual git commands and verify hook behavior.
  *
  * CI/CD Compatibility:
- * - Tests work in GitHub Actions and other CI environments
+ * - Tests automatically skip if git is not available
+ * - Tests skip if not in a git repository
  * - Configures git user.name and user.email if not set
  * - Creates isolated test branch to avoid conflicts
  * - Cleans up all changes after test completion
  */
+
+// Check if git is available before running any tests
+function isGitAvailable(): boolean {
+  try {
+    execSync("git --version", { stdio: "pipe" });
+    execSync("git rev-parse --git-dir", {
+      cwd: process.cwd(),
+      stdio: "pipe",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const skipTests = !isGitAvailable();
+
+if (skipTests) {
+  console.warn(
+    "⚠️  Git not available or not in a git repository - skipping git hooks integration tests",
+  );
+}
 
 describe("Git Hooks Integration Tests", () => {
   const projectRoot = process.cwd();
@@ -31,6 +54,7 @@ describe("Git Hooks Integration Tests", () => {
   let gitUserConfigured = false;
 
   beforeAll(() => {
+    if (skipTests) return;
     // Store original branch
     try {
       originalBranch = execSync("git branch --show-current", {
@@ -77,6 +101,7 @@ describe("Git Hooks Integration Tests", () => {
   });
 
   afterAll(() => {
+    if (skipTests) return;
     // Clean up test file if it exists
     if (existsSync(testFilePath)) {
       try {
@@ -107,49 +132,64 @@ describe("Git Hooks Integration Tests", () => {
   });
 
   describe("Hook Installation", () => {
-    it("should have pre-commit hook installed in .git/hooks", () => {
-      const preCommitPath = join(gitHooksDir, "pre-commit");
-      expect(existsSync(preCommitPath)).toBe(true);
-    });
+    it.skipIf(skipTests)(
+      "should have pre-commit hook installed in .git/hooks",
+      () => {
+        const preCommitPath = join(gitHooksDir, "pre-commit");
+        expect(existsSync(preCommitPath)).toBe(true);
+      },
+    );
 
-    it("should have pre-push hook installed in .git/hooks", () => {
-      const prePushPath = join(gitHooksDir, "pre-push");
-      expect(existsSync(prePushPath)).toBe(true);
-    });
+    it.skipIf(skipTests)(
+      "should have pre-push hook installed in .git/hooks",
+      () => {
+        const prePushPath = join(gitHooksDir, "pre-push");
+        expect(existsSync(prePushPath)).toBe(true);
+      },
+    );
 
-    it("should have executable permissions on pre-commit hook", () => {
-      const preCommitPath = join(gitHooksDir, "pre-commit");
-      const content = readFileSync(preCommitPath, "utf-8");
+    it.skipIf(skipTests)(
+      "should have executable permissions on pre-commit hook",
+      () => {
+        const preCommitPath = join(gitHooksDir, "pre-commit");
+        const content = readFileSync(preCommitPath, "utf-8");
 
-      // Verify it's a shell script (simple-git-hooks uses #!/bin/sh)
-      expect(content).toContain("#!/bin/sh");
+        // Verify it's a shell script (simple-git-hooks uses #!/bin/sh)
+        expect(content).toContain("#!/bin/sh");
 
-      // Verify content points to the correct hook location
-      expect(content).toContain(".git-hooks/pre-commit");
-    });
+        // Verify content points to the correct hook location
+        expect(content).toContain(".git-hooks/pre-commit");
+      },
+    );
 
-    it("should have executable permissions on pre-push hook", () => {
-      const prePushPath = join(gitHooksDir, "pre-push");
-      const content = readFileSync(prePushPath, "utf-8");
+    it.skipIf(skipTests)(
+      "should have executable permissions on pre-push hook",
+      () => {
+        const prePushPath = join(gitHooksDir, "pre-push");
+        const content = readFileSync(prePushPath, "utf-8");
 
-      // Verify it's a shell script (simple-git-hooks uses #!/bin/sh)
-      expect(content).toContain("#!/bin/sh");
+        // Verify it's a shell script (simple-git-hooks uses #!/bin/sh)
+        expect(content).toContain("#!/bin/sh");
 
-      // Verify content points to the correct hook location
-      expect(content).toContain(".git-hooks/pre-push");
-    });
+        // Verify content points to the correct hook location
+        expect(content).toContain(".git-hooks/pre-push");
+      },
+    );
 
-    it("should have source hooks in .git-hooks directory", () => {
-      const sourcePreCommit = join(projectRoot, ".git-hooks", "pre-commit");
-      const sourcePrePush = join(projectRoot, ".git-hooks", "pre-push");
+    it.skipIf(skipTests)(
+      "should have source hooks in .git-hooks directory",
+      () => {
+        const sourcePreCommit = join(projectRoot, ".git-hooks", "pre-commit");
+        const sourcePrePush = join(projectRoot, ".git-hooks", "pre-push");
 
-      expect(existsSync(sourcePreCommit)).toBe(true);
-      expect(existsSync(sourcePrePush)).toBe(true);
-    });
+        expect(existsSync(sourcePreCommit)).toBe(true);
+        expect(existsSync(sourcePrePush)).toBe(true);
+      },
+    );
   });
 
   describe("Pre-commit Hook - Lint Errors", () => {
-    it("should run lint-staged on pre-commit", () => {
+    it.skipIf(skipTests)("should run lint-staged on pre-commit", () => {
       // Verify pre-commit hook uses lint-staged
       const preCommitHookPath = join(projectRoot, ".git-hooks", "pre-commit");
       const hookContent = readFileSync(preCommitHookPath, "utf-8");
@@ -157,53 +197,56 @@ describe("Git Hooks Integration Tests", () => {
       expect(hookContent).toContain("bunx lint-staged");
     });
 
-    it("should auto-fix fixable lint errors with biome", () => {
-      // Create a file with fixable lint errors (wrong quotes, formatting)
-      const fileWithFixableError = `
+    it.skipIf(skipTests)(
+      "should auto-fix fixable lint errors with biome",
+      () => {
+        // Create a file with fixable lint errors (wrong quotes, formatting)
+        const fileWithFixableError = `
 export function testFunction() {
 return    'test';
 }
 `;
 
-      writeFileSync(testFilePath, fileWithFixableError);
+        writeFileSync(testFilePath, fileWithFixableError);
 
-      // Run biome check to verify there are issues
-      let hasBiomeErrors = false;
-      try {
-        execSync(`bun run lint ${testFilePath}`, {
-          cwd: projectRoot,
-          stdio: "pipe",
-        });
-      } catch (_error) {
-        hasBiomeErrors = true;
-      }
+        // Run biome check to verify there are issues
+        let hasBiomeErrors = false;
+        try {
+          execSync(`bun run lint ${testFilePath}`, {
+            cwd: projectRoot,
+            stdio: "pipe",
+          });
+        } catch (_error) {
+          hasBiomeErrors = true;
+        }
 
-      expect(hasBiomeErrors).toBe(true);
+        expect(hasBiomeErrors).toBe(true);
 
-      // Run lint-staged to auto-fix
-      try {
-        execSync(`git add ${testFilePath}`, { cwd: projectRoot });
-        execSync(`bunx lint-staged`, { cwd: projectRoot, stdio: "pipe" });
-      } catch (error) {
-        console.warn("lint-staged failed:", error);
-      }
+        // Run lint-staged to auto-fix
+        try {
+          execSync(`git add ${testFilePath}`, { cwd: projectRoot });
+          execSync(`bunx lint-staged`, { cwd: projectRoot, stdio: "pipe" });
+        } catch (error) {
+          console.warn("lint-staged failed:", error);
+        }
 
-      // Read the fixed content
-      const fixedContent = readFileSync(testFilePath, "utf-8");
+        // Read the fixed content
+        const fixedContent = readFileSync(testFilePath, "utf-8");
 
-      // Should be fixed now (double quotes and proper formatting)
-      expect(fixedContent).toContain('"test"');
+        // Should be fixed now (double quotes and proper formatting)
+        expect(fixedContent).toContain('"test"');
 
-      // Clean up
-      try {
-        unlinkSync(testFilePath);
-        execSync("git reset HEAD", { cwd: projectRoot });
-      } catch {
-        // Ignore cleanup errors
-      }
-    });
+        // Clean up
+        try {
+          unlinkSync(testFilePath);
+          execSync("git reset HEAD", { cwd: projectRoot });
+        } catch {
+          // Ignore cleanup errors
+        }
+      },
+    );
 
-    it("should allow commit with valid code", () => {
+    it.skipIf(skipTests)("should allow commit with valid code", () => {
       // Create a file with valid code
       const validFile = `export function testFunction(): string {
   return "test";
@@ -245,19 +288,22 @@ return    'test';
   });
 
   describe("Pre-commit Hook - Format Errors", () => {
-    it("should have biome format configured in lint-staged", () => {
-      // Verify package.json has lint-staged config with biome format
-      const packageJsonPath = join(projectRoot, "package.json");
-      const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+    it.skipIf(skipTests)(
+      "should have biome format configured in lint-staged",
+      () => {
+        // Verify package.json has lint-staged config with biome format
+        const packageJsonPath = join(projectRoot, "package.json");
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
-      expect(packageJson["lint-staged"]).toBeDefined();
-      const lintStagedConfig = packageJson["lint-staged"];
-      const tsConfig = lintStagedConfig["*.{ts,tsx,js,jsx}"];
+        expect(packageJson["lint-staged"]).toBeDefined();
+        const lintStagedConfig = packageJson["lint-staged"];
+        const tsConfig = lintStagedConfig["*.{ts,tsx,js,jsx}"];
 
-      expect(tsConfig).toContain("biome format --write");
-    });
+        expect(tsConfig).toContain("biome format --write");
+      },
+    );
 
-    it("should auto-fix format errors with biome", () => {
+    it.skipIf(skipTests)("should auto-fix format errors with biome", () => {
       // Create a file with format errors
       const fileWithFormatError = `
 export function testFunction() {
@@ -289,46 +335,49 @@ return 'test';  // Wrong indentation and single quotes
       }
     });
 
-    it("should format files automatically during commit with lint-staged", () => {
-      // Create a file with format errors
-      const fileWithFormatError = `export function testFunction() {
+    it.skipIf(skipTests)(
+      "should format files automatically during commit with lint-staged",
+      () => {
+        // Create a file with format errors
+        const fileWithFormatError = `export function testFunction() {
 return 'test';
 }`;
 
-      writeFileSync(testFilePath, fileWithFormatError);
+        writeFileSync(testFilePath, fileWithFormatError);
 
-      // Stage and commit (lint-staged will auto-format)
-      execSync(`git add ${testFilePath}`, { cwd: projectRoot });
+        // Stage and commit (lint-staged will auto-format)
+        execSync(`git add ${testFilePath}`, { cwd: projectRoot });
 
-      let commitSucceeded = false;
-      try {
-        // NOTE: Using --no-verify to prevent recursive test suite execution
-        execSync(
-          'git commit --no-verify -m "test: auto-format during commit"',
-          {
-            cwd: projectRoot,
-            stdio: "pipe",
-          },
-        );
-        commitSucceeded = true;
-      } catch (error) {
-        console.error("Commit failed:", error);
-      }
+        let commitSucceeded = false;
+        try {
+          // NOTE: Using --no-verify to prevent recursive test suite execution
+          execSync(
+            'git commit --no-verify -m "test: auto-format during commit"',
+            {
+              cwd: projectRoot,
+              stdio: "pipe",
+            },
+          );
+          commitSucceeded = true;
+        } catch (error) {
+          console.error("Commit failed:", error);
+        }
 
-      // Clean up
-      try {
-        unlinkSync(testFilePath);
-        execSync("git reset HEAD~1", { cwd: projectRoot });
-      } catch {
-        // Ignore cleanup errors
-      }
+        // Clean up
+        try {
+          unlinkSync(testFilePath);
+          execSync("git reset HEAD~1", { cwd: projectRoot });
+        } catch {
+          // Ignore cleanup errors
+        }
 
-      expect(commitSucceeded).toBe(true);
-    });
+        expect(commitSucceeded).toBe(true);
+      },
+    );
   });
 
   describe("Pre-push Hook - Test Failures", () => {
-    it("should have pre-push hook that runs tests", () => {
+    it.skipIf(skipTests)("should have pre-push hook that runs tests", () => {
       const prePushHookPath = join(projectRoot, ".git-hooks", "pre-push");
       const hookContent = readFileSync(prePushHookPath, "utf-8");
 
@@ -336,7 +385,7 @@ return 'test';
       expect(hookContent).toContain("bun test");
     });
 
-    it("should block push when tests fail", () => {
+    it.skipIf(skipTests)("should block push when tests fail", () => {
       // This test verifies the hook configuration is correct
       // Actually testing push failure requires creating a failing test,
       // which would break the test suite itself. Instead, we verify
@@ -352,85 +401,100 @@ return 'test';
   });
 
   describe("Hook Bypass with --no-verify", () => {
-    it("should allow commit bypass with --no-verify flag", () => {
-      // Create a file with intentional lint errors
-      const fileWithLintError = `
+    it.skipIf(skipTests)(
+      "should allow commit bypass with --no-verify flag",
+      () => {
+        // Create a file with intentional lint errors
+        const fileWithLintError = `
 export function testFunction() {
   const unusedVariable = "This should trigger lint error";
   return "test";
 }
 `;
 
-      writeFileSync(testFilePath, fileWithLintError);
+        writeFileSync(testFilePath, fileWithLintError);
 
-      // Stage the file
-      execSync(`git add ${testFilePath}`, { cwd: projectRoot });
+        // Stage the file
+        execSync(`git add ${testFilePath}`, { cwd: projectRoot });
 
-      // Try to commit with --no-verify (should succeed despite lint errors)
-      let commitSucceeded = false;
-      try {
-        execSync(
-          'git commit --no-verify -m "test: bypass hook with --no-verify"',
-          {
-            cwd: projectRoot,
-            stdio: "pipe",
-          },
-        );
-        commitSucceeded = true;
-      } catch (error) {
-        console.error("Commit with --no-verify failed:", error);
-      }
+        // Try to commit with --no-verify (should succeed despite lint errors)
+        let commitSucceeded = false;
+        try {
+          execSync(
+            'git commit --no-verify -m "test: bypass hook with --no-verify"',
+            {
+              cwd: projectRoot,
+              stdio: "pipe",
+            },
+          );
+          commitSucceeded = true;
+        } catch (error) {
+          console.error("Commit with --no-verify failed:", error);
+        }
 
-      // Clean up
-      try {
-        unlinkSync(testFilePath);
-        execSync("git reset HEAD~1", { cwd: projectRoot });
-      } catch {
-        // Ignore cleanup errors
-      }
+        // Clean up
+        try {
+          unlinkSync(testFilePath);
+          execSync("git reset HEAD~1", { cwd: projectRoot });
+        } catch {
+          // Ignore cleanup errors
+        }
 
-      expect(commitSucceeded).toBe(true);
-    });
+        expect(commitSucceeded).toBe(true);
+      },
+    );
 
-    it("should allow push bypass with --no-verify flag", () => {
-      // Verify the --no-verify flag is documented and available
-      // This is a sanity check that the git hooks can be bypassed when needed
+    it.skipIf(skipTests)(
+      "should allow push bypass with --no-verify flag",
+      () => {
+        // Verify the --no-verify flag is documented and available
+        // This is a sanity check that the git hooks can be bypassed when needed
 
-      const prePushHookPath = join(projectRoot, ".git-hooks", "pre-push");
-      expect(existsSync(prePushHookPath)).toBe(true);
+        const prePushHookPath = join(projectRoot, ".git-hooks", "pre-push");
+        expect(existsSync(prePushHookPath)).toBe(true);
 
-      // The --no-verify flag is a git built-in feature
-      // This test confirms the hook exists and can be bypassed
-      // Actual bypass testing requires a remote, which we don't have in tests
-      expect(true).toBe(true);
-    });
+        // The --no-verify flag is a git built-in feature
+        // This test confirms the hook exists and can be bypassed
+        // Actual bypass testing requires a remote, which we don't have in tests
+        expect(true).toBe(true);
+      },
+    );
   });
 
   describe("Hook Error Messages", () => {
-    it("should display clear error message on pre-commit failure", () => {
-      const preCommitHookPath = join(projectRoot, ".git-hooks", "pre-commit");
-      const hookContent = readFileSync(preCommitHookPath, "utf-8");
+    it.skipIf(skipTests)(
+      "should display clear error message on pre-commit failure",
+      () => {
+        const preCommitHookPath = join(projectRoot, ".git-hooks", "pre-commit");
+        const hookContent = readFileSync(preCommitHookPath, "utf-8");
 
-      // Verify hook has clear error messages
-      expect(hookContent).toContain("Pre-commit checks failed");
-      expect(hookContent).toContain("Please fix the issues");
-    });
+        // Verify hook has clear error messages
+        expect(hookContent).toContain("Pre-commit checks failed");
+        expect(hookContent).toContain("Please fix the issues");
+      },
+    );
 
-    it("should display clear error message on pre-push failure", () => {
-      const prePushHookPath = join(projectRoot, ".git-hooks", "pre-push");
-      const hookContent = readFileSync(prePushHookPath, "utf-8");
+    it.skipIf(skipTests)(
+      "should display clear error message on pre-push failure",
+      () => {
+        const prePushHookPath = join(projectRoot, ".git-hooks", "pre-push");
+        const hookContent = readFileSync(prePushHookPath, "utf-8");
 
-      // Verify hook has clear error messages
-      expect(hookContent).toContain("Pre-push checks failed");
-      expect(hookContent).toContain("Please fix the failing tests");
-    });
+        // Verify hook has clear error messages
+        expect(hookContent).toContain("Pre-push checks failed");
+        expect(hookContent).toContain("Please fix the failing tests");
+      },
+    );
 
-    it("should display success message when hooks pass", () => {
-      const preCommitHookPath = join(projectRoot, ".git-hooks", "pre-commit");
-      const hookContent = readFileSync(preCommitHookPath, "utf-8");
+    it.skipIf(skipTests)(
+      "should display success message when hooks pass",
+      () => {
+        const preCommitHookPath = join(projectRoot, ".git-hooks", "pre-commit");
+        const hookContent = readFileSync(preCommitHookPath, "utf-8");
 
-      // Verify hook has success messages
-      expect(hookContent).toContain("All pre-commit checks passed");
-    });
+        // Verify hook has success messages
+        expect(hookContent).toContain("All pre-commit checks passed");
+      },
+    );
   });
 });
