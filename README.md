@@ -10,12 +10,13 @@ A modern, high-performance portfolio website showcasing professional and persona
 - **🎯 Job Fit Analyzer**: AI-powered job description analysis tool providing honest assessment of role alignment
 - **🛡️ Production-Grade Security**: Comprehensive guardrail system with educational feedback for prompt injection, rate limiting, and content validation
 - **🎨 Beautiful UI/UX**: Custom animations, grain overlay effects, and cursor glow
+- **🌓 Dark Mode Support**: Comprehensive theme system with light, dark, and system preference modes
 - **📂 Project Showcase**: Filterable portfolio with professional and personal projects
 - **📊 Tech Stack Visualization**: Interactive technology stack with AI development tools and categorization
 - **📚 Engineering Principles**: Dedicated page showcasing principles from The Phoenix Project, The Unicorn Project, and The Goal, with focus on AI-first development and team leadership
 - **👥 Agentic AI Leadership**: Showcasing experience leading teams of humans and autonomous AI agents
 - **⚡ Performance Optimized**: React 19 with React Compiler enabled
-- **🌓 Modern Design System**: OKLCH color space with custom theming
+- **🌈 Modern Design System**: OKLCH color space with custom theming
 - **♿ Accessibility**: Reduced motion support and semantic HTML
 - **📱 Fully Responsive**: Mobile-first design that works on all devices
 
