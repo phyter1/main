@@ -73,6 +73,7 @@ echo ""
 
 # UI Component Tests
 echo "🎨 UI Component Tests"
+run_test "src/components/ui/button.test.tsx" "button"
 run_test "src/components/ui/chat-message.test.tsx" "chat-message"
 run_test "src/components/ui/dropdown-menu.test.tsx" "dropdown-menu"
 run_test "src/components/ui/expandable-context.test.tsx" "expandable-context"
@@ -114,6 +115,8 @@ echo ""
 
 # Page Tests
 echo "📄 Page Tests"
+run_test "src/app/globals.test.ts" "globals.css"
+run_test "src/app/page.test.tsx" "homepage"
 run_test "src/app/about/page.test.tsx" "about"
 run_test "src/app/chat/page.test.tsx" "chat"
 run_test "src/app/fit-assessment/page.test.tsx" "fit-assessment"
