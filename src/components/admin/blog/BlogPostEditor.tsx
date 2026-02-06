@@ -17,7 +17,7 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import type { BlogPost } from "@/types/blog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,10 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
  * auto-save, and rich text editing capabilities.
  */
 export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
+	// Generate unique IDs for form fields
+	const titleId = useId();
+	const excerptId = useId();
+
 	// Form state
 	const [title, setTitle] = useState(post?.title || "");
 	const [excerpt, setExcerpt] = useState(post?.excerpt || "");
@@ -217,9 +221,9 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
 
 			{/* Title Input */}
 			<div className="mb-4">
-				<Label htmlFor="title">Title</Label>
+				<Label htmlFor={titleId}>Title</Label>
 				<Input
-					id="title"
+					id={titleId}
 					type="text"
 					value={title}
 					onChange={(e) => setTitle(e.target.value)}
@@ -230,9 +234,9 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
 
 			{/* Excerpt Input */}
 			<div className="mb-4">
-				<Label htmlFor="excerpt">Excerpt</Label>
+				<Label htmlFor={excerptId}>Excerpt</Label>
 				<textarea
-					id="excerpt"
+					id={excerptId}
 					value={excerpt}
 					onChange={(e) => setExcerpt(e.target.value)}
 					placeholder="Enter post excerpt..."
