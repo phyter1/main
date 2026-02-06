@@ -63,6 +63,34 @@ mock.module("convex/browser", () => ({
   }),
 }));
 
+// Mock Convex generated API for all tests
+mock.module("@/convex/_generated/api", () => ({
+  api: {
+    blog: {
+      getCategories: {},
+      createCategory: {},
+      updateCategory: {},
+      deleteCategory: {},
+      listPosts: {},
+      getPostBySlug: {},
+      getFeaturedPosts: {},
+      searchPosts: {},
+      getPostsByTag: {},
+      getTags: {},
+      createPost: {},
+      updatePost: {},
+      publishPost: {},
+      unpublishPost: {},
+      deletePost: {},
+      incrementViewCount: {},
+      validateSlugUnique: {},
+      createTag: {},
+      deleteTag: {},
+      updatePostCounts: {},
+    },
+  },
+}));
+
 // Note: Individual test files should mock AI SDK functions (streamText, generateObject)
 // as needed since they have different behaviors per test
 
