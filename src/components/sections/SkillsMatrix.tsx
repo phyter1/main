@@ -61,7 +61,7 @@ export function SkillsMatrix() {
   return (
     <section className="relative bg-background py-24 px-6">
       {/* Background gradient similar to Hero */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-accent-subtle/30 to-background" />
 
       <motion.div
         className="relative z-10 mx-auto max-w-6xl"
