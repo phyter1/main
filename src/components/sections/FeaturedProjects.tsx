@@ -16,7 +16,10 @@ import { getFeaturedProjects } from "@/data/projects";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface FeaturedProjectsProps {
-  variants?: any;
+  variants?: {
+    hidden?: Record<string, unknown>;
+    visible?: Record<string, unknown>;
+  };
 }
 
 /**
@@ -107,7 +110,7 @@ export function FeaturedProjects({ variants }: FeaturedProjectsProps) {
 
               <CardFooter className="flex gap-2">
                 {project.links.demo && (
-                  <Button variant="default" size="sm" asChild>
+                  <Button variant="vibrant" size="sm" asChild>
                     <a
                       href={project.links.demo}
                       target="_blank"
@@ -119,7 +122,7 @@ export function FeaturedProjects({ variants }: FeaturedProjectsProps) {
                   </Button>
                 )}
                 {project.links.github && (
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="vibrant" size="sm" asChild>
                     <a
                       href={project.links.github}
                       target="_blank"
@@ -145,6 +148,7 @@ export function FeaturedProjects({ variants }: FeaturedProjectsProps) {
       {/* Scroll indicator */}
       <div className="mt-16 flex justify-center">
         <button
+          type="button"
           onClick={() => {
             const nextSection = document.getElementById("principles-preview");
             nextSection?.scrollIntoView({ behavior: "smooth", block: "start" });
