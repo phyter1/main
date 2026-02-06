@@ -26,21 +26,27 @@ const categoryLabels: Record<StackItem["category"], string> = {
 };
 
 const categoryColors: Record<StackItem["category"], string> = {
-  language: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  framework: "bg-green-500/10 text-green-500 border-green-500/20",
-  library: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  database: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  devtool: "bg-pink-500/10 text-pink-500 border-pink-500/20",
-  infrastructure: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
+  language:
+    "bg-category-frontend/10 text-category-frontend border-category-frontend/20",
+  framework:
+    "bg-category-backend/10 text-category-backend border-category-backend/20",
+  library:
+    "bg-category-frontend/10 text-category-frontend border-category-frontend/20",
+  database:
+    "bg-category-database/10 text-category-database border-category-database/20",
+  devtool:
+    "bg-category-devtools/10 text-category-devtools border-category-devtools/20",
+  infrastructure:
+    "bg-category-cloud/10 text-category-cloud border-category-cloud/20",
 };
 
 const proficiencyLevels: Record<
   StackItem["proficiency"],
   { label: string; color: string }
 > = {
-  expert: { label: "Expert", color: "text-green-500" },
-  proficient: { label: "Proficient", color: "text-blue-500" },
-  familiar: { label: "Familiar", color: "text-yellow-500" },
+  expert: { label: "Expert", color: "text-success" },
+  proficient: { label: "Proficient", color: "text-info" },
+  familiar: { label: "Familiar", color: "text-warning" },
 };
 
 export default function StackPage() {
