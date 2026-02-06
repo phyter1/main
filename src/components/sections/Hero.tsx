@@ -59,7 +59,7 @@ export function Hero() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-accent-subtle/40 via-accent-subtle/10 to-background" />
 
       {/* Content */}
       <motion.div
@@ -85,7 +85,9 @@ export function Hero() {
         >
           Tech Lead
           <br />
-          <span className="text-primary">AI-First Development</span>
+          <span className="bg-gradient-to-r from-accent-vibrant to-primary-vibrant bg-clip-text text-transparent">
+            AI-First Development
+          </span>
         </motion.h1>
 
         <motion.p
@@ -115,10 +117,10 @@ export function Hero() {
           variants={itemVariants}
           className="flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
-          <Button size="lg" className="min-w-[200px]" asChild>
+          <Button size="lg" variant="vibrant" className="min-w-[200px]" asChild>
             <a href="/projects">View My Work</a>
           </Button>
-          <Button size="lg" variant="outline" className="min-w-[200px]" asChild>
+          <Button size="lg" variant="vibrant" className="min-w-[200px]" asChild>
             <a href="/about">Let's Connect</a>
           </Button>
         </motion.div>
@@ -132,9 +134,13 @@ export function Hero() {
           className="absolute bottom-8 left-1/2 -translate-x-1/2"
         >
           <button
+            type="button"
             onClick={() => {
               const nextSection = document.getElementById("featured-projects");
-              nextSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+              nextSection?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
             }}
             aria-label="Scroll to featured projects"
             className="cursor-pointer transition-opacity hover:opacity-70"
