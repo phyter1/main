@@ -55,6 +55,7 @@ echo "📚 Library Tests"
 run_test "src/lib/ai-config.test.ts" "ai-config"
 run_test "src/lib/analytics.test.ts" "analytics"
 run_test "src/lib/auth.test.ts" "auth"
+run_test "src/lib/blog-utils.test.ts" "blog-utils"
 run_test "src/lib/input-sanitization.test.ts" "input-sanitization"
 run_test "src/lib/prompt-versioning.test.ts" "prompt-versioning"
 run_test "src/lib/test-runner.test.ts" "test-runner"
@@ -156,6 +157,7 @@ echo ""
 
 # Data Tests
 echo "💾 Data Tests"
+run_test "src/data/blog-mock.test.ts" "blog-mock"
 run_test "src/data/resume.test.ts" "resume"
 echo ""
 
