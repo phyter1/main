@@ -25,6 +25,67 @@ bun lint
 bun format
 ```
 
+## Testing
+
+### Test Execution
+
+**IMPORTANT: Known Issue with Parallel Test Execution**
+
+This project has known issues when running all tests in parallel (Bun's default behavior). Tests must be run sequentially to avoid concurrency-related failures.
+
+```bash
+# Run all tests sequentially (default test command)
+bun test
+
+# Run specific test suites
+bun test:lib          # Library tests only
+bun test:components   # Component tests only
+bun test:api          # API route tests only
+bun test:pages        # Page tests only
+bun test:admin        # Admin tests only
+
+# Watch mode (use for individual file development)
+bun test:watch
+```
+
+### Adding New Tests
+
+**CRITICAL: When adding new test files, you MUST update the sequential test script:**
+
+1. Create your test file (e.g., `src/components/MyComponent.test.tsx`)
+2. Open `scripts/test-all-sequential.sh`
+3. Add your test file to the appropriate section with the `run_test` function:
+
+```bash
+# Example: Adding a new component test
+echo "🎨 UI Component Tests"
+run_test "src/components/ui/chat-message.test.tsx" "chat-message"
+run_test "src/components/ui/my-component.test.tsx" "my-component"  # <-- Add here
+```
+
+**Why Sequential Testing?**
+- Parallel test execution causes race conditions in shared resources
+- Mock state can leak between parallel test files
+- DOM cleanup conflicts when tests run simultaneously
+- The sequential script ensures proper isolation between test files
+
+**Test Organization in `test-all-sequential.sh`:**
+- 📚 Library Tests (`src/lib/`)
+- 🔌 Provider Tests (`src/providers/`)
+- 🪝 Hook Tests (`src/hooks/`)
+- 🎨 UI Component Tests (`src/components/ui/`)
+- 🎨 Theme Component Tests (`src/components/theme/`)
+- ✨ Effects Component Tests (`src/components/effects/`)
+- 📦 Section Component Tests (`src/components/sections/`)
+- 🔧 Admin Component Tests (`src/components/admin/`)
+- 🏗️ Layout Component Tests (`src/components/layout/`)
+- 📄 Page Tests (`src/app/*/page.test.tsx`)
+- 🔐 Admin Page Tests (`src/app/admin/`)
+- 🌐 API Route Tests (`src/app/api/`)
+- 🔐 Admin API Route Tests (`src/app/api/admin/`)
+- 💾 Data Tests (`src/data/`)
+- 🔗 Integration Tests (`src/app/__tests__/`, `src/__tests__/`)
+
 ## Technology Stack
 
 - **Framework**: Next.js 16 with App Router
