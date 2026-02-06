@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
-import { ThemeProvider, useTheme } from "./ThemeProvider";
+import { useTheme } from "@/hooks/useTheme";
+import { ThemeProvider } from "./ThemeProvider";
 
 describe("ThemeProvider Component - T001", () => {
   let mockMatchMedia: ReturnType<typeof mock>;
