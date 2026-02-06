@@ -60,7 +60,7 @@ export function Navigation() {
             href="/"
             className="flex items-center gap-2 font-mono text-lg font-bold"
           >
-            <Terminal className="h-5 w-5 text-primary" />
+            <Terminal className="h-5 w-5 text-accent-vibrant" />
             <span className="text-foreground">Ryan Lowe</span>
           </Link>
 
@@ -80,7 +80,7 @@ export function Navigation() {
                 >
                   {item.label}
                   {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-vibrant" />
                   )}
                 </Link>
               );
@@ -90,7 +90,7 @@ export function Navigation() {
           {/* ThemeToggle and CTA Button */}
           <div className="hidden md:flex md:items-center md:gap-4">
             <ThemeToggle />
-            <Button size="sm" variant="outline" asChild>
+            <Button size="sm" variant="vibrant" asChild>
               <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
                 Resume
               </a>
@@ -136,7 +136,7 @@ export function Navigation() {
             })}
             <div className="flex items-center gap-4 pt-2">
               <ThemeToggle />
-              <Button size="sm" variant="outline" className="flex-1" asChild>
+              <Button size="sm" variant="vibrant" className="flex-1" asChild>
                 <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
                   Resume
                 </a>

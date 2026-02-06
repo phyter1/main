@@ -1,14 +1,23 @@
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it, mock } from "bun:test";
+import { render, screen } from "@testing-library/react";
+import type React from "react";
 import Home from "./page";
 
 // Mock framer-motion to avoid animation issues in tests
 mock.module("framer-motion", () => ({
   motion: {
-    section: ({ children, ...props }: any) => <section {...props}>{children}</section>,
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    h1: ({ children, ...props }: any) => <h1 {...props}>{children}</h1>,
-    p: ({ children, ...props }: any) => <p {...props}>{children}</p>,
+    section: ({ children, ...props }: React.PropsWithChildren<object>) => (
+      <section {...props}>{children}</section>
+    ),
+    div: ({ children, ...props }: React.PropsWithChildren<object>) => (
+      <div {...props}>{children}</div>
+    ),
+    h1: ({ children, ...props }: React.PropsWithChildren<object>) => (
+      <h1 {...props}>{children}</h1>
+    ),
+    p: ({ children, ...props }: React.PropsWithChildren<object>) => (
+      <p {...props}>{children}</p>
+    ),
   },
 }));
 
@@ -31,8 +40,10 @@ mock.module("@/components/sections/Hero", () => ({
   Hero: () => (
     <section data-testid="hero-section">
       <h1>Tech Lead AI-First Development</h1>
-      <button>View My Work</button>
-      <button>Let's Connect</button>
+      <button type="button">View My Work</button>
+      <button type="button">Let's Connect</button>
+      <button type="button">Start Conversation</button>
+      <button type="button">Analyze Fit</button>
     </section>
   ),
 }));
@@ -43,7 +54,7 @@ mock.module("@/components/sections/FeaturedProjects", () => ({
     <section data-testid="featured-projects">
       <h2>Featured Projects</h2>
       <p>A selection of recent work showcasing full-stack development</p>
-      <button>View All Projects</button>
+      <button type="button">View All Projects</button>
     </section>
   ),
 }));
@@ -54,14 +65,14 @@ mock.module("@/components/sections/PrinciplesPreview", () => ({
     <section data-testid="principles-preview">
       <h2>Engineering Principles</h2>
       <p>Core principles from The Phoenix Project</p>
-      <button>Learn More</button>
+      <button type="button">Learn More</button>
     </section>
   ),
 }));
 
 describe("Home Page", () => {
   it("renders all main sections", () => {
-    const { container } = render(<Home />);
+    render(<Home />);
 
     // Check for all test IDs
     expect(screen.getByTestId("grain-overlay")).toBeDefined();
@@ -80,14 +91,26 @@ describe("Home Page", () => {
     render(<Home />);
 
     // Hero CTAs
-    expect(screen.getByText("View My Work")).toBeDefined();
-    expect(screen.getByText("Let's Connect")).toBeDefined();
+    const viewMyWorkButtons = screen.getAllByText("View My Work");
+    expect(viewMyWorkButtons.length).toBeGreaterThan(0);
+
+    const connectButtons = screen.getAllByText("Let's Connect");
+    expect(connectButtons.length).toBeGreaterThan(0);
+
+    // AI Feature CTAs
+    const startConversationButtons = screen.getAllByText("Start Conversation");
+    expect(startConversationButtons.length).toBeGreaterThan(0);
+
+    const analyzeFitButtons = screen.getAllByText("Analyze Fit");
+    expect(analyzeFitButtons.length).toBeGreaterThan(0);
 
     // Featured Projects CTA
-    expect(screen.getByText("View All Projects")).toBeDefined();
+    const viewAllButtons = screen.getAllByText("View All Projects");
+    expect(viewAllButtons.length).toBeGreaterThan(0);
 
     // Principles CTA
-    expect(screen.getByText("Learn More")).toBeDefined();
+    const learnMoreButtons = screen.getAllByText("Learn More");
+    expect(learnMoreButtons.length).toBeGreaterThan(0);
   });
 
   it("has proper semantic structure", () => {

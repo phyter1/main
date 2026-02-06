@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { type AgentType, rollbackVersion } from "@/lib/prompt-versioning";
+import { rollbackVersion } from "@/lib/prompt-versioning";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 
 /**
@@ -109,7 +109,6 @@ interface DeployPromptResponse {
   versionId: string;
   message: string;
 }
-
 
 /**
  * POST /api/admin/deploy-prompt

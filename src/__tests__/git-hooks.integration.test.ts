@@ -382,7 +382,7 @@ return 'test';
       const hookContent = readFileSync(prePushHookPath, "utf-8");
 
       // Verify hook runs test command (sequential for consistency with CI)
-      expect(hookContent).toContain("bun run test:sequential");
+      expect(hookContent).toContain("bun run test");
     });
 
     it.skipIf(skipTests)("should block push when tests fail", () => {

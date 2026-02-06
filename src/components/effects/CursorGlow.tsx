@@ -74,9 +74,11 @@ export function CursorGlow({ color, size = 600, blur = 40 }: CursorGlowProps) {
 
   if (!isVisible) return null;
 
-  // Use brighter color in dark mode, subtle color in light mode
+  // Use design system accent color with theme-appropriate opacity
+  // Light mode: 0.06 opacity for subtle effect
+  // Dark mode: 0.08 opacity for slightly brighter glow
   const effectiveColor =
-    color || (isDark ? "rgba(0, 245, 212, 0.08)" : "rgba(0, 245, 212, 0.06)");
+    color || `oklch(from var(--accent) l c h / ${isDark ? "0.08" : "0.06"})`;
 
   return (
     <div

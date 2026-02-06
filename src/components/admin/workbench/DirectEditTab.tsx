@@ -1,9 +1,11 @@
 "use client";
 
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useId, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -11,13 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 type AgentType = "chat" | "fit-assessment";
 
 export function DirectEditTab() {
+  const agentTypeId = useId();
+  const promptTextId = useId();
+  const descriptionId = useId();
+
   const [agentType, setAgentType] = useState<AgentType>("fit-assessment");
   const [promptText, setPromptText] = useState("");
   const [description, setDescription] = useState("");
@@ -42,7 +46,10 @@ export function DirectEditTab() {
       }
 
       const data = await response.json();
-      const activeVersion = data.versions.find((v: any) => v.isActive);
+      const activeVersion = data.versions.find(
+        (v: { isActive: boolean; prompt: string; tokenCount: number }) =>
+          v.isActive,
+      );
 
       if (!activeVersion) {
         throw new Error("No active version found");
@@ -129,7 +136,7 @@ export function DirectEditTab() {
         <Alert
           variant={message.type === "error" ? "destructive" : "default"}
           className={
-            message.type === "success" ? "border-green-500 text-green-700" : ""
+            message.type === "success" ? "border-success text-success" : ""
           }
         >
           {message.type === "success" ? (
@@ -149,7 +156,7 @@ export function DirectEditTab() {
               value={agentType}
               onValueChange={(value) => setAgentType(value as AgentType)}
             >
-              <SelectTrigger id="agent-type">
+              <SelectTrigger id={agentTypeId}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -167,9 +174,9 @@ export function DirectEditTab() {
         </div>
 
         <div>
-          <Label htmlFor="prompt-text">Prompt Text</Label>
+          <Label htmlFor={promptTextId}>Prompt Text</Label>
           <Textarea
-            id="prompt-text"
+            id={promptTextId}
             value={promptText}
             onChange={(e) => setPromptText(e.target.value)}
             placeholder="Paste or edit the full prompt text here..."
@@ -181,9 +188,9 @@ export function DirectEditTab() {
         </div>
 
         <div>
-          <Label htmlFor="description">Change Description</Label>
+          <Label htmlFor={descriptionId}>Change Description</Label>
           <Input
-            id="description"
+            id={descriptionId}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief description of what changed..."

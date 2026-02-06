@@ -31,10 +31,10 @@ export function AIFeatureCards({ variants }: AIFeatureCardsProps) {
       className="mx-auto mt-12 grid max-w-3xl gap-4 md:grid-cols-2"
     >
       {/* Chat Assistant Card */}
-      <Card className="group flex flex-col transition-all hover:border-primary/50 hover:shadow-md">
+      <Card className="group flex flex-col transition-all hover:border-accent-vibrant/60 hover:shadow-xl hover:shadow-accent-vibrant/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <MessageSquare className="h-5 w-5 text-primary" />
+            <MessageSquare className="h-5 w-5 text-accent-vibrant group-hover:scale-110 transition-transform duration-200" />
             AI Assistant
           </CardTitle>
         </CardHeader>
@@ -44,17 +44,17 @@ export function AIFeatureCards({ variants }: AIFeatureCardsProps) {
             philosophy. Ask about my background, technical expertise, or
             approach to problem-solving.
           </p>
-          <Button variant="outline" size="sm" className="w-full" asChild>
+          <Button variant="vibrant" size="sm" className="w-full" asChild>
             <a href="/chat">Start Conversation</a>
           </Button>
         </CardContent>
       </Card>
 
       {/* Job Fit Analyzer Card */}
-      <Card className="group flex flex-col transition-all hover:border-primary/50 hover:shadow-md">
+      <Card className="group flex flex-col transition-all hover:border-accent-vibrant/60 hover:shadow-xl hover:shadow-accent-vibrant/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Target className="h-5 w-5 text-primary" />
+            <Target className="h-5 w-5 text-accent-vibrant group-hover:scale-110 transition-transform duration-200" />
             Job Fit Analyzer
           </CardTitle>
         </CardHeader>
@@ -64,7 +64,7 @@ export function AIFeatureCards({ variants }: AIFeatureCardsProps) {
             align with your role. Paste a job description and receive detailed
             fit analysis.
           </p>
-          <Button variant="outline" size="sm" className="w-full" asChild>
+          <Button variant="vibrant" size="sm" className="w-full" asChild>
             <a href="/fit-assessment">Analyze Fit</a>
           </Button>
         </CardContent>

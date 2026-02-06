@@ -127,9 +127,9 @@ function computeDiff(
 
 function DiffLine({ text, type }: DiffLine) {
   const bgClass = cn({
-    "bg-green-500/20": type === "added",
-    "bg-red-500/20": type === "removed",
-    "bg-yellow-500/20": type === "modified",
+    "bg-success/20": type === "added",
+    "bg-destructive/20": type === "removed",
+    "bg-warning/20": type === "modified",
   });
 
   return (

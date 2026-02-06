@@ -3,7 +3,13 @@
  */
 
 import { afterEach, describe, expect, it } from "bun:test";
-import { cleanup, render, screen, within, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import type { GuardrailViolation } from "@/types/guardrails";
 import { GuardrailFeedback } from "./guardrail-feedback";
 

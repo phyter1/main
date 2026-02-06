@@ -164,4 +164,69 @@ describe("T001: Update homepage Hero title to Tech Lead", () => {
       expect(agentReferences.length).toBeGreaterThan(0);
     });
   });
+
+  describe("T011: Boost Hero background gradient and headline", () => {
+    it("should have boosted background gradient using accent-subtle color", () => {
+      const { container } = render(<Hero />);
+
+      // Find the background gradient div
+      const gradientDiv = container.querySelector(
+        ".bg-gradient-to-b.from-accent-subtle\\/40",
+      );
+      expect(gradientDiv).toBeDefined();
+      expect(gradientDiv?.classList.contains("via-accent-subtle/10")).toBe(
+        true,
+      );
+    });
+
+    it("should not use the old subtle primary gradient", () => {
+      const { container } = render(<Hero />);
+
+      // Verify old gradient is NOT present
+      const oldGradient = container.querySelector(".from-primary\\/5");
+      expect(oldGradient).toBeNull();
+    });
+
+    it("should have gradient text effect on AI-First Development headline", () => {
+      const { container } = render(<Hero />);
+
+      // Find the headline span with gradient text
+      const headlineSpan = container.querySelector(
+        "span.bg-gradient-to-r.from-accent-vibrant.to-primary-vibrant",
+      );
+      expect(headlineSpan).toBeDefined();
+      expect(headlineSpan?.classList.contains("bg-clip-text")).toBe(true);
+      expect(headlineSpan?.classList.contains("text-transparent")).toBe(true);
+    });
+
+    it("should not use the old plain text-primary class for headline", () => {
+      render(<Hero />);
+
+      const headings = screen.getAllByRole("heading", { level: 1 });
+      const aiHeadlineSpan = headings[0].querySelector("span");
+
+      // Verify old class is NOT present
+      expect(aiHeadlineSpan?.classList.contains("text-primary")).toBe(false);
+    });
+
+    it("should maintain visibility and readability of gradient text", () => {
+      const { container } = render(<Hero />);
+
+      // Verify gradient text span exists and has content
+      const headlineSpan = container.querySelector(
+        "span.bg-gradient-to-r.from-accent-vibrant.to-primary-vibrant",
+      );
+      expect(headlineSpan?.textContent).toContain("AI-First Development");
+    });
+
+    it("should have increased gradient visibility (8x boost from 5% to 40%)", () => {
+      const { container } = render(<Hero />);
+
+      // Verify gradient uses 40% opacity (8x the original 5%)
+      const gradientDiv = container.querySelector(
+        ".bg-gradient-to-b.from-accent-subtle\\/40",
+      );
+      expect(gradientDiv).toBeDefined();
+    });
+  });
 });

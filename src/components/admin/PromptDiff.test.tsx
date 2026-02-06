@@ -72,7 +72,7 @@ describe("PromptDiff", () => {
 
       const addedLine = screen.getByText(/Line 3 added/);
       expect(addedLine).toBeTruthy();
-      expect(addedLine.className).toContain("bg-green-500/20");
+      expect(addedLine.className).toContain("bg-success/20");
     });
 
     it("should highlight removed lines in red", () => {
@@ -85,7 +85,7 @@ describe("PromptDiff", () => {
 
       const removedLine = screen.getByText(/Line 2 removed/);
       expect(removedLine).toBeTruthy();
-      expect(removedLine.className).toContain("bg-red-500/20");
+      expect(removedLine.className).toContain("bg-destructive/20");
     });
 
     it("should highlight modified lines in yellow", () => {
@@ -96,8 +96,8 @@ describe("PromptDiff", () => {
       const originalLine = screen.getByText(/Line 1 original/);
       const modifiedLine = screen.getByText(/Line 1 modified/);
 
-      expect(originalLine.className).toContain("bg-yellow-500/20");
-      expect(modifiedLine.className).toContain("bg-yellow-500/20");
+      expect(originalLine.className).toContain("bg-warning/20");
+      expect(modifiedLine.className).toContain("bg-warning/20");
     });
 
     it("should not highlight unchanged lines", () => {

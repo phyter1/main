@@ -236,7 +236,7 @@ describe("JobFitAnalyzer Component", () => {
   });
 
   describe("Results Display", () => {
-    it("should display strong fit level with green badge", async () => {
+    it("should display strong fit level with success badge", async () => {
       const user = userEvent.setup();
       mockFetch.mockImplementationOnce(() =>
         Promise.resolve({
@@ -262,11 +262,11 @@ describe("JobFitAnalyzer Component", () => {
       await waitFor(() => {
         const badge = screen.getByText(/strong fit/i);
         expect(badge).toBeDefined();
-        expect(badge.className).toContain("bg-green");
+        expect(badge.className).toContain("bg-success");
       });
     });
 
-    it("should display moderate fit level with yellow badge", async () => {
+    it("should display moderate fit level with warning badge", async () => {
       const user = userEvent.setup();
       mockFetch.mockImplementationOnce(() =>
         Promise.resolve({
@@ -292,11 +292,11 @@ describe("JobFitAnalyzer Component", () => {
       await waitFor(() => {
         const badge = screen.getByText(/moderate fit/i);
         expect(badge).toBeDefined();
-        expect(badge.className).toContain("bg-yellow");
+        expect(badge.className).toContain("bg-warning");
       });
     });
 
-    it("should display weak fit level with red badge", async () => {
+    it("should display weak fit level with destructive badge", async () => {
       const user = userEvent.setup();
       mockFetch.mockImplementationOnce(() =>
         Promise.resolve({
@@ -322,7 +322,7 @@ describe("JobFitAnalyzer Component", () => {
       await waitFor(() => {
         const badge = screen.getByText(/weak fit/i);
         expect(badge).toBeDefined();
-        expect(badge.className).toContain("bg-red");
+        expect(badge.className).toContain("bg-destructive");
       });
     });
 
