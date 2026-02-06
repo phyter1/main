@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Footer } from "@/components/layout/Footer";
 import { Navigation } from "@/components/layout/Navigation";
 import { firaMono, firaSans } from "@/lib/fonts";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 
 const siteUrl = "https://ryn.phytertek.com";
@@ -107,17 +108,34 @@ export default function RootLayout({
           // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safe
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: FOUC prevention script must run before React hydration
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const theme = localStorage.getItem('theme') || 'system';
+                const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                const resolvedTheme = theme === 'system' ? systemTheme : theme;
+                if (resolvedTheme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className={`${firaSans.variable} ${firaMono.variable} font-sans antialiased`}
       >
-        <ConvexClientProvider>
-          <Navigation />
-          <main>{children}</main>
-          <Footer />
-          <Analytics />
-          <SpeedInsights />
-        </ConvexClientProvider>
+        <ThemeProvider>
+          <ConvexClientProvider>
+            <Navigation />
+            <main>{children}</main>
+            <Footer />
+            <Analytics />
+            <SpeedInsights />
+          </ConvexClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
