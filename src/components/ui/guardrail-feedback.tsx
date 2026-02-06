@@ -48,17 +48,17 @@ export interface GuardrailFeedbackProps {
 function getGuardrailDisplay(type: string): { icon: string; color: string } {
   switch (type) {
     case "prompt_injection":
-      return { icon: "🛡️", color: "text-red-600" };
+      return { icon: "🛡️", color: "text-destructive" };
     case "rate_limit":
-      return { icon: "⏱️", color: "text-yellow-600" };
+      return { icon: "⏱️", color: "text-warning" };
     case "length_validation":
-      return { icon: "📏", color: "text-blue-600" };
+      return { icon: "📏", color: "text-info" };
     case "suspicious_pattern":
-      return { icon: "⚠️", color: "text-orange-600" };
+      return { icon: "⚠️", color: "text-warning" };
     case "scope_enforcement":
-      return { icon: "🎯", color: "text-purple-600" };
+      return { icon: "🎯", color: "text-info" };
     default:
-      return { icon: "ℹ️", color: "text-gray-600" };
+      return { icon: "ℹ️", color: "text-muted-foreground" };
   }
 }
 
@@ -142,7 +142,7 @@ export function GuardrailFeedback({
         animate={fadeInVariants.animate}
         transition={fadeInTransition}
         className={cn(
-          "rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800",
+          "rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10 dark:text-destructive-foreground",
           className,
         )}
         role="alert"
@@ -265,9 +265,9 @@ export function GuardrailFeedback({
                         rel="noopener noreferrer"
                         aria-label={`View source code in ${guardrail.sourceFile} (opens in new tab)`}
                         className={cn(
-                          "inline-flex items-center gap-1 text-blue-600 underline-offset-4",
-                          "transition-all duration-150 hover:underline hover:text-blue-700",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-sm",
+                          "inline-flex items-center gap-1 text-info underline-offset-4",
+                          "transition-all duration-150 hover:underline hover:text-info/80",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info focus-visible:ring-offset-2 rounded-sm",
                         )}
                       >
                         <span>{guardrail.sourceFile}</span>
