@@ -114,6 +114,11 @@ run_test "src/components/admin/ResumeUpdater.test.tsx" "ResumeUpdater"
 run_test "src/components/admin/TestRunner.test.tsx" "TestRunner"
 echo ""
 
+# Admin Blog Component Tests
+echo "📝 Admin Blog Component Tests"
+run_test "src/components/admin/blog/BlogPostMetadata.test.tsx" "BlogPostMetadata"
+echo ""
+
 # Layout Component Tests
 echo "🏗️ Layout Component Tests"
 run_test "src/components/layout/Navigation.test.tsx" "Navigation"
