@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +67,10 @@ interface TestSummary {
  * TestRunner component for managing and executing test cases
  */
 export default function TestRunner({ agentType, promptText }: TestRunnerProps) {
+  const questionId = useId();
+  const criterionTypeId = useId();
+  const criterionValueId = useId();
+
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [summary, setSummary] = useState<TestSummary | null>(null);
@@ -250,9 +254,9 @@ export default function TestRunner({ agentType, promptText }: TestRunnerProps) {
           <CardContent className="space-y-4">
             {/* Question Input */}
             <div className="space-y-2">
-              <Label htmlFor="question">Question</Label>
+              <Label htmlFor={questionId}>Question</Label>
               <Input
-                id="question"
+                id={questionId}
                 value={formQuestion}
                 onChange={(e) => setFormQuestion(e.target.value)}
                 placeholder="What is your TypeScript experience?"
@@ -300,9 +304,9 @@ export default function TestRunner({ agentType, promptText }: TestRunnerProps) {
               {showCriterionForm && (
                 <div className="space-y-2 rounded border p-3">
                   <div className="space-y-2">
-                    <Label htmlFor="criterion-type">Criterion Type</Label>
+                    <Label htmlFor={criterionTypeId}>Criterion Type</Label>
                     <select
-                      id="criterion-type"
+                      id={criterionTypeId}
                       value={criterionType}
                       onChange={(e) =>
                         setCriterionType(e.target.value as Criterion["type"])
@@ -320,9 +324,9 @@ export default function TestRunner({ agentType, promptText }: TestRunnerProps) {
                     criterionType === "token-limit" ||
                     criterionType === "max-length") && (
                     <div className="space-y-2">
-                      <Label htmlFor="criterion-value">Criterion Value</Label>
+                      <Label htmlFor={criterionValueId}>Criterion Value</Label>
                       <Input
-                        id="criterion-value"
+                        id={criterionValueId}
                         type={
                           criterionType === "token-limit" ||
                           criterionType === "max-length"
@@ -424,7 +428,7 @@ export default function TestRunner({ agentType, promptText }: TestRunnerProps) {
                       </div>
                       {result && (
                         <p
-                          className={`text-sm ${result.passed ? "text-green-600" : "text-red-600"}`}
+                          className={`text-sm ${result.passed ? "text-success" : "text-destructive"}`}
                         >
                           {result.passed ? "✅ Pass" : "❌ Fail"}
                         </p>
@@ -522,8 +526,8 @@ export default function TestRunner({ agentType, promptText }: TestRunnerProps) {
                           <span
                             className={
                               result.passed
-                                ? "text-green-600 font-medium"
-                                : "text-red-600 font-medium"
+                                ? "text-success font-medium"
+                                : "text-destructive font-medium"
                             }
                           >
                             {result.passed ? "✅ Pass" : "❌ Fail"}
