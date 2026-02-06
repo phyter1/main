@@ -451,10 +451,12 @@ describe("ThemeProvider Component - T001", () => {
     it("should have use client directive", async () => {
       // Read the source file to verify "use client" directive
       const fs = await import("node:fs/promises");
-      const sourceCode = await fs.readFile(
-        "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main/src/providers/ThemeProvider.tsx",
-        "utf-8",
-      );
+      const path = await import("node:path");
+      const { fileURLToPath } = await import("node:url");
+
+      const currentDir = path.dirname(fileURLToPath(import.meta.url));
+      const sourceFilePath = path.join(currentDir, "ThemeProvider.tsx");
+      const sourceCode = await fs.readFile(sourceFilePath, "utf-8");
 
       expect(sourceCode.startsWith('"use client"')).toBe(true);
     });

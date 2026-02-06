@@ -3,6 +3,14 @@ import { cleanup, render } from "@testing-library/react";
 import { act } from "react";
 import { CursorGlow } from "./CursorGlow";
 
+// Helper to get source file path
+async function getSourceFilePath(): Promise<string> {
+  const path = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  return path.join(currentDir, "CursorGlow.tsx");
+}
+
 describe("CursorGlow Component - T005", () => {
   let mockMatchMedia: ReturnType<typeof mock>;
   let mockObserver: {
@@ -79,10 +87,8 @@ describe("CursorGlow Component - T005", () => {
 
     it("should have use client directive", async () => {
       const fs = await import("node:fs/promises");
-      const sourceCode = await fs.readFile(
-        "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main/src/components/effects/CursorGlow.tsx",
-        "utf-8",
-      );
+      const sourceFilePath = await getSourceFilePath();
+      const sourceCode = await fs.readFile(sourceFilePath, "utf-8");
 
       expect(sourceCode.startsWith('"use client"')).toBe(true);
     });
@@ -132,10 +138,8 @@ describe("CursorGlow Component - T005", () => {
 
     it("should not have hardcoded default color in prop definition", async () => {
       const fs = await import("node:fs/promises");
-      const sourceCode = await fs.readFile(
-        "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main/src/components/effects/CursorGlow.tsx",
-        "utf-8",
-      );
+      const sourceFilePath = await getSourceFilePath();
+      const sourceCode = await fs.readFile(sourceFilePath, "utf-8");
 
       // Verify color prop has no default value in destructuring
       const hasDefaultColor = /color\s*=\s*["']rgba/.test(sourceCode);
@@ -148,10 +152,8 @@ describe("CursorGlow Component - T005", () => {
 
     it("should have theme-aware color logic in component body", async () => {
       const fs = await import("node:fs/promises");
-      const sourceCode = await fs.readFile(
-        "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main/src/components/effects/CursorGlow.tsx",
-        "utf-8",
-      );
+      const sourceFilePath = await getSourceFilePath();
+      const sourceCode = await fs.readFile(sourceFilePath, "utf-8");
 
       // Verify isDark state exists
       expect(sourceCode).toContain("isDark");
@@ -170,10 +172,8 @@ describe("CursorGlow Component - T005", () => {
 
     it("should respect size and blur props", async () => {
       const fs = await import("node:fs/promises");
-      const sourceCode = await fs.readFile(
-        "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main/src/components/effects/CursorGlow.tsx",
-        "utf-8",
-      );
+      const sourceFilePath = await getSourceFilePath();
+      const sourceCode = await fs.readFile(sourceFilePath, "utf-8");
 
       // Verify size and blur props still exist with defaults
       expect(sourceCode).toContain("size = 600");
@@ -243,20 +243,16 @@ describe("CursorGlow Component - T005", () => {
 
     it("should have pointer-events-none class for accessibility", async () => {
       const fs = await import("node:fs/promises");
-      const sourceCode = await fs.readFile(
-        "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main/src/components/effects/CursorGlow.tsx",
-        "utf-8",
-      );
+      const sourceFilePath = await getSourceFilePath();
+      const sourceCode = await fs.readFile(sourceFilePath, "utf-8");
 
       expect(sourceCode).toContain("pointer-events-none");
     });
 
     it("should have aria-hidden attribute", async () => {
       const fs = await import("node:fs/promises");
-      const sourceCode = await fs.readFile(
-        "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main/src/components/effects/CursorGlow.tsx",
-        "utf-8",
-      );
+      const sourceFilePath = await getSourceFilePath();
+      const sourceCode = await fs.readFile(sourceFilePath, "utf-8");
 
       expect(sourceCode).toContain('aria-hidden="true"');
     });

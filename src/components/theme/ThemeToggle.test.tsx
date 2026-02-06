@@ -52,10 +52,12 @@ describe("T004: ThemeToggle Component", () => {
     it("should be a client component with 'use client' directive", async () => {
       // Read the file content to verify 'use client' directive
       const fs = await import("node:fs/promises");
-      const content = await fs.readFile(
-        "/Users/ryanlowe/code/code-ripper/workspace/phyter1-main/src/components/theme/ThemeToggle.tsx",
-        "utf-8",
-      );
+      const path = await import("node:path");
+      const { fileURLToPath } = await import("node:url");
+
+      const currentDir = path.dirname(fileURLToPath(import.meta.url));
+      const sourceFilePath = path.join(currentDir, "ThemeToggle.tsx");
+      const content = await fs.readFile(sourceFilePath, "utf-8");
 
       expect(content.startsWith('"use client"')).toBe(true);
     });
