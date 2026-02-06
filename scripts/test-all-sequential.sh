@@ -52,12 +52,34 @@ run_test "src/lib/prompt-versioning.test.ts" "prompt-versioning"
 run_test "src/lib/test-runner.test.ts" "test-runner"
 echo ""
 
+# Provider Tests
+echo "🔌 Provider Tests"
+run_test "src/providers/ThemeProvider.test.tsx" "ThemeProvider"
+echo ""
+
+# Hook Tests
+echo "🪝 Hook Tests"
+run_test "src/hooks/__tests__/useTheme.test.tsx" "useTheme"
+run_test "src/hooks/__tests__/useTheme.integration.test.tsx" "useTheme integration"
+echo ""
+
 # UI Component Tests
 echo "🎨 UI Component Tests"
 run_test "src/components/ui/chat-message.test.tsx" "chat-message"
+run_test "src/components/ui/dropdown-menu.test.tsx" "dropdown-menu"
 run_test "src/components/ui/expandable-context.test.tsx" "expandable-context"
 run_test "src/components/ui/guardrail-feedback.test.tsx" "guardrail-feedback"
 run_test "src/components/ui/typing-indicator.test.tsx" "typing-indicator"
+echo ""
+
+# Theme Component Tests
+echo "🎨 Theme Component Tests"
+run_test "src/components/theme/ThemeToggle.test.tsx" "ThemeToggle"
+echo ""
+
+# Effects Component Tests
+echo "✨ Effects Component Tests"
+run_test "src/components/effects/CursorGlow.test.tsx" "CursorGlow"
 echo ""
 
 # Section Component Tests
