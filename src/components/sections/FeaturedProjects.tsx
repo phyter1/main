@@ -1,5 +1,6 @@
 "use client";
 
+import type { Variants } from "framer-motion";
 import { motion } from "framer-motion";
 import { ChevronDown, ExternalLink, Github } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -16,10 +17,7 @@ import { getFeaturedProjects } from "@/data/projects";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface FeaturedProjectsProps {
-  variants?: {
-    hidden?: Record<string, unknown>;
-    visible?: Record<string, unknown>;
-  };
+  variants?: Variants;
 }
 
 /**

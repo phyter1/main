@@ -1,11 +1,13 @@
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it, mock } from "bun:test";
+import { render, screen } from "@testing-library/react";
 import { PrinciplesPreview } from "./PrinciplesPreview";
 
 // Mock framer-motion to avoid animation issues in tests
 mock.module("framer-motion", () => ({
   motion: {
-    section: ({ children, ...props }: any) => <section {...props}>{children}</section>,
+    section: ({ children, ...props }: any) => (
+      <section {...props}>{children}</section>
+    ),
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
 }));
@@ -98,7 +100,9 @@ describe("PrinciplesPreview", () => {
     render(<PrinciplesPreview />);
 
     // Check that application text is present (should be shortened)
-    expect(screen.getByText(/At Hugo Health, I own the complete stack/)).toBeDefined();
+    expect(
+      screen.getByText(/At Hugo Health, I own the complete stack/),
+    ).toBeDefined();
   });
 
   it("renders Learn More CTA button", () => {
@@ -124,7 +128,9 @@ describe("PrinciplesPreview", () => {
     const { container } = render(<PrinciplesPreview />);
 
     // Should have 3 cards
-    const cards = container.querySelectorAll('[class*="flex"][class*="flex-col"]');
+    const cards = container.querySelectorAll(
+      '[class*="flex"][class*="flex-col"]',
+    );
     expect(cards.length).toBeGreaterThanOrEqual(3);
   });
 
