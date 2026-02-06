@@ -272,6 +272,66 @@ bun build
 - Tree-shaking for minimal bundle size
 - Optimized font loading with `display: swap`
 
+### Performance Monitoring with Speed Insights
+
+The application includes **Vercel Speed Insights** for real-world performance monitoring, tracking Core Web Vitals (LCP, FID, CLS, TTFB) from actual users.
+
+#### Setup Requirements
+
+Speed Insights is already integrated in the codebase (`src/app/layout.tsx`) but requires activation in your Vercel dashboard:
+
+1. Navigate to your project in the Vercel dashboard
+2. Go to **Settings** → **Speed Insights**
+3. Enable Speed Insights for your project
+4. Deploy your application to production
+
+#### Verification Steps
+
+After deployment, verify Speed Insights is working correctly:
+
+1. **Check Script Loading**
+   - Visit your deployed site
+   - Open browser DevTools → Network tab
+   - Verify the script loads from: `/_vercel/speed-insights/script.js`
+   - Status should be `200 OK`
+
+2. **Verify Data Collection**
+   - Navigate through your site pages
+   - Return to Vercel dashboard → **Speed Insights**
+   - Performance data should appear within 24 hours of traffic
+   - View Core Web Vitals metrics by page
+
+3. **Development Mode**
+   - In local development (`bun dev`), Speed Insights runs in debug mode
+   - Check browser console for Speed Insights debug logs
+   - No data is sent to Vercel in development
+
+#### What Gets Tracked
+
+- **LCP (Largest Contentful Paint)**: How quickly main content loads
+- **FID (First Input Delay)**: How quickly site responds to user interaction
+- **CLS (Cumulative Layout Shift)**: Visual stability during page load
+- **TTFB (Time to First Byte)**: Server response time
+
+All metrics are privacy-compliant with no PII collection.
+
+#### Troubleshooting
+
+**Script not loading:**
+- Verify Speed Insights is enabled in Vercel dashboard
+- Check deployment completed successfully
+- Confirm you're accessing the production URL (not preview or development)
+
+**No data appearing:**
+- Speed Insights requires actual user traffic
+- Data typically appears within 24 hours
+- Low-traffic sites may take longer to show meaningful data
+
+**Console errors:**
+- Ensure `@vercel/speed-insights` package is installed (`bun install`)
+- Verify `<SpeedInsights />` component is in `src/app/layout.tsx`
+- Check for browser extension conflicts (ad blockers may interfere)
+
 ## 🎨 Customization
 
 ### Adding Projects
