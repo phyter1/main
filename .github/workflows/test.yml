@@ -28,6 +28,12 @@ jobs:
         run: bun run test:sequential
         env:
           CI: true
+          # Test environment variables (mock values, not real credentials)
+          OPENAI_API_KEY: test_key_for_testing_only_sk_mock_1234567890
+          ADMIN_PASSWORD: TestPassword123!@#ForTests
+          ADMIN_SESSION_SECRET: test_session_secret_64_characters_long_for_testing_purposes_only_1234
+          NEXT_PUBLIC_CONVEX_URL: https://test-convex-url.convex.cloud
+          ADMIN_MAX_REQUESTS_PER_MINUTE: 100
 
       - name: Upload test results
         if: always()
