@@ -234,6 +234,7 @@ echo "🔗 Integration Tests"
 run_test "src/app/admin/__tests__/workflows.integration.test.tsx" "workflows integration"
 run_test "src/app/__tests__/guardrail-feedback.integration.test.tsx" "guardrail-feedback integration"
 run_test "src/app/__tests__/ai-features-integration.test.tsx" "ai-features integration"
+run_test "src/app/__tests__/blog-workflows.integration.test.tsx" "blog-workflows integration"
 run_test "src/__tests__/git-hooks.integration.test.ts" "git-hooks integration"
 echo ""
 
