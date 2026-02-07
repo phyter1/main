@@ -24,6 +24,14 @@ interface RateLimitEntry {
 const loginRateLimitMap = new Map<string, RateLimitEntry>();
 
 /**
+ * Export for testing purposes - allows tests to clear rate limit state
+ * @internal
+ */
+export const __testing__ = {
+  clearRateLimitMap: () => loginRateLimitMap.clear(),
+};
+
+/**
  * Get client IP address from request headers
  */
 function getClientIP(request: Request): string {

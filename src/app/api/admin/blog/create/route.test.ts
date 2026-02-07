@@ -3,41 +3,25 @@
  * Tests POST /api/admin/blog/create endpoint
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it } from "bun:test";
 
-// Mock session verification
-const mockVerifySessionToken = mock(() => true);
-mock.module("@/lib/auth", () => ({
-  verifySessionToken: mockVerifySessionToken,
-}));
-
-// Mock Convex mutation
-const mockFetchMutation = mock(() => "test-post-id-123");
-mock.module("convex/nextjs", () => ({
-  fetchMutation: mockFetchMutation,
-}));
-
-// Mock Convex API
-mock.module("../../../../../../convex/_generated/api", () => ({
-  api: {
-    blog: {
-      createPost: "createPost",
-    },
-  },
-}));
+// Import mocks from preload file
+// Run with: bun test --preload ./src/app/api/admin/blog/__test-setup__.ts
+import { mockFetchMutation, mockVerifySessionToken } from "../__test-setup__";
 
 describe("POST /api/admin/blog/create", () => {
   beforeEach(() => {
     mockVerifySessionToken.mockReset();
-    mockVerifySessionToken.mockReturnValue(true);
+    mockVerifySessionToken.mockImplementation(() => true);
     mockFetchMutation.mockReset();
-    mockFetchMutation.mockReturnValue("test-post-id-123");
+    mockFetchMutation.mockImplementation(() => "test-post-id-123");
   });
 
   it("should create a draft post with valid data and authentication", async () => {
     mockVerifySessionToken.mockReturnValue(true);
     mockFetchMutation.mockReturnValue("test-post-id-123");
 
+    // Import POST dynamically after mocks are set up
     const { POST } = await import("./route");
 
     const validPostData = {

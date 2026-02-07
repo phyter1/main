@@ -12,7 +12,7 @@ import { cleanup, render, screen } from "@testing-library/react";
  */
 
 // Mock authenticated layout
-mock.module("@/app/admin/agent-workbench/authenticated-layout", () => ({
+mock.module("@/app/admin/authenticated-layout", () => ({
   AuthenticatedLayout: mock(({ children }: { children: React.ReactNode }) => (
     <div data-testid="authenticated-layout">
       <div>Authenticated Layout Wrapper</div>

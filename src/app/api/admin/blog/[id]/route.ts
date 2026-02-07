@@ -44,11 +44,11 @@ const UpdatePostSchema = z.object({
 /**
  * Verify admin session from request cookies
  */
-function verifyAdminSession(request: NextRequest): boolean {
+async function verifyAdminSession(request: NextRequest): Promise<boolean> {
   const cookies = request.headers.get("cookie") || "";
   const sessionMatch = cookies.match(/session=([^;]+)/);
   const sessionCookie = sessionMatch?.[1];
-  return !!(sessionCookie && verifySessionToken(sessionCookie));
+  return !!(sessionCookie && (await verifySessionToken(sessionCookie)));
 }
 
 /**
@@ -60,7 +60,7 @@ export async function PATCH(
 ) {
   try {
     // Verify admin session
-    if (!verifyAdminSession(request)) {
+    if (!(await verifyAdminSession(request))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -144,7 +144,7 @@ export async function DELETE(
 ) {
   try {
     // Verify admin session
-    if (!verifyAdminSession(request)) {
+    if (!(await verifyAdminSession(request))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

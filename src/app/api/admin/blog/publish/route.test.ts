@@ -4,7 +4,6 @@
  */
 
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { POST } from "./route";
 
 // Mock session verification
 const mockVerifySessionToken = mock(() => true);
@@ -28,10 +27,19 @@ mock.module("../../../../../../convex/_generated/api", () => ({
 }));
 
 describe("POST /api/admin/blog/publish", () => {
-  beforeEach(() => {
-    mock.restore();
-    mockVerifySessionToken.mockReturnValue(true);
-    mockFetchMutation.mockReturnValue(undefined);
+  // Import POST dynamically after mocks are set up
+  let POST: any;
+
+  beforeEach(async () => {
+    // Reset individual mocks instead of mock.restore() which destroys module mocks
+    mockVerifySessionToken.mockReset();
+    mockVerifySessionToken.mockImplementation(() => true);
+    mockFetchMutation.mockReset();
+    mockFetchMutation.mockImplementation(() => undefined);
+
+    // Dynamically import to get mocked version
+    const module = await import("./route");
+    POST = module.POST;
   });
 
   it("should publish a post with valid ID and authentication", async () => {

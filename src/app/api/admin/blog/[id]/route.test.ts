@@ -4,7 +4,6 @@
  */
 
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { DELETE, PATCH } from "./route";
 
 // Mock session verification
 const mockVerifySessionToken = mock(() => true);
@@ -29,10 +28,21 @@ mock.module("../../../../../../convex/_generated/api", () => ({
 }));
 
 describe("PATCH /api/admin/blog/[id]", () => {
-  beforeEach(() => {
-    mock.restore();
-    mockVerifySessionToken.mockReturnValue(true);
-    mockFetchMutation.mockReturnValue(undefined);
+  // Import PATCH/DELETE dynamically after mocks are set up
+  let PATCH: any;
+  let _DELETE: any;
+
+  beforeEach(async () => {
+    // Reset individual mocks instead of mock.restore() which destroys module mocks
+    mockVerifySessionToken.mockReset();
+    mockVerifySessionToken.mockImplementation(() => true);
+    mockFetchMutation.mockReset();
+    mockFetchMutation.mockImplementation(() => undefined);
+
+    // Dynamically import to get mocked version
+    const module = await import("./route");
+    PATCH = module.PATCH;
+    _DELETE = module.DELETE;
   });
 
   it("should update a post with valid data and authentication", async () => {
@@ -318,10 +328,18 @@ describe("PATCH /api/admin/blog/[id]", () => {
 });
 
 describe("DELETE /api/admin/blog/[id]", () => {
-  beforeEach(() => {
-    mock.restore();
-    mockVerifySessionToken.mockReturnValue(true);
-    mockFetchMutation.mockReturnValue(undefined);
+  beforeEach(async () => {
+    // Reset individual mocks instead of mock.restore() which destroys module mocks
+    mockVerifySessionToken.mockReset();
+    mockVerifySessionToken.mockImplementation(() => true);
+    mockFetchMutation.mockReset();
+    mockFetchMutation.mockImplementation(() => undefined);
+
+    // Dynamically import to get mocked version (already imported in PATCH describe block)
+    if (!DELETE) {
+      const module = await import("./route");
+      DELETE = module.DELETE;
+    }
   });
 
   it("should archive a post with valid ID and authentication", async () => {

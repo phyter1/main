@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const sessionMatch = cookies.match(/session=([^;]+)/);
     const sessionCookie = sessionMatch?.[1];
 
-    if (!sessionCookie || !verifySessionToken(sessionCookie)) {
+    if (!sessionCookie || !(await verifySessionToken(sessionCookie))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -139,7 +139,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Authentication: Verify session token
     const sessionToken = getSessionToken(request);
-    if (!sessionToken || !verifySessionToken(sessionToken)) {
+    if (!sessionToken || !(await verifySessionToken(sessionToken))) {
       return NextResponse.json(
         { error: "Unauthorized. Admin authentication required." },
         { status: 401 },

@@ -189,7 +189,7 @@ describe("T001: Authentication Utilities and Middleware", () => {
       const token = "test-token-123";
       storeSessionToken(token);
 
-      const isValid = verifySessionToken(token);
+      const isValid = await verifySessionToken(token);
       expect(isValid).toBe(true);
     });
 
@@ -199,14 +199,14 @@ describe("T001: Authentication Utilities and Middleware", () => {
       const token = "valid-token-456";
       storeSessionToken(token);
 
-      const isValid = verifySessionToken(token);
+      const isValid = await verifySessionToken(token);
       expect(isValid).toBe(true);
     });
 
     it("should reject invalid session token", async () => {
       const { verifySessionToken } = await import("./auth");
 
-      const isValid = verifySessionToken("invalid-token");
+      const isValid = await verifySessionToken("invalid-token");
       expect(isValid).toBe(false);
     });
 
@@ -217,7 +217,7 @@ describe("T001: Authentication Utilities and Middleware", () => {
       // Store with past expiration
       storeSessionToken(token, Date.now() - 1000);
 
-      const isValid = verifySessionToken(token);
+      const isValid = await verifySessionToken(token);
       expect(isValid).toBe(false);
     });
 
@@ -230,9 +230,9 @@ describe("T001: Authentication Utilities and Middleware", () => {
       storeSessionToken("expired-token-2", Date.now() - 2000);
 
       // Verify only valid token remains
-      expect(verifySessionToken("valid-token")).toBe(true);
-      expect(verifySessionToken("expired-token-1")).toBe(false);
-      expect(verifySessionToken("expired-token-2")).toBe(false);
+      expect(await verifySessionToken("valid-token")).toBe(true);
+      expect(await verifySessionToken("expired-token-1")).toBe(false);
+      expect(await verifySessionToken("expired-token-2")).toBe(false);
     });
 
     it("should invalidate token on logout", async () => {
@@ -242,11 +242,11 @@ describe("T001: Authentication Utilities and Middleware", () => {
       const token = "logout-token-123";
       storeSessionToken(token);
 
-      expect(verifySessionToken(token)).toBe(true);
+      expect(await verifySessionToken(token)).toBe(true);
 
       invalidateSessionToken(token);
 
-      expect(verifySessionToken(token)).toBe(false);
+      expect(await verifySessionToken(token)).toBe(false);
     });
   });
 

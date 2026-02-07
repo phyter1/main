@@ -78,9 +78,9 @@ export function generateSlug(title: string): string {
 export function calculateReadingTime(content: string): number {
   const trimmed = content.trim();
 
-  // Return 0 for empty content
+  // Return 1 minute minimum for empty content
   if (!trimmed) {
-    return 0;
+    return 1;
   }
 
   // Split by whitespace and filter out empty strings

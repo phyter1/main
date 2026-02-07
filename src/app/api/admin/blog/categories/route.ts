@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Verify admin session
     const sessionCookie = request.cookies.get("session")?.value;
 
-    if (!sessionCookie || !verifySessionToken(sessionCookie)) {
+    if (!sessionCookie || !(await verifySessionToken(sessionCookie))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
