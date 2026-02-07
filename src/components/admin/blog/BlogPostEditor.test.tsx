@@ -303,7 +303,7 @@ describe("BlogPostEditor", () => {
       render(
         <BlogPostEditor
           title=""
-          content="   \n\n\t  "
+          content={"   \n\n\t  "}
           onTitleChange={onTitleChange}
           onContentChange={onContentChange}
         />,

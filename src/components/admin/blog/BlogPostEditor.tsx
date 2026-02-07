@@ -34,10 +34,10 @@ export function BlogPostEditor({
 
   // Character and word count
   const charCount = content.length;
-  const wordCount = content
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word.length > 0).length;
+  const trimmed = content.trim();
+  const wordCount = trimmed
+    ? trimmed.split(/\s+/).filter((word) => word.length > 0).length
+    : 0;
 
   return (
     <div className="space-y-6">
