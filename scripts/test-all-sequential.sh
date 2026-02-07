@@ -156,6 +156,11 @@ run_test "src/app/api/chat/route.test.ts" "chat API"
 run_test "src/app/api/fit-assessment/route.test.ts" "fit-assessment API"
 echo ""
 
+# Blog API Route Tests
+echo "📝 Blog API Route Tests"
+run_test "src/app/blog/rss.xml/route.test.ts" "RSS feed API"
+echo ""
+
 # Admin API Route Tests
 echo "🔐 Admin API Route Tests"
 run_test "src/app/api/admin/deploy-prompt/route.test.ts" "deploy-prompt API"
