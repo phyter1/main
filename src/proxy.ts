@@ -1,44 +1,62 @@
 /**
- * Next.js Middleware for Authentication
+ * Next.js Proxy for Authentication
  * Protects /admin/* routes with session-based authentication
  */
 
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { validateAuthConfig, verifySessionToken } from "./src/lib/auth";
+import { validateAuthConfig, verifySessionToken } from "./lib/auth";
 
 /**
- * Middleware to protect admin routes
+ * Environment-aware debug logger
+ * Only logs in development, silent in production
+ */
+const debug =
+  process.env.NODE_ENV !== "production"
+    ? console.log.bind(console, "[AUTH]")
+    : () => {};
+
+/**
+ * Proxy to protect admin routes
  * @param request - Incoming Next.js request
  * @returns Response with redirect or next()
  */
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
+
+  debug("Proxy called:", pathname);
 
   // Allow access to /admin/login without authentication
   if (pathname === "/admin/login") {
+    debug("Allowing /admin/login");
     return NextResponse.next();
   }
 
   // Validate auth configuration on server startup
   try {
     validateAuthConfig();
-  } catch (error) {
-    // Allow middleware to continue, but log the error
-    console.error("Auth configuration validation failed:", error);
+  } catch (_error) {
+    // Log error but allow proxy to continue
+    console.error("[AUTH] Configuration validation failed");
   }
 
   // Check if this is an admin route (excluding /admin/login)
   if (pathname.startsWith("/admin")) {
+    debug("Checking admin route authentication");
     // Extract session token from cookies
     const sessionToken = getSessionTokenFromRequest(request);
+    debug("Session token:", sessionToken ? "EXISTS" : "MISSING");
 
     // Verify session token
     if (!sessionToken || !verifySessionToken(sessionToken)) {
-      // Redirect to login page
+      debug("Redirecting to login - No valid session");
+      // Redirect to login page with original URL as redirect param
       const loginUrl = new URL("/admin/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl, { status: 307 });
     }
+
+    debug("Valid session found, allowing access");
 
     // Add security headers to authenticated admin requests
     const response = NextResponse.next();
@@ -103,6 +121,7 @@ export const config = {
     /*
      * Match admin routes only for authentication
      */
+    "/admin",
     "/admin/:path*",
   ],
 };
