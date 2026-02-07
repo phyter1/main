@@ -2,7 +2,7 @@
 
 A modern, high-performance portfolio website showcasing professional and personal projects, built with cutting-edge web technologies and developed using AI-first, agentic development practices.
 
-**Live Site:** [ryan.phytertek.com](https://ryan.phytertek.com)
+**Live Site:** [phytertek.com](https://rphytertek.com)
 
 ## ✨ Features
 
