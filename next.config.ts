@@ -8,6 +8,24 @@ const nextConfig: NextConfig = {
   },
   // Configure MDX support for .mdx files
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+
+  // Cache-Control headers for blog routes (T034)
+  // Enables Vercel Edge caching with ISR
+  async headers() {
+    return [
+      {
+        source: "/blog/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            // s-maxage: CDN cache for 60 seconds
+            // stale-while-revalidate: serve stale for 300s during revalidation
+            value: "s-maxage=60, stale-while-revalidate=300",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 // Configure MDX with plugins

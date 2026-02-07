@@ -178,6 +178,13 @@ run_test "src/app/blog/page.test.tsx" "blog listing"
 run_test "src/app/blog/[slug]/page.test.tsx" "blog post"
 run_test "src/app/blog/category/[slug]/page.test.tsx" "blog category"
 run_test "src/app/blog/tag/[slug]/page.test.tsx" "blog tag"
+run_test "src/app/blog/__tests__/cache-config.test.ts" "blog cache config"
+run_test "src/app/blog/__tests__/cache-integration.test.ts" "blog cache integration"
+echo ""
+
+# Next.js Configuration Tests
+echo "⚙️  Next.js Configuration Tests"
+run_test "next.config.test.ts" "next.config cache headers"
 echo ""
 
 # API Route Tests
