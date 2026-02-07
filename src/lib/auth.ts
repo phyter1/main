@@ -94,8 +94,8 @@ export function createSessionCookie(token: string): string {
   const cookieParts = [
     `session=${token}`,
     "HttpOnly",
-    "SameSite=Lax",
-    "Path=/",
+    "SameSite=Strict", // Strict for better CSRF protection
+    "Path=/admin", // Scope to admin routes only
     `Max-Age=${maxAge}`,
   ];
 
