@@ -8,6 +8,7 @@ A modern, high-performance portfolio website showcasing professional and persona
 
 - **🤖 AI Chat Assistant**: Interactive AI-powered chat interface trained on professional experience and engineering philosophy
 - **🎯 Job Fit Analyzer**: AI-powered job description analysis tool providing honest assessment of role alignment
+- **📝 Blog System**: Full-featured blog with MDX support, admin interface, SEO optimization, and RSS feed
 - **🛡️ Production-Grade Security**: Comprehensive guardrail system with educational feedback for prompt injection, rate limiting, and content validation
 - **🎨 Beautiful UI/UX**: Custom animations, grain overlay effects, and cursor glow
 - **🌓 Dark Mode Support**: Comprehensive theme system with light, dark, and system preference modes
@@ -40,11 +41,23 @@ A modern, high-performance portfolio website showcasing professional and persona
 - **TypeScript Strict Mode** - Maximum type safety
 - **Path Aliases** - Clean imports with `@/*` mapping
 
+### Backend & Data
+- **Convex** - Real-time backend with type-safe queries and mutations
+- **Convex File Storage** - Cloud storage for blog images
+
+### Content Management
+- **MDX** - Markdown with JSX support for rich content
+- **Tiptap** - Headless rich text editor with React integration
+- **remark-gfm** - GitHub Flavored Markdown support
+- **rehype-highlight** - Syntax highlighting for code blocks
+- **rehype-slug** - Automatic heading IDs for anchor links
+
 ### Additional Libraries
 - **Lucide React** - Beautiful icon system
 - **React Icons** - Comprehensive icon collection
 - **XYFlow** - Interactive flow diagrams for infrastructure visualization
 - **date-fns** - Modern date utility library
+- **Zod** - TypeScript-first schema validation
 
 ## 📁 Project Structure
 
@@ -54,11 +67,36 @@ src/
 │   ├── layout.tsx           # Root layout with metadata
 │   ├── page.tsx             # Homepage with hero section
 │   ├── about/               # About page
+│   ├── blog/                # Blog pages
+│   │   ├── page.tsx         # Blog listing page
+│   │   ├── [slug]/          # Individual blog posts
+│   │   ├── category/        # Category archive pages
+│   │   ├── tag/             # Tag archive pages
+│   │   └── rss.xml/         # RSS feed generation
+│   ├── admin/               # Admin interface
+│   │   ├── blog/            # Blog admin dashboard
+│   │   │   ├── page.tsx     # Blog dashboard
+│   │   │   ├── new/         # Create new post
+│   │   │   ├── edit/        # Edit post
+│   │   │   └── categories/  # Category management
+│   │   └── login/           # Admin authentication
 │   ├── principles/          # Engineering principles page
 │   ├── projects/            # Projects showcase with filters
 │   ├── stack/               # Tech stack visualization
 │   └── globals.css          # Global styles and theme variables
 ├── components/
+│   ├── blog/                # Blog components
+│   │   ├── BlogCard.tsx     # Blog post card
+│   │   ├── BlogContent.tsx  # MDX content renderer
+│   │   ├── BlogHeader.tsx   # Post header
+│   │   ├── BlogSearch.tsx   # Search component
+│   │   ├── BlogSidebar.tsx  # Sidebar with categories/tags
+│   │   └── ShareButtons.tsx # Social sharing buttons
+│   ├── admin/               # Admin components
+│   │   └── blog/            # Blog admin components
+│   │       ├── BlogPostEditor.tsx   # Tiptap editor
+│   │       ├── BlogPostMetadata.tsx # SEO metadata editor
+│   │       └── CategoryManager.tsx  # Category management
 │   ├── effects/             # Visual effects (grain, glow, typewriter)
 │   ├── layout/              # Navigation and footer
 │   ├── sections/            # Page sections (Hero, etc.)
@@ -71,6 +109,7 @@ src/
 ├── hooks/
 │   └── useReducedMotion.ts  # Accessibility hook
 └── lib/
+    ├── blog-utils.ts        # Blog utility functions
     ├── fonts.ts             # Font configuration
     └── utils.ts             # Utility functions (cn helper)
 ```
@@ -83,6 +122,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[Design System](./docs/01-DESIGN-SYSTEM.md)** - Colors, typography, and theming
 - **[Components](./docs/02-COMPONENTS.md)** - Component library and usage
 - **[Guardrail System](./docs/12-GUARDRAIL-SYSTEM.md)** - AI security with educational feedback
+- **[Blog System](./docs/13-BLOG-SYSTEM.md)** - Blog architecture, admin guide, and content guidelines (coming soon)
 - **[Security](./SECURITY.md)** - Security practices and vulnerability reporting
 
 The guardrail documentation is particularly notable for its production-grade security implementation with transparent, educational user feedback. See `docs/12-GUARDRAIL-SYSTEM.md` for details on:
@@ -191,6 +231,61 @@ AI_MAX_TOKENS_PER_REQUEST=4096
 3. Never commit `.env.local` to version control
 
 ## 🎯 Key Features Explained
+
+### Blog System
+
+A comprehensive blog platform integrated with the portfolio, featuring:
+
+**Content Management:**
+- MDX-powered content with full Markdown support
+- GitHub Flavored Markdown (GFM) including tables, task lists, and autolinks
+- Tiptap rich text editor with live preview
+- Syntax highlighting for code blocks with language detection
+- Auto-save functionality to prevent content loss
+- Category and tag organization
+
+**Admin Interface:**
+- Full-featured admin dashboard at `/admin/blog`
+- Integrated with existing admin authentication system
+- Create, edit, publish, and archive posts
+- Category management with post counts
+- Image upload with preview
+- SEO metadata editor (title, description, Open Graph images)
+- Slug auto-generation with custom override option
+
+**Public Features:**
+- Blog listing page with grid layout and featured posts section
+- Individual post pages with responsive design
+- Category and tag archive pages with filtering
+- Full-text search with live results
+- RSS feed generation at `/blog/rss.xml`
+- Social sharing buttons (Twitter, LinkedIn, email, copy link)
+- Automatic table of contents for long posts
+
+**SEO Optimization:**
+- Dynamic metadata generation (Open Graph, Twitter Cards)
+- Automatic sitemap integration
+- Structured data (JSON-LD) for blog posts
+- Canonical URLs and proper heading hierarchy
+- ISR (Incremental Static Regeneration) for optimal performance
+
+**Technical Implementation:**
+- Convex backend for real-time data synchronization
+- Server-side rendering with Next.js App Router
+- Type-safe queries and mutations with TypeScript
+- Comprehensive test coverage (unit, integration, and component tests)
+- Performance optimized with React Compiler
+
+**Routes:**
+- `/blog` - Main blog listing page
+- `/blog/[slug]` - Individual blog posts
+- `/blog/category/[slug]` - Category archive pages
+- `/blog/tag/[slug]` - Tag archive pages
+- `/blog/rss.xml` - RSS feed
+- `/admin/blog` - Admin blog dashboard
+- `/admin/blog/new` - Create new post
+- `/admin/blog/edit/[id]` - Edit existing post
+- `/admin/blog/categories` - Manage categories
 
 ### Engineering Principles Page
 
