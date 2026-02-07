@@ -268,7 +268,7 @@ export const projects: Project[] = [
       "Biome",
     ],
     links: {
-      demo: "https://ryan.phytertek.com",
+      demo: "https://phytertek.com",
       github: "https://github.com/phyter1/main",
     },
     featured: true,
