@@ -64,7 +64,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // Handle loading state
   if (categories === undefined) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="text-center">
           <p className="text-muted-foreground">Loading category...</p>
         </div>
@@ -98,7 +98,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 pt-24 pb-12">
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main Content */}
         <main className="flex-1">
@@ -240,11 +240,3 @@ export async function generateStaticParams() {
   // For now, return empty array to allow dynamic generation
   return [];
 }
-
-/**
- * Configure ISR revalidation
- *
- * Page will be regenerated every 60 seconds (1 minute)
- * to keep category content fresh while maintaining performance.
- */
-export const revalidate = 60;

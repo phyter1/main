@@ -115,7 +115,7 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
   // Handle tag not found
   if (!tag) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-3xl font-bold mb-4">Tag Not Found</h1>
           <p className="text-muted-foreground mb-8">
@@ -149,7 +149,7 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
     .slice(0, 5);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 pt-24 pb-12">
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main Content */}
         <div className="flex-1">

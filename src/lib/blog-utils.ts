@@ -65,22 +65,22 @@ export function generateSlug(title: string): string {
  * Calculate estimated reading time in minutes
  *
  * Estimates reading time based on average reading speed of 200 words per minute.
- * Always returns at least 1 minute for any content.
+ * Returns 0 for very short content (< 1 minute read time).
  *
  * @param content - The blog post content (markdown or plain text)
- * @returns Estimated reading time in minutes (minimum 1)
+ * @returns Estimated reading time in minutes (0 for < 1 minute)
  *
  * @example
+ * calculateReadingTime("word ".repeat(50)) // 0 (less than 1 minute)
  * calculateReadingTime("word ".repeat(200)) // 1
  * calculateReadingTime("word ".repeat(400)) // 2
- * calculateReadingTime("word ".repeat(600)) // 3
  */
 export function calculateReadingTime(content: string): number {
   const trimmed = content.trim();
 
-  // Return 1 minute for empty or very short content
+  // Return 0 for empty content
   if (!trimmed) {
-    return 1;
+    return 0;
   }
 
   // Split by whitespace and filter out empty strings
@@ -91,8 +91,8 @@ export function calculateReadingTime(content: string): number {
   const WORDS_PER_MINUTE = 200;
   const minutes = wordCount / WORDS_PER_MINUTE;
 
-  // Round up and ensure minimum of 1 minute
-  return Math.max(1, Math.ceil(minutes));
+  // Round up (0 for < 1 minute)
+  return Math.ceil(minutes);
 }
 
 /**

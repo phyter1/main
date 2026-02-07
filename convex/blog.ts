@@ -36,15 +36,13 @@ export const listPosts = query({
   handler: async (ctx, args) => {
     const { status, category, limit = 20, offset = 0 } = args;
 
-    let query = ctx.db.query("blogPosts");
-
-    // Filter by status if provided
-    if (status) {
-      query = query.withIndex("by_status", (q) => q.eq("status", status));
-    }
-
-    // Collect all results
-    let posts = await query.collect();
+    // Collect all results with optional status filter
+    let posts = status
+      ? await ctx.db
+          .query("blogPosts")
+          .withIndex("by_status", (q) => q.eq("status", status))
+          .collect()
+      : await ctx.db.query("blogPosts").collect();
 
     // Filter by category if provided
     if (category) {
@@ -341,13 +339,14 @@ export const updatePost = mutation({
 
     // If slug is being updated, validate uniqueness
     if (updates.slug && updates.slug !== existingPost.slug) {
+      const newSlug = updates.slug;
       const slugInUse = await ctx.db
         .query("blogPosts")
-        .withIndex("by_slug", (q) => q.eq("slug", updates.slug))
+        .withIndex("by_slug", (q) => q.eq("slug", newSlug))
         .first();
 
       if (slugInUse) {
-        throw new Error(`Slug "${updates.slug}" is already in use`);
+        throw new Error(`Slug "${newSlug}" is already in use`);
       }
     }
 

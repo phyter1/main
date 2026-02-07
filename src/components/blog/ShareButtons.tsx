@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Link2, Linkedin, Mail, Twitter } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -55,15 +55,13 @@ export function ShareButtons({
 }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
+  const [postUrl, setPostUrl] = useState(`/blog/${slug}`);
 
-  // Construct post URL
-  const getPostUrl = () => {
-    const base =
-      baseUrl || (typeof window !== "undefined" ? window.location.origin : "");
-    return `${base}/blog/${slug}`;
-  };
-
-  const postUrl = getPostUrl();
+  // Set full URL after hydration to avoid SSR mismatch
+  useEffect(() => {
+    const base = baseUrl || window.location.origin;
+    setPostUrl(`${base}/blog/${slug}`);
+  }, [baseUrl, slug]);
 
   /**
    * Generate Twitter share URL with proper encoding

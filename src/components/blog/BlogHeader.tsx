@@ -100,7 +100,9 @@ export function BlogHeader({ post, className }: BlogHeaderProps) {
         )}
 
         {/* Reading Time */}
-        <span className="text-muted-foreground">{readingTime} min read</span>
+        <span className="text-muted-foreground">
+          {readingTime === 0 ? "< 1 min read" : `${readingTime} min read`}
+        </span>
       </div>
 
       {/* Title */}

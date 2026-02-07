@@ -125,12 +125,12 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${firaSans.variable} ${firaMono.variable} font-sans antialiased`}
+        className={`${firaSans.variable} ${firaMono.variable} font-sans antialiased flex flex-col min-h-screen`}
       >
         <ThemeProvider>
           <ConvexClientProvider>
             <Navigation />
-            <main>{children}</main>
+            <main className="flex-1">{children}</main>
             <Footer />
             <Analytics />
             <SpeedInsights />

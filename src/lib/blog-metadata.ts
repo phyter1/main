@@ -66,7 +66,10 @@ export function generateBlogMetadata(post: BlogPost): Metadata {
   const publishedTime = post.publishedAt
     ? new Date(post.publishedAt).toISOString()
     : undefined;
-  const modifiedTime = new Date(post.updatedAt).toISOString();
+  const modifiedTime =
+    post.updatedAt && !Number.isNaN(post.updatedAt)
+      ? new Date(post.updatedAt).toISOString()
+      : undefined;
 
   return {
     title,

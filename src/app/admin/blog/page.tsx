@@ -10,31 +10,38 @@
  * - Responsive layout
  */
 
+import { useMutation, useQuery } from "convex/react";
 import { Eye, FilePen, FileText, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BlogPostList } from "@/components/admin/blog/BlogPostList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { BlogPost } from "@/data/blog-mock";
-import { mockBlogCategories, mockBlogPosts } from "@/data/blog-mock";
-
-/**
- * Page metadata for SEO and browser tab
- */
-export const metadata = {
-  title: "Blog Management | Admin Dashboard",
-  description: "Manage blog posts, categories, and content",
-};
+import { api } from "../../../../convex/_generated/api";
 
 export default function BlogPage() {
   const router = useRouter();
 
-  // Calculate statistics from mock data
-  const totalPosts = mockBlogPosts.length;
-  const draftPosts = mockBlogPosts.filter(
-    (post) => post.status === "draft",
-  ).length;
-  const publishedPosts = mockBlogPosts.filter(
+  // Fetch data from Convex
+  const allPostsData = useQuery(api.blog.listPosts, {});
+  const categoriesData = useQuery(api.blog.getCategories);
+  const deletePostMutation = useMutation(api.blog.deletePost);
+
+  // Handle loading state
+  if (!allPostsData || !categoriesData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  const posts = allPostsData.posts || [];
+  const categories = categoriesData || [];
+
+  // Calculate statistics
+  const totalPosts = posts.length;
+  const draftPosts = posts.filter((post) => post.status === "draft").length;
+  const publishedPosts = posts.filter(
     (post) => post.status === "published",
   ).length;
 
@@ -44,39 +51,56 @@ export default function BlogPage() {
   };
 
   // Handler for editing post
-  const handleEditPost = (post: BlogPost) => {
-    router.push(`/admin/blog/edit/${post.slug}`);
+  const handleEditPost = (post: any) => {
+    router.push(`/admin/blog/edit/${post._id}`);
   };
 
   // Handler for deleting post
-  const handleDeletePost = (post: BlogPost) => {
-    console.log("Delete post:", post.slug);
-    // TODO: Implement delete functionality with confirmation
+  const handleDeletePost = async (post: any) => {
+    if (!confirm(`Are you sure you want to delete "${post.title}"?`)) {
+      return;
+    }
+
+    try {
+      await deletePostMutation({ id: post._id });
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      alert("Failed to delete post. Please try again.");
+    }
   };
 
   // Handlers for bulk actions
-  const handleBulkPublish = (posts: BlogPost[]) => {
+  const handleBulkPublish = async (selectedPosts: any[]) => {
+    // TODO: Implement bulk publish mutation
     console.log(
       "Bulk publish:",
-      posts.map((p) => p.slug),
+      selectedPosts.map((p) => p.slug),
     );
-    // TODO: Implement bulk publish
   };
 
-  const handleBulkArchive = (posts: BlogPost[]) => {
+  const handleBulkArchive = async (selectedPosts: any[]) => {
+    // TODO: Implement bulk archive mutation
     console.log(
       "Bulk archive:",
-      posts.map((p) => p.slug),
+      selectedPosts.map((p) => p.slug),
     );
-    // TODO: Implement bulk archive
   };
 
-  const handleBulkDelete = (posts: BlogPost[]) => {
-    console.log(
-      "Bulk delete:",
-      posts.map((p) => p.slug),
-    );
-    // TODO: Implement bulk delete with confirmation
+  const handleBulkDelete = async (selectedPosts: any[]) => {
+    if (
+      !confirm(`Are you sure you want to delete ${selectedPosts.length} posts?`)
+    ) {
+      return;
+    }
+
+    try {
+      await Promise.all(
+        selectedPosts.map((post) => deletePostMutation({ id: post._id })),
+      );
+    } catch (error) {
+      console.error("Failed to delete posts:", error);
+      alert("Failed to delete some posts. Please try again.");
+    }
   };
 
   return (
@@ -150,8 +174,8 @@ export default function BlogPage() {
         </CardHeader>
         <CardContent>
           <BlogPostList
-            posts={mockBlogPosts}
-            categories={mockBlogCategories}
+            posts={posts}
+            categories={categories}
             onEdit={handleEditPost}
             onDelete={handleDeletePost}
             onBulkPublish={handleBulkPublish}

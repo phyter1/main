@@ -39,11 +39,11 @@ import { api } from "../../../convex/_generated/api";
 // Constants
 const POSTS_PER_PAGE = 20;
 
-// Revalidate every 60 seconds (ISR)
-export const revalidate = 60;
-
 /**
  * Blog Listing Page Component
+ *
+ * Note: Uses Convex real-time queries which automatically update.
+ * No ISR needed since this is a client component with live data.
  */
 export default function BlogPage() {
   const router = useRouter();
@@ -136,7 +136,7 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-12 max-w-7xl">
+      <div className="container mx-auto px-4 pt-24 pb-12 max-w-7xl">
         {/* Page Header */}
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">

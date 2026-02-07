@@ -68,22 +68,6 @@ export default function NewBlogPostPage() {
   const [isPublishing, setIsPublishing] = useState(false);
 
   /**
-   * Handle editor changes (title, excerpt, content)
-   */
-  const handleEditorSave = (data: {
-    title?: string;
-    excerpt?: string;
-    content?: string;
-  }) => {
-    setFormData((prev) => ({
-      ...prev,
-      title: data.title ?? prev.title,
-      excerpt: data.excerpt ?? prev.excerpt,
-      content: data.content ?? prev.content,
-    }));
-  };
-
-  /**
    * Handle metadata changes
    */
   const handleMetadataChange = (metadata: {
@@ -121,7 +105,7 @@ export default function NewBlogPostPage() {
         coverImageUrl: formData.coverImage,
         categoryId: formData.categoryId,
         tags: formData.tags,
-        author: "Admin", // TODO: Get from auth session
+        author: "Ryan Lowe",
         readingTimeMinutes,
         featured: formData.featured,
         seoMetadata: {
@@ -162,7 +146,7 @@ export default function NewBlogPostPage() {
         coverImageUrl: formData.coverImage,
         categoryId: formData.categoryId,
         tags: formData.tags,
-        author: "Admin", // TODO: Get from auth session
+        author: "Ryan Lowe",
         readingTimeMinutes,
         featured: formData.featured,
         seoMetadata: {
@@ -231,7 +215,16 @@ export default function NewBlogPostPage() {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Left: Editor (2/3 width) */}
         <div className="lg:col-span-2">
-          <BlogPostEditor post={undefined} onSave={handleEditorSave} />
+          <BlogPostEditor
+            title={formData.title}
+            content={formData.content}
+            onTitleChange={(title) =>
+              setFormData((prev) => ({ ...prev, title }))
+            }
+            onContentChange={(content) =>
+              setFormData((prev) => ({ ...prev, content }))
+            }
+          />
         </div>
 
         {/* Right: Metadata (1/3 width) */}
