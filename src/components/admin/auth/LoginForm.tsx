@@ -3,10 +3,11 @@
 /**
  * Login Form Component
  * Client component for handling admin authentication
+ * Supports redirect URL param to return user to original page after login
  */
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,10 +20,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
+  const passwordId = useId();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const _router = useRouter();
+  const searchParams = useSearchParams();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,10 +33,14 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
+      // Get redirect URL from query params
+      const redirectTo =
+        searchParams.get("redirect") || "/admin/agent-workbench";
+
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, redirectTo }),
       });
 
       const data = await response.json();
@@ -43,9 +50,8 @@ export function LoginForm() {
         return;
       }
 
-      // Redirect to agent workbench on success
       // Use window.location for hard reload to ensure cookie is picked up
-      window.location.href = data.redirectTo || "/admin/agent-workbench";
+      window.location.href = data.redirectTo;
     } catch {
       setError("An error occurred. Please try again.");
     } finally {
@@ -59,15 +65,15 @@ export function LoginForm() {
         <CardHeader>
           <CardTitle>Admin Login</CardTitle>
           <CardDescription>
-            Enter your password to access the admin workbench
+            Enter your password to access the admin area
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor={passwordId}>Password</Label>
               <Input
-                id="password"
+                id={passwordId}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

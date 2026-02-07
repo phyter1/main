@@ -21,8 +21,16 @@ mock.module("@/lib/auth", () => ({
 }));
 
 describe("POST /api/admin/login", () => {
-  beforeEach(() => {
-    mock.restore();
+  beforeEach(async () => {
+    // Reset individual mocks instead of mock.restore() which destroys module mocks
+    mockVerifyAdminPassword.mockReset();
+    mockGenerateSessionToken.mockReset();
+    mockCreateSessionCookie.mockReset();
+    mockStoreSessionToken.mockReset();
+
+    // Clear rate limit map to prevent test interference
+    const { __testing__ } = await import("./route");
+    __testing__.clearRateLimitMap();
   });
 
   describe("Request Validation", () => {

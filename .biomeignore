@@ -1,0 +1,13 @@
+# Biome ignore file
+# https://biomejs.dev/reference/configuration/#filesignore
+
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+dist
+build
+
+# Generated files
+convex/_generated

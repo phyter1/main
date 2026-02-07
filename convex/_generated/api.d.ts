@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as blog from "../blog.js";
 import type * as prompts from "../prompts.js";
 import type * as testCases from "../testCases.js";
 import type * as validators from "../validators.js";
@@ -19,6 +20,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  blog: typeof blog;
   prompts: typeof prompts;
   testCases: typeof testCases;
   validators: typeof validators;

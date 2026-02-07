@@ -23,17 +23,22 @@ interface SessionToken {
   expiresAt: number;
 }
 
-// Use global singleton to persist sessions across module reloads in development
-const globalForSessions = globalThis as unknown as {
-  activeSessions: Map<string, SessionToken> | undefined;
+/**
+ * Module-level session storage
+ * Note: Removed global singleton pattern to enable proper test mocking
+ * Sessions will not persist across hot module reloads in development
+ */
+const activeSessions = new Map<string, SessionToken>();
+
+/**
+ * Test helper to clear all sessions
+ * @internal - Only for use in tests
+ */
+export const __testing__ = {
+  clearSessions: () => activeSessions.clear(),
+  addSession: (token: string, expiresAt: number) =>
+    activeSessions.set(token, { token, expiresAt }),
 };
-
-const activeSessions =
-  globalForSessions.activeSessions ?? new Map<string, SessionToken>();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForSessions.activeSessions = activeSessions;
-}
 
 /**
  * Hash a password using PBKDF2 with random salt (Web Crypto API)
@@ -94,8 +99,8 @@ export function createSessionCookie(token: string): string {
   const cookieParts = [
     `session=${token}`,
     "HttpOnly",
-    "SameSite=Lax",
-    "Path=/",
+    "SameSite=Strict", // Strict for better CSRF protection
+    "Path=/admin", // Scope to admin routes only
     `Max-Age=${maxAge}`,
   ];
 
@@ -130,9 +135,9 @@ export function storeSessionToken(token: string, expiresAt?: number): void {
 /**
  * Verify if a session token is valid and not expired
  * @param token - Session token to verify
- * @returns True if token is valid and not expired
+ * @returns Promise resolving to true if token is valid and not expired
  */
-export function verifySessionToken(token: string): boolean {
+export async function verifySessionToken(token: string): Promise<boolean> {
   cleanupExpiredSessions();
 
   const session = activeSessions.get(token);

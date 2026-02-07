@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { label: "Resume Data", href: "/admin/agent-workbench/resume" },
   { label: "Test Suite", href: "/admin/agent-workbench/tests" },
   { label: "History", href: "/admin/agent-workbench/history" },
+  { label: "Blog", href: "/admin/blog" },
 ];
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
