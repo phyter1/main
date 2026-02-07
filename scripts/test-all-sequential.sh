@@ -119,6 +119,12 @@ echo "📝 Admin Blog Component Tests"
 run_test "src/components/admin/blog/BlogPostMetadata.test.tsx" "BlogPostMetadata"
 echo ""
 
+# Blog Component Tests
+echo "📝 Blog Component Tests"
+run_test "src/components/blog/BlogCard.test.tsx" "BlogCard"
+run_test "src/components/blog/TableOfContents.test.tsx" "TableOfContents"
+echo ""
+
 # Layout Component Tests
 echo "🏗️ Layout Component Tests"
 run_test "src/components/layout/Navigation.test.tsx" "Navigation"
