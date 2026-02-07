@@ -56,6 +56,7 @@ run_test "src/lib/ai-config.test.ts" "ai-config"
 run_test "src/lib/analytics.test.ts" "analytics"
 run_test "src/lib/auth.test.ts" "auth"
 run_test "src/lib/blog-utils.test.ts" "blog-utils"
+run_test "src/lib/blog-metadata.test.ts" "blog-metadata"
 run_test "src/lib/blog-sitemap.test.ts" "blog-sitemap"
 run_test "src/lib/input-sanitization.test.ts" "input-sanitization"
 run_test "src/lib/prompt-versioning.test.ts" "prompt-versioning"
@@ -117,12 +118,22 @@ echo ""
 
 # Admin Blog Component Tests
 echo "📝 Admin Blog Component Tests"
+run_test "src/components/admin/blog/BlogPostEditor.test.tsx" "BlogPostEditor"
 run_test "src/components/admin/blog/BlogPostMetadata.test.tsx" "BlogPostMetadata"
+run_test "src/components/admin/blog/BlogPostList.test.tsx" "BlogPostList"
+run_test "src/components/admin/blog/CategoryManager.test.tsx" "CategoryManager"
+run_test "src/components/admin/blog/ImageUploader.test.tsx" "ImageUploader"
+run_test "src/components/admin/blog/MarkdownPreview.test.tsx" "MarkdownPreview"
 echo ""
 
 # Blog Component Tests
 echo "📝 Blog Component Tests"
 run_test "src/components/blog/BlogCard.test.tsx" "BlogCard"
+run_test "src/components/blog/BlogContent.test.tsx" "BlogContent"
+run_test "src/components/blog/BlogHeader.test.tsx" "BlogHeader"
+run_test "src/components/blog/BlogSearch.test.tsx" "BlogSearch"
+run_test "src/components/blog/BlogSidebar.test.tsx" "BlogSidebar"
+run_test "src/components/blog/ShareButtons.test.tsx" "ShareButtons"
 run_test "src/components/blog/TableOfContents.test.tsx" "TableOfContents"
 echo ""
 
@@ -152,6 +163,23 @@ run_test "src/app/admin/agent-workbench/layout.test.tsx" "agent-workbench/layout
 run_test "src/app/admin/agent-workbench/history/page.test.tsx" "agent-workbench/history"
 echo ""
 
+# Admin Blog Page Tests
+echo "📝 Admin Blog Page Tests"
+run_test "src/app/admin/blog/page.test.tsx" "blog dashboard"
+run_test "src/app/admin/blog/layout.test.tsx" "blog layout"
+run_test "src/app/admin/blog/new/page.test.tsx" "blog new post"
+run_test "src/app/admin/blog/edit/[id]/page.test.tsx" "blog edit post"
+run_test "src/app/admin/blog/categories/page.test.tsx" "blog categories"
+echo ""
+
+# Blog Page Tests
+echo "📝 Blog Page Tests"
+run_test "src/app/blog/page.test.tsx" "blog listing"
+run_test "src/app/blog/[slug]/page.test.tsx" "blog post"
+run_test "src/app/blog/category/[slug]/page.test.tsx" "blog category"
+run_test "src/app/blog/tag/[slug]/page.test.tsx" "blog tag"
+echo ""
+
 # API Route Tests
 echo "🌐 API Route Tests"
 run_test "src/app/api/chat/route.test.ts" "chat API"
@@ -173,10 +201,25 @@ run_test "src/app/api/admin/test-prompt/route.test.ts" "test-prompt API"
 run_test "src/app/api/admin/update-resume/route.test.ts" "update-resume API"
 echo ""
 
+# Admin Blog API Route Tests
+echo "📝 Admin Blog API Route Tests"
+run_test "src/app/api/admin/blog/create/route.test.ts" "blog create API"
+run_test "src/app/api/admin/blog/[id]/route.test.ts" "blog update/delete API"
+run_test "src/app/api/admin/blog/publish/route.test.ts" "blog publish API"
+run_test "src/app/api/admin/blog/upload/route.test.ts" "blog upload API"
+run_test "src/app/api/admin/blog/categories/route.test.ts" "blog categories API"
+run_test "src/app/api/admin/blog/categories/[id]/route.test.ts" "blog category update/delete API"
+echo ""
+
 # Data Tests
 echo "💾 Data Tests"
 run_test "src/data/blog-mock.test.ts" "blog-mock"
 run_test "src/data/resume.test.ts" "resume"
+echo ""
+
+# Type Tests
+echo "📐 Type Tests"
+run_test "src/types/blog.test.ts" "blog types"
 echo ""
 
 # Integration Tests
