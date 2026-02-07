@@ -54,7 +54,7 @@ describe("BlogPostEditor", () => {
       expect((titleInput as HTMLInputElement).type).toBe("text");
     });
 
-    it("should render content textarea", () => {
+    it("should render content textarea in edit mode", async () => {
       const onTitleChange = mock(() => {});
       const onContentChange = mock(() => {});
 
@@ -69,7 +69,7 @@ describe("BlogPostEditor", () => {
 
       // Switch to Edit mode first
       const editButton = screen.getByRole("button", { name: "Edit" });
-      editButton.click();
+      await user.click(editButton);
 
       const contentTextarea = screen.getByLabelText(/Content \(Markdown\)/i);
       expect(contentTextarea).toBeDefined();
@@ -335,7 +335,7 @@ describe("BlogPostEditor", () => {
       expect(titleId?.length).toBeGreaterThan(0);
     });
 
-    it("should have proper label associations", () => {
+    it("should have proper label associations", async () => {
       const onTitleChange = mock(() => {});
       const onContentChange = mock(() => {});
 
@@ -354,7 +354,7 @@ describe("BlogPostEditor", () => {
 
       // Switch to edit mode to check content label
       const editButton = screen.getByRole("button", { name: "Edit" });
-      editButton.click();
+      await user.click(editButton);
 
       const contentTextarea = screen.getByLabelText(/Content \(Markdown\)/i);
       expect(contentTextarea).toBeDefined();

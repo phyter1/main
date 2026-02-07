@@ -120,12 +120,12 @@ describe("T001: Authentication Utilities and Middleware", () => {
       expect(cookie).toContain("HttpOnly");
     });
 
-    it("should set SameSite=Lax for CSRF protection", async () => {
+    it("should set SameSite=Strict for CSRF protection", async () => {
       const { createSessionCookie } = await import("./auth");
 
       const cookie = createSessionCookie("test-token-123");
 
-      expect(cookie).toContain("SameSite=Lax");
+      expect(cookie).toContain("SameSite=Strict");
     });
 
     it("should set Secure flag in production", async () => {

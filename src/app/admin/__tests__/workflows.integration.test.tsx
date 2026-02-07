@@ -99,7 +99,7 @@ mock.module("@/data/resume", () => ({
 // NOTE: Import order - Components must be imported AFTER mocks are set up for proper test execution
 // This is intentional and required for the test framework to work correctly
 import PromptHistoryPage from "@/app/admin/agent-workbench/history/page";
-import { LoginForm } from "@/app/admin/agent-workbench/login-form";
+import { LoginForm } from "@/components/admin/auth/LoginForm";
 import { PromptEditor } from "@/components/admin/PromptEditor";
 import { ResumeUpdater } from "@/components/admin/ResumeUpdater";
 
