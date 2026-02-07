@@ -5,7 +5,7 @@
  * Ensures all blog admin pages require authentication.
  */
 
-import { AuthenticatedLayout } from "@/app/admin/agent-workbench/authenticated-layout";
+import { AuthenticatedLayout } from "../authenticated-layout";
 
 interface BlogLayoutProps {
   children: React.ReactNode;
