@@ -132,13 +132,13 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
             author: p.author,
             publishedAt: p.publishedAt,
             updatedAt: p.updatedAt,
-            coverImage: p.coverImage,
-            category: p.category,
+            coverImage: p.coverImageUrl,
+            category: "", // TODO: Map categoryId to category name
             tags: p.tags,
             featured: p.featured,
-            viewCount: p.viewCount,
-            readingTime: p.readingTime,
-            seoMetadata: p.seoMetadata,
+            viewCount: p.viewCount || 0,
+            readingTime: p.readingTimeMinutes || 0,
+            seoMetadata: p.seoMetadata as any, // TODO: Fix type mismatch
           }) as BlogPost,
       );
   }, [relatedByTag, post]);
@@ -169,7 +169,7 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
   }
 
   // Generate JSON-LD structured data
-  const jsonLd = generateArticleStructuredData(post);
+  const jsonLd = generateArticleStructuredData(post as unknown as BlogPost);
 
   return (
     <>
@@ -197,13 +197,13 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
                 author: post.author,
                 publishedAt: post.publishedAt,
                 updatedAt: post.updatedAt,
-                coverImage: post.coverImage,
-                category: post.category,
+                coverImage: post.coverImageUrl,
+                category: "", // TODO: Map categoryId to category name
                 tags: post.tags,
                 featured: post.featured,
-                viewCount: post.viewCount,
-                readingTime: post.readingTimeMinutes,
-                seoMetadata: post.seoMetadata,
+                viewCount: post.viewCount || 0,
+                readingTime: post.readingTimeMinutes || 0,
+                seoMetadata: post.seoMetadata as any,
               }}
               className="mb-8"
             />

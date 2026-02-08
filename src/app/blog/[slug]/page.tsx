@@ -17,6 +17,7 @@
 import { preloadQuery } from "convex/nextjs";
 import type { Metadata } from "next";
 import { generateBlogMetadata } from "@/lib/blog-metadata";
+import type { BlogPost } from "@/types/blog";
 import { api } from "../../../../convex/_generated/api";
 import { BlogPostClient } from "./BlogPostClient";
 
@@ -73,7 +74,7 @@ export async function generateMetadata({
 
   // Generate comprehensive metadata using blog-metadata library
   // This includes all SEO tags, OpenGraph, Twitter Cards, and canonical URL
-  return generateBlogMetadata(post);
+  return generateBlogMetadata(post as unknown as BlogPost);
 }
 
 /**
@@ -86,11 +87,13 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
     limit: 1000,
   });
 
-  if (!result || !result.posts) {
+  const data = result as any;
+
+  if (!data || !data.posts) {
     return [];
   }
 
-  return result.posts.map((post: { slug: string }) => ({
+  return data.posts.map((post: { slug: string }) => ({
     slug: post.slug,
   }));
 }

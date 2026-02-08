@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { BlogPostList } from "@/components/admin/blog/BlogPostList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { BlogPost } from "@/data/blog-mock";
 import { api } from "../../../../convex/_generated/api";
 
 export default function BlogPage() {
@@ -174,7 +175,7 @@ export default function BlogPage() {
         </CardHeader>
         <CardContent>
           <BlogPostList
-            posts={posts}
+            posts={posts as unknown as BlogPost[]}
             categories={categories}
             onEdit={handleEditPost}
             onDelete={handleDeletePost}

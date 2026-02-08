@@ -97,7 +97,11 @@ export default function EditBlogPostPage() {
         tags: post.tags,
         featured: post.featured,
         coverImage: post.coverImageUrl, // Fixed: schema uses coverImageUrl
-        seoMetadata: post.seoMetadata,
+        seoMetadata: {
+          metaTitle: post.seoMetadata?.metaTitle ?? "",
+          metaDescription: post.seoMetadata?.metaDescription ?? "",
+          ogImage: post.seoMetadata?.ogImage ?? "",
+        },
       });
     }
   }, [post]);
