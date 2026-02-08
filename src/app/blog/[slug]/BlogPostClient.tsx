@@ -29,6 +29,12 @@ import {
   TableOfContents,
 } from "@/components/blog/TableOfContents";
 import { generateArticleStructuredData } from "@/lib/blog-metadata";
+import {
+  buildCategoryMap,
+  type ConvexBlogPost,
+  transformConvexPost,
+  transformConvexPosts,
+} from "@/lib/blog-transforms";
 import type { BlogPost } from "@/types/blog";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -89,9 +95,22 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
   );
 
   // Determine the active post data based on which loading strategy we used
-  const post = shouldUsePreloaded ? preloadedPostData : clientFetchedPost;
+  const rawPost = shouldUsePreloaded ? preloadedPostData : clientFetchedPost;
 
-  // Hook 3: useQuery for related posts - always called unconditionally
+  // Hook 3: useQuery for categories - needed for transformation
+  const categories = useQuery(api.blog.getCategories);
+
+  // Transform raw post to BlogPost type
+  const post = useMemo(() => {
+    if (!rawPost || !categories) return null;
+    const categoryMap = buildCategoryMap(categories);
+    return transformConvexPost(
+      rawPost as unknown as ConvexBlogPost,
+      categoryMap.get(rawPost.categoryId as unknown as string),
+    );
+  }, [rawPost, categories]);
+
+  // Hook 4: useQuery for related posts - always called unconditionally
   // Skip if post doesn't have tags
   const relatedByTag = useQuery(
     api.blog.getPostsByTag,
@@ -114,34 +133,17 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
 
   // Hook 6: useMemo for related posts - always called unconditionally
   const relatedPosts = useMemo(() => {
-    if (!relatedByTag || !Array.isArray(relatedByTag) || !post) return [];
+    if (!relatedByTag || !Array.isArray(relatedByTag) || !post || !categories)
+      return [];
 
-    return relatedByTag
-      .filter((p) => p._id !== post._id)
-      .slice(0, 3)
-      .map(
-        (p) =>
-          ({
-            _id: p._id,
-            _creationTime: p._creationTime,
-            title: p.title,
-            slug: p.slug,
-            excerpt: p.excerpt,
-            content: p.content,
-            status: p.status,
-            author: p.author,
-            publishedAt: p.publishedAt,
-            updatedAt: p.updatedAt,
-            coverImage: p.coverImageUrl,
-            category: "", // TODO: Map categoryId to category name
-            tags: p.tags,
-            featured: p.featured,
-            viewCount: p.viewCount || 0,
-            readingTime: p.readingTimeMinutes || 0,
-            seoMetadata: p.seoMetadata as any, // TODO: Fix type mismatch
-          }) as BlogPost,
-      );
-  }, [relatedByTag, post]);
+    const categoryMap = buildCategoryMap(categories);
+    const filtered = relatedByTag.filter((p) => p._id !== post._id).slice(0, 3);
+
+    return transformConvexPosts(
+      filtered as unknown as ConvexBlogPost[],
+      categoryMap,
+    );
+  }, [relatedByTag, post, categories]);
 
   // Hook 7: useEffect for view count - always called unconditionally
   useEffect(() => {
@@ -185,28 +187,7 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
           {/* Main Content */}
           <article className="min-w-0">
             {/* Blog Header */}
-            <BlogHeader
-              post={{
-                _id: post._id,
-                _creationTime: post._creationTime,
-                title: post.title,
-                slug: post.slug,
-                excerpt: post.excerpt,
-                content: post.content,
-                status: post.status,
-                author: post.author,
-                publishedAt: post.publishedAt,
-                updatedAt: post.updatedAt,
-                coverImage: post.coverImageUrl,
-                category: "", // TODO: Map categoryId to category name
-                tags: post.tags,
-                featured: post.featured,
-                viewCount: post.viewCount || 0,
-                readingTime: post.readingTimeMinutes || 0,
-                seoMetadata: post.seoMetadata as any,
-              }}
-              className="mb-8"
-            />
+            <BlogHeader post={post} className="mb-8" />
 
             {/* Blog Content */}
             <BlogContent content={post.content} className="mb-8" />

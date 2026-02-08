@@ -16,9 +16,21 @@
 import { useQuery } from "convex/react";
 import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  buildCategoryMap,
+  type ConvexBlogPost,
+  transformConvexPosts,
+} from "@/lib/blog-transforms";
 import { api } from "../../../convex/_generated/api";
 
 interface BlogSearchProps {
@@ -37,13 +49,26 @@ export function BlogSearch({ className = "" }: BlogSearchProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
+  // Query categories for transformation
+  const categories = useQuery(api.blog.getCategories);
+
   // Query search results
-  const searchResults = useQuery(
+  const rawSearchResults = useQuery(
     api.blog.searchPosts,
     debouncedQuery.trim().length > 0
-      ? { query: debouncedQuery.trim() }
+      ? { searchQuery: debouncedQuery.trim() }
       : "skip",
   );
+
+  // Transform search results to BlogPost type
+  const searchResults = useMemo(() => {
+    if (!rawSearchResults || !categories) return undefined;
+    const categoryMap = buildCategoryMap(categories);
+    return transformConvexPosts(
+      rawSearchResults as unknown as ConvexBlogPost[],
+      categoryMap,
+    );
+  }, [rawSearchResults, categories]);
 
   // Debounce search input (300ms)
   useEffect(() => {

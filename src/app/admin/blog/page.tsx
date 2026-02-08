@@ -17,6 +17,11 @@ import { BlogPostList } from "@/components/admin/blog/BlogPostList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BlogPost } from "@/data/blog-mock";
+import {
+  buildCategoryMap,
+  type ConvexBlogPost,
+  transformConvexPosts,
+} from "@/lib/blog-transforms";
 import { api } from "../../../../convex/_generated/api";
 
 export default function BlogPage() {
@@ -36,8 +41,14 @@ export default function BlogPage() {
     );
   }
 
-  const posts = allPostsData.posts || [];
   const categories = categoriesData || [];
+  const categoryMap = buildCategoryMap(categories);
+
+  // Transform Convex posts to BlogPost type
+  const posts = transformConvexPosts(
+    (allPostsData.posts || []) as unknown as ConvexBlogPost[],
+    categoryMap,
+  );
 
   // Calculate statistics
   const totalPosts = posts.length;

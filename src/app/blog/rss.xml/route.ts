@@ -6,8 +6,13 @@
  */
 
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../../../../convex/_generated/api";
+import {
+  buildCategoryMap,
+  type ConvexBlogPost,
+  transformConvexPosts,
+} from "@/lib/blog-transforms";
 import type { BlogPost } from "@/types/blog";
+import { api } from "../../../../convex/_generated/api";
 
 // Site metadata for RSS feed
 const SITE_TITLE = "Phytertek Blog";
@@ -119,14 +124,23 @@ export async function GET(): Promise<Response> {
     // Initialize Convex client
     const client = new ConvexHttpClient(convexUrl);
 
-    // Query last 50 published posts
+    // Query last 50 published posts and categories
     const result = await client.query(api.blog.listPosts, {
       status: "published",
       limit: MAX_POSTS,
     });
 
+    const categories = await client.query(api.blog.getCategories);
+    const categoryMap = buildCategoryMap(categories);
+
+    // Transform Convex posts to BlogPost type
+    const posts = transformConvexPosts(
+      result.posts as unknown as ConvexBlogPost[],
+      categoryMap,
+    );
+
     // Generate RSS XML
-    const xml = generateRssFeed(result.posts);
+    const xml = generateRssFeed(posts);
 
     // Return with proper headers
     return new Response(xml, {

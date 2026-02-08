@@ -17,7 +17,7 @@
 import { preloadQuery } from "convex/nextjs";
 import type { Metadata } from "next";
 import { generateBlogMetadata } from "@/lib/blog-metadata";
-import type { BlogPost } from "@/types/blog";
+import { buildCategoryMap, transformConvexPost } from "@/lib/blog-transforms";
 import { api } from "../../../../convex/_generated/api";
 import { BlogPostClient } from "./BlogPostClient";
 
@@ -61,20 +61,30 @@ export async function generateMetadata({
 }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  // Preload post for metadata
+  // Preload post and categories for metadata
   const preloadedPost = await preloadQuery(api.blog.getPostBySlug, { slug });
-  const post = preloadedPost || null;
+  const rawPost = (preloadedPost || null) as any;
 
-  if (!post) {
+  if (!rawPost) {
     return {
       title: "Post Not Found",
       description: "The blog post you're looking for doesn't exist.",
     };
   }
 
+  // Get categories for transformation
+  const categories = (await preloadQuery(api.blog.getCategories)) as any;
+  const categoryMap = buildCategoryMap(categories);
+
+  // Transform Convex post to BlogPost type
+  const categoryName = rawPost.categoryId
+    ? categoryMap.get(rawPost.categoryId as unknown as string)
+    : undefined;
+  const post = transformConvexPost(rawPost, categoryName);
+
   // Generate comprehensive metadata using blog-metadata library
   // This includes all SEO tags, OpenGraph, Twitter Cards, and canonical URL
-  return generateBlogMetadata(post as unknown as BlogPost);
+  return generateBlogMetadata(post);
 }
 
 /**

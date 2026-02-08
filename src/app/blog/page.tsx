@@ -21,7 +21,7 @@ import { useQuery } from "convex/react";
 import type { Variants } from "framer-motion";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { Suspense, useCallback, useMemo } from "react";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { BlogSearch } from "@/components/blog/BlogSearch";
 import { BlogSidebar } from "@/components/blog/BlogSidebar";
@@ -34,6 +34,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import {
+  buildCategoryMap,
+  type ConvexBlogPost,
+  transformConvexPosts,
+} from "@/lib/blog-transforms";
 import { api } from "../../../convex/_generated/api";
 
 // Constants
@@ -45,7 +50,7 @@ const POSTS_PER_PAGE = 20;
  * Note: Uses Convex real-time queries which automatically update.
  * No ISR needed since this is a client component with live data.
  */
-export default function BlogPage() {
+function BlogPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
@@ -67,10 +72,35 @@ export default function BlogPage() {
     offset: offset,
   });
 
-  // Extract data
-  const featuredPosts = featuredPostsData || [];
+  // Extract and transform data
   const categories = categoriesData || [];
-  const posts = postsData?.posts || [];
+  const categoryMap = useMemo(
+    () => (categories.length > 0 ? buildCategoryMap(categories) : undefined),
+    [categories],
+  );
+
+  const featuredPosts = useMemo(
+    () =>
+      featuredPostsData
+        ? transformConvexPosts(
+            featuredPostsData as unknown as ConvexBlogPost[],
+            categoryMap,
+          )
+        : [],
+    [featuredPostsData, categoryMap],
+  );
+
+  const posts = useMemo(
+    () =>
+      postsData?.posts
+        ? transformConvexPosts(
+            postsData.posts as unknown as ConvexBlogPost[],
+            categoryMap,
+          )
+        : [],
+    [postsData?.posts, categoryMap],
+  );
+
   const totalPosts = postsData?.total || 0;
   const hasMore = postsData?.hasMore || false;
 
@@ -283,5 +313,29 @@ export default function BlogPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Blog Page Wrapper with Suspense
+ *
+ * Wraps BlogPageContent in Suspense to handle useSearchParams() correctly
+ * during static generation.
+ */
+export default function BlogPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 pt-24 pb-12 max-w-7xl">
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">Loading blog...</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <BlogPageContent />
+    </Suspense>
   );
 }

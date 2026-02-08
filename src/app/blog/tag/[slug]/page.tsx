@@ -19,7 +19,12 @@ import { BlogCard } from "@/components/blog/BlogCard";
 import { BlogSidebar } from "@/components/blog/BlogSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { BlogPost, BlogTag } from "@/types/blog";
+import {
+  buildCategoryMap,
+  type ConvexBlogPost,
+  transformConvexPosts,
+} from "@/lib/blog-transforms";
+import type { BlogTag } from "@/types/blog";
 import { api } from "../../../../../convex/_generated/api";
 
 // ISR revalidation interval (60 seconds)
@@ -132,11 +137,20 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
     );
   }
 
-  // Fetch posts with this tag
-  const allPosts = (await convex.query(api.blog.getPostsByTag, {
+  // Fetch posts with this tag and categories for transformation
+  const rawPosts = await convex.query(api.blog.getPostsByTag, {
     tag: slug,
     status: "published",
-  })) as BlogPost[];
+  });
+
+  const categories = await convex.query(api.blog.getCategories);
+  const categoryMap = buildCategoryMap(categories);
+
+  // Transform Convex posts to BlogPost type
+  const allPosts = transformConvexPosts(
+    rawPosts as unknown as ConvexBlogPost[],
+    categoryMap,
+  );
 
   const totalPosts = allPosts.length;
   const totalPages = Math.ceil(totalPosts / postsPerPage);

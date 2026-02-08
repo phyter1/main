@@ -59,20 +59,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch blog content for dynamic sitemap entries
   try {
     // Fetch all published posts
-    const postsData = await preloadQuery(api.blog.listPosts, {
+    const postsData = (await preloadQuery(api.blog.listPosts, {
       status: "published",
       limit: 1000, // Get all posts for sitemap
-    });
+    })) as any;
 
     // Fetch all categories
-    const categoriesData = await preloadQuery(api.blog.getCategories, {});
+    const categoriesData = (await preloadQuery(
+      api.blog.getCategories,
+      {},
+    )) as any;
 
     // Fetch all tags
-    const tagsData = await preloadQuery(api.blog.getTags, {});
+    const tagsData = (await preloadQuery(api.blog.getTags, {})) as any;
 
     // Generate blog sitemap entries
     const blogEntries = generateBlogSitemapEntries({
-      posts: postsData.posts || [],
+      posts: postsData?.posts || [],
       categories: categoriesData || [],
       tags: tagsData || [],
       baseUrl,

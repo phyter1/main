@@ -344,7 +344,7 @@ export function CategoryManager() {
           )}
 
           <div className="space-y-3">
-            {displayCategories.map((category, index) => {
+            {displayCategories?.map((category, index) => {
               const isEditing = editingCategory?.id === category._id;
 
               return (

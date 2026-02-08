@@ -89,9 +89,12 @@ export function BlogContent({ content, className = "" }: BlogContentProps) {
               {...props}
             />
           ),
-          code: ({ node, inline, className, children, ...props }) => {
+          code: ({ node, className, children, ...props }: any) => {
             // Handle inline code vs code blocks
-            if (inline) {
+            // Inline code doesn't have a language class (language-*)
+            const isInline = !className || !className.startsWith("language-");
+
+            if (isInline) {
               return (
                 <code
                   className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-sm font-mono"
@@ -178,9 +181,9 @@ export function BlogContent({ content, className = "" }: BlogContentProps) {
               {...props}
             />
           ),
-          li: ({ node, children, ...props }) => {
+          li: ({ node, children, ...props }: any) => {
             // Check if this is a task list item
-            const firstChild = children?.[0];
+            const firstChild = Array.isArray(children) ? children[0] : children;
             if (
               typeof firstChild === "object" &&
               firstChild !== null &&

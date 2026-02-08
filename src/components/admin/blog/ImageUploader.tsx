@@ -211,7 +211,7 @@ export function ImageUploader({
   /**
    * Handles drag enter event
    */
-  const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
+  const handleDragEnter = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     setIsDragging(true);
   };
@@ -219,7 +219,7 @@ export function ImageUploader({
   /**
    * Handles drag leave event
    */
-  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     setIsDragging(false);
   };
@@ -227,14 +227,14 @@ export function ImageUploader({
   /**
    * Handles drag over event
    */
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
   };
 
   /**
    * Handles file drop
    */
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     setIsDragging(false);
 
