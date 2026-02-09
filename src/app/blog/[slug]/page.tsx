@@ -73,7 +73,7 @@ export async function generateMetadata({
   }
 
   // Get categories for transformation
-  const categories = (await preloadQuery(api.blog.getCategories)) as any;
+  const categories = (await preloadQuery(api.blog.getCategories, {})) as any;
   const categoryMap = buildCategoryMap(categories);
 
   // Transform Convex post to BlogPost type
