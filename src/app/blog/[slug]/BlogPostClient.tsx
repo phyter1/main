@@ -81,7 +81,12 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
 
   // Transform raw post to BlogPost type
   const post = useMemo(() => {
-    if (!rawPost || !categories) return null;
+    // Return undefined during loading (when data hasn't arrived yet)
+    if (rawPost === undefined || categories === undefined) return undefined;
+
+    // Return null when post is explicitly not found
+    if (rawPost === null || !categories) return null;
+
     const categoryMap = buildCategoryMap(categories);
     return transformConvexPost(
       rawPost as unknown as ConvexBlogPost,
