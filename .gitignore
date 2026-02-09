@@ -47,3 +47,6 @@ next-env.d.ts
 .pipeline/
 TASKS/
 .playwright-mcp/
+
+# Admin credentials (temporary, delete after saving to password manager)
+.admin-credentials.txt
