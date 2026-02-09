@@ -11,7 +11,7 @@
  * Uses proper priority values and change frequencies for optimal SEO.
  */
 
-import { preloadQuery } from "convex/nextjs";
+import { ConvexHttpClient } from "convex/browser";
 import type { MetadataRoute } from "next";
 import { generateBlogSitemapEntries } from "@/lib/blog-sitemap";
 import { api } from "../../convex/_generated/api";
@@ -58,20 +58,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Fetch blog content for dynamic sitemap entries
   try {
+    // Initialize Convex client for build-time data fetching
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
     // Fetch all published posts
-    const postsData = (await preloadQuery(api.blog.listPosts, {
+    const postsData = (await convex.query(api.blog.listPosts, {
       status: "published",
       limit: 1000, // Get all posts for sitemap
     })) as any;
 
     // Fetch all categories
-    const categoriesData = (await preloadQuery(
+    const categoriesData = (await convex.query(
       api.blog.getCategories,
       {},
     )) as any;
 
     // Fetch all tags
-    const tagsData = (await preloadQuery(api.blog.getTags, {})) as any;
+    const tagsData = (await convex.query(api.blog.getTags, {})) as any;
 
     // Generate blog sitemap entries
     const blogEntries = generateBlogSitemapEntries({
@@ -86,6 +89,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch (error) {
     // If blog data fetch fails, return static pages only
     console.error("Failed to fetch blog data for sitemap:", error);
+    console.error(
+      "Error details:",
+      error instanceof Error ? error.message : String(error),
+    );
     return staticPages;
   }
 }
