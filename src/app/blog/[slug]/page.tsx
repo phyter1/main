@@ -14,7 +14,7 @@
  * - generateStaticParams for published posts
  */
 
-import { preloadQuery } from "convex/nextjs";
+import { ConvexHttpClient } from "convex/browser";
 import type { Metadata } from "next";
 import { generateBlogMetadata } from "@/lib/blog-metadata";
 import { buildCategoryMap, transformConvexPost } from "@/lib/blog-transforms";
@@ -28,9 +28,9 @@ interface BlogPostPageProps {
 }
 
 /**
- * ISR revalidation: 1 hour (3600 seconds)
+ * Make this route dynamic since we're using ConvexHttpClient
  */
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 /**
  * Server component wrapper for blog post page
@@ -41,9 +41,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     const { slug } = await params;
     console.log("[BlogPostPage] Slug:", slug);
 
-    // Preload post data for client component
+    // Initialize Convex client for server-side data fetching
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+    // Fetch post data
     console.log("[BlogPostPage] Fetching post by slug...");
-    const preloadedPost = await preloadQuery(api.blog.getPostBySlug, { slug });
+    const preloadedPost = await convex.query(api.blog.getPostBySlug, { slug });
     console.log("[BlogPostPage] Post fetched:", !!preloadedPost);
 
     return <BlogPostClient slug={slug} preloadedPost={preloadedPost} />;
@@ -81,10 +84,14 @@ export async function generateMetadata({
     const { slug } = await params;
     console.log("[generateMetadata] Slug:", slug);
 
-    // Preload post and categories for metadata
+    // Initialize Convex client
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+    // Fetch post and categories for metadata
     console.log("[generateMetadata] Fetching post by slug...");
-    const preloadedPost = await preloadQuery(api.blog.getPostBySlug, { slug });
-    const rawPost = (preloadedPost || null) as any;
+    const rawPost = (await convex.query(api.blog.getPostBySlug, {
+      slug,
+    })) as any;
     console.log("[generateMetadata] Raw post fetched:", !!rawPost);
 
     if (!rawPost) {
@@ -97,7 +104,7 @@ export async function generateMetadata({
 
     // Get categories for transformation
     console.log("[generateMetadata] Fetching categories...");
-    const categories = (await preloadQuery(api.blog.getCategories, {})) as any;
+    const categories = (await convex.query(api.blog.getCategories, {})) as any;
     console.log(
       "[generateMetadata] Categories fetched:",
       categories?.length || 0,
@@ -146,19 +153,25 @@ export async function generateMetadata({
  * Generate static params for all published posts
  */
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  // Preload all published posts
-  const result = await preloadQuery(api.blog.listPosts, {
-    status: "published",
-    limit: 1000,
-  });
+  try {
+    // Initialize Convex client for build-time data fetching
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-  const data = result as any;
+    // Fetch all published posts
+    const data = (await convex.query(api.blog.listPosts, {
+      status: "published",
+      limit: 1000,
+    })) as any;
 
-  if (!data || !data.posts) {
+    if (!data || !data.posts) {
+      return [];
+    }
+
+    return data.posts.map((post: { slug: string }) => ({
+      slug: post.slug,
+    }));
+  } catch (error) {
+    console.error("Failed to generate static params:", error);
     return [];
   }
-
-  return data.posts.map((post: { slug: string }) => ({
-    slug: post.slug,
-  }));
 }
