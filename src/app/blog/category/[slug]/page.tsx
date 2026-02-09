@@ -43,7 +43,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch categories to get category data
-  const categories = useQuery(api.blog.getCategories);
+  const categories = useQuery(api.blog.getCategories, {});
 
   // Find the category by slug
   const category = categories?.find(

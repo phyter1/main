@@ -73,7 +73,7 @@ export function BlogPostMetadata({
   const ogImageId = useId();
 
   // Fetch categories and tags from Convex
-  const categories = useQuery(api.blog.getCategories) || [];
+  const categories = useQuery(api.blog.getCategories, {}) || [];
   const existingTags = useQuery(api.blog.getTags) || [];
   const createCategory = useMutation(api.blog.createCategory);
 

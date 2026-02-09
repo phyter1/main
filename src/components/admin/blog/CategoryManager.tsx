@@ -55,7 +55,7 @@ export function CategoryManager() {
   const descId = useId();
 
   // Fetch categories from Convex
-  const categories = useQuery(api.blog.getCategories);
+  const categories = useQuery(api.blog.getCategories, {});
 
   // Mutations
   const createCategory = useMutation(api.blog.createCategory);

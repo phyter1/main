@@ -50,7 +50,7 @@ export function BlogSearch({ className = "" }: BlogSearchProps) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   // Query categories for transformation
-  const categories = useQuery(api.blog.getCategories);
+  const categories = useQuery(api.blog.getCategories, {});
 
   // Query search results
   const rawSearchResults = useQuery(

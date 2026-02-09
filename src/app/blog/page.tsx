@@ -64,7 +64,7 @@ function BlogPageContent() {
 
   // Fetch data from Convex
   const featuredPostsData = useQuery(api.blog.getFeaturedPosts);
-  const categoriesData = useQuery(api.blog.getCategories);
+  const categoriesData = useQuery(api.blog.getCategories, {});
   const postsData = useQuery(api.blog.listPosts, {
     status: "published",
     category: categoryFilter,

@@ -98,7 +98,7 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
   const rawPost = shouldUsePreloaded ? preloadedPostData : clientFetchedPost;
 
   // Hook 3: useQuery for categories - needed for transformation
-  const categories = useQuery(api.blog.getCategories);
+  const categories = useQuery(api.blog.getCategories, {});
 
   // Transform raw post to BlogPost type
   const post = useMemo(() => {

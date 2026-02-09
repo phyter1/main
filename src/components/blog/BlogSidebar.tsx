@@ -30,7 +30,7 @@ import { api } from "../../../convex/_generated/api";
  */
 export function BlogSidebar() {
   // Fetch data from Convex queries
-  const categories = useQuery(api.blog.getCategories);
+  const categories = useQuery(api.blog.getCategories, {});
   const tags = useQuery(api.blog.getTags);
   const recentPostsData = useQuery(api.blog.listPosts, {
     status: "published",

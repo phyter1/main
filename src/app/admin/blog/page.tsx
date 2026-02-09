@@ -29,7 +29,7 @@ export default function BlogPage() {
 
   // Fetch data from Convex
   const allPostsData = useQuery(api.blog.listPosts, {});
-  const categoriesData = useQuery(api.blog.getCategories);
+  const categoriesData = useQuery(api.blog.getCategories, {});
   const deletePostMutation = useMutation(api.blog.deletePost);
 
   // Handle loading state
