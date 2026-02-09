@@ -34,34 +34,15 @@ export const dynamic = "force-dynamic";
 
 /**
  * Server component wrapper for blog post page
+ * Note: Passing null to preloadedPost to let client fetch data client-side
+ * This avoids the preloadQuery SSG conflict with dynamic routes
  */
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  try {
-    console.log("[BlogPostPage] Starting page render");
-    const { slug } = await params;
-    console.log("[BlogPostPage] Slug:", slug);
+  const { slug } = await params;
 
-    // Initialize Convex client for server-side data fetching
-    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
-    // Fetch post data
-    console.log("[BlogPostPage] Fetching post by slug...");
-    const preloadedPost = await convex.query(api.blog.getPostBySlug, { slug });
-    console.log("[BlogPostPage] Post fetched:", !!preloadedPost);
-
-    return <BlogPostClient slug={slug} preloadedPost={preloadedPost} />;
-  } catch (error) {
-    console.error("[BlogPostPage] ERROR:", error);
-    console.error(
-      "[BlogPostPage] Error stack:",
-      error instanceof Error ? error.stack : "No stack",
-    );
-    console.error(
-      "[BlogPostPage] Error message:",
-      error instanceof Error ? error.message : String(error),
-    );
-    throw error; // Re-throw to let Next.js handle it
-  }
+  // Pass null to let BlogPostClient fetch data client-side
+  // This avoids DYNAMIC_SERVER_USAGE errors with preloadQuery
+  return <BlogPostClient slug={slug} preloadedPost={null} />;
 }
 
 /**
