@@ -12,12 +12,7 @@
  * FIXED: React hooks rules violations - all hooks now called unconditionally
  */
 
-import {
-  type Preloaded,
-  useMutation,
-  usePreloadedQuery,
-  useQuery,
-} from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { notFound } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { BlogCard } from "@/components/blog/BlogCard";
@@ -41,7 +36,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface BlogPostClientProps {
   slug: string;
-  preloadedPost: Preloaded<typeof api.blog.getPostBySlug> | null;
+  preloadedPost: null; // Always null - kept for compatibility but unused
 }
 
 /**
@@ -75,29 +70,13 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
   // CRITICAL: All hooks must be called unconditionally and before any returns
   // This satisfies React's rules of hooks
 
-  // Determine if we should use preloaded data or fetch client-side
-  const shouldUsePreloaded = preloadedPost !== null;
+  // Note: preloadedPost is always null now (server passes null to avoid SSG conflicts)
+  // So we always use client-side fetching with useQuery
 
-  // Hook 1: useQuery for client-side fetching
-  // Skip if we have preloaded data
-  const clientFetchedPost = useQuery(
-    api.blog.getPostBySlug,
-    shouldUsePreloaded ? "skip" : { slug },
-  );
+  // Hook 1: useQuery for client-side fetching - always used now
+  const rawPost = useQuery(api.blog.getPostBySlug, { slug });
 
-  // Hook 2: usePreloadedQuery for SSR preloaded data
-  // Always call but handle null preloadedPost by providing undefined behavior
-  // When preloadedPost is null, this returns undefined which we handle below
-  const preloadedPostData = usePreloadedQuery(
-    shouldUsePreloaded
-      ? preloadedPost
-      : (undefined as unknown as Preloaded<typeof api.blog.getPostBySlug>),
-  );
-
-  // Determine the active post data based on which loading strategy we used
-  const rawPost = shouldUsePreloaded ? preloadedPostData : clientFetchedPost;
-
-  // Hook 3: useQuery for categories - needed for transformation
+  // Hook 2: useQuery for categories - needed for transformation
   const categories = useQuery(api.blog.getCategories, {});
 
   // Transform raw post to BlogPost type
@@ -110,7 +89,7 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
     );
   }, [rawPost, categories]);
 
-  // Hook 4: useQuery for related posts - always called unconditionally
+  // Hook 3: useQuery for related posts - always called unconditionally
   // Skip if post doesn't have tags
   const relatedByTag = useQuery(
     api.blog.getPostsByTag,
