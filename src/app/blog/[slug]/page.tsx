@@ -36,12 +36,29 @@ export const revalidate = 3600;
  * Server component wrapper for blog post page
  */
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { slug } = await params;
+  try {
+    console.log("[BlogPostPage] Starting page render");
+    const { slug } = await params;
+    console.log("[BlogPostPage] Slug:", slug);
 
-  // Preload post data for client component
-  const preloadedPost = await preloadQuery(api.blog.getPostBySlug, { slug });
+    // Preload post data for client component
+    console.log("[BlogPostPage] Fetching post by slug...");
+    const preloadedPost = await preloadQuery(api.blog.getPostBySlug, { slug });
+    console.log("[BlogPostPage] Post fetched:", !!preloadedPost);
 
-  return <BlogPostClient slug={slug} preloadedPost={preloadedPost} />;
+    return <BlogPostClient slug={slug} preloadedPost={preloadedPost} />;
+  } catch (error) {
+    console.error("[BlogPostPage] ERROR:", error);
+    console.error(
+      "[BlogPostPage] Error stack:",
+      error instanceof Error ? error.stack : "No stack",
+    );
+    console.error(
+      "[BlogPostPage] Error message:",
+      error instanceof Error ? error.message : String(error),
+    );
+    throw error; // Re-throw to let Next.js handle it
+  }
 }
 
 /**
@@ -59,33 +76,70 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  try {
+    console.log("[generateMetadata] Starting metadata generation");
+    const { slug } = await params;
+    console.log("[generateMetadata] Slug:", slug);
 
-  // Preload post and categories for metadata
-  const preloadedPost = await preloadQuery(api.blog.getPostBySlug, { slug });
-  const rawPost = (preloadedPost || null) as any;
+    // Preload post and categories for metadata
+    console.log("[generateMetadata] Fetching post by slug...");
+    const preloadedPost = await preloadQuery(api.blog.getPostBySlug, { slug });
+    const rawPost = (preloadedPost || null) as any;
+    console.log("[generateMetadata] Raw post fetched:", !!rawPost);
 
-  if (!rawPost) {
-    return {
-      title: "Post Not Found",
-      description: "The blog post you're looking for doesn't exist.",
-    };
+    if (!rawPost) {
+      console.log("[generateMetadata] Post not found for slug:", slug);
+      return {
+        title: "Post Not Found",
+        description: "The blog post you're looking for doesn't exist.",
+      };
+    }
+
+    // Get categories for transformation
+    console.log("[generateMetadata] Fetching categories...");
+    const categories = (await preloadQuery(api.blog.getCategories, {})) as any;
+    console.log(
+      "[generateMetadata] Categories fetched:",
+      categories?.length || 0,
+    );
+    const categoryMap = categories ? buildCategoryMap(categories) : undefined;
+    console.log(
+      "[generateMetadata] Category map built, size:",
+      categoryMap?.size || 0,
+    );
+
+    // Transform Convex post to BlogPost type
+    console.log(
+      "[generateMetadata] Transforming post, categoryId:",
+      rawPost.categoryId,
+    );
+    const categoryName =
+      rawPost.categoryId && categoryMap
+        ? categoryMap.get(rawPost.categoryId as unknown as string)
+        : undefined;
+    console.log("[generateMetadata] Category name resolved:", categoryName);
+
+    const post = transformConvexPost(rawPost, categoryName);
+    console.log("[generateMetadata] Post transformed successfully");
+
+    // Generate comprehensive metadata using blog-metadata library
+    // This includes all SEO tags, OpenGraph, Twitter Cards, and canonical URL
+    console.log("[generateMetadata] Generating blog metadata...");
+    const metadata = generateBlogMetadata(post);
+    console.log("[generateMetadata] Metadata generated successfully");
+    return metadata;
+  } catch (error) {
+    console.error("[generateMetadata] ERROR:", error);
+    console.error(
+      "[generateMetadata] Error stack:",
+      error instanceof Error ? error.stack : "No stack",
+    );
+    console.error(
+      "[generateMetadata] Error message:",
+      error instanceof Error ? error.message : String(error),
+    );
+    throw error; // Re-throw to let Next.js handle it
   }
-
-  // Get categories for transformation
-  const categories = (await preloadQuery(api.blog.getCategories, {})) as any;
-  const categoryMap = categories ? buildCategoryMap(categories) : undefined;
-
-  // Transform Convex post to BlogPost type
-  const categoryName =
-    rawPost.categoryId && categoryMap
-      ? categoryMap.get(rawPost.categoryId as unknown as string)
-      : undefined;
-  const post = transformConvexPost(rawPost, categoryName);
-
-  // Generate comprehensive metadata using blog-metadata library
-  // This includes all SEO tags, OpenGraph, Twitter Cards, and canonical URL
-  return generateBlogMetadata(post);
 }
 
 /**
