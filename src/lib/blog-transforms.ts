@@ -100,9 +100,15 @@ export function transformConvexPosts(
  * @returns Map of categoryId -> categoryName
  */
 export function buildCategoryMap(
-  categories: Array<{ _id: Id<"blogCategories">; name: string }>,
+  categories:
+    | Array<{ _id: Id<"blogCategories">; name: string }>
+    | null
+    | undefined,
 ): Map<string, string> {
   const map = new Map<string, string>();
+  if (!categories || !Array.isArray(categories)) {
+    return map;
+  }
   for (const category of categories) {
     map.set(category._id as unknown as string, category.name);
   }

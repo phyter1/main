@@ -74,12 +74,13 @@ export async function generateMetadata({
 
   // Get categories for transformation
   const categories = (await preloadQuery(api.blog.getCategories, {})) as any;
-  const categoryMap = buildCategoryMap(categories);
+  const categoryMap = categories ? buildCategoryMap(categories) : undefined;
 
   // Transform Convex post to BlogPost type
-  const categoryName = rawPost.categoryId
-    ? categoryMap.get(rawPost.categoryId as unknown as string)
-    : undefined;
+  const categoryName =
+    rawPost.categoryId && categoryMap
+      ? categoryMap.get(rawPost.categoryId as unknown as string)
+      : undefined;
   const post = transformConvexPost(rawPost, categoryName);
 
   // Generate comprehensive metadata using blog-metadata library
