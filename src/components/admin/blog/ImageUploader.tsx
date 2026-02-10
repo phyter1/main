@@ -5,6 +5,7 @@ import Image from "next/image";
 import {
   type ChangeEvent,
   type DragEvent,
+  useEffect,
   useId,
   useRef,
   useState,
@@ -100,6 +101,13 @@ export function ImageUploader({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageUrlInputId = useId(); // Generate unique ID for accessibility
+
+  /**
+   * Sync preview URL with initialImageUrl prop changes
+   */
+  useEffect(() => {
+    setPreviewUrl(initialImageUrl || null);
+  }, [initialImageUrl]);
 
   /**
    * Validates an image file
