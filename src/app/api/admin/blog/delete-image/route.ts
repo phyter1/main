@@ -1,43 +1,38 @@
 /**
- * Image Upload API Route
- * Handles file uploads for blog post images with authentication,
- * validation, and integration with Vercel Blob Store
+ * Image Delete API Route
+ * Handles deletion of uploaded images from Vercel Blob Store with authentication
  */
 
 import { type NextRequest, NextResponse } from "next/server";
 import { verifySessionToken } from "@/lib/auth";
-import {
-  sanitizeFilename,
-  uploadImage,
-  validateUploadFile,
-} from "@/lib/upload-service";
+import { deleteImage } from "@/lib/upload-service";
 
 /**
  * Rate limiting configuration
+ * TODO: In production, use Redis or distributed cache for persistent rate limiting
+ * across serverless function invocations. Current in-memory Map won't persist.
  */
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_UPLOADS_PER_WINDOW = 10; // 10 uploads per minute per IP
+const MAX_DELETES_PER_WINDOW = 10; // 10 deletes per minute per IP
 
 /**
  * Rate limit tracking
- * TODO: In production, use Redis or distributed cache for persistent rate limiting
- * across serverless function invocations. Current in-memory Map won't persist.
  */
 interface RateLimitEntry {
   count: number;
   resetAt: number;
 }
 
-const uploadRateLimits = new Map<string, RateLimitEntry>();
+const deleteRateLimits = new Map<string, RateLimitEntry>();
 
 /**
  * Clean up expired rate limit entries
  */
 function cleanupRateLimits(): void {
   const now = Date.now();
-  for (const [ip, entry] of uploadRateLimits.entries()) {
+  for (const [ip, entry] of deleteRateLimits.entries()) {
     if (entry.resetAt < now) {
-      uploadRateLimits.delete(ip);
+      deleteRateLimits.delete(ip);
     }
   }
 }
@@ -54,11 +49,11 @@ function checkRateLimit(ip: string): {
   cleanupRateLimits();
 
   const now = Date.now();
-  const entry = uploadRateLimits.get(ip);
+  const entry = deleteRateLimits.get(ip);
 
   if (!entry) {
     // First request from this IP
-    uploadRateLimits.set(ip, {
+    deleteRateLimits.set(ip, {
       count: 1,
       resetAt: now + RATE_LIMIT_WINDOW_MS,
     });
@@ -67,7 +62,7 @@ function checkRateLimit(ip: string): {
 
   if (entry.resetAt < now) {
     // Window expired, reset counter
-    uploadRateLimits.set(ip, {
+    deleteRateLimits.set(ip, {
       count: 1,
       resetAt: now + RATE_LIMIT_WINDOW_MS,
     });
@@ -75,14 +70,14 @@ function checkRateLimit(ip: string): {
   }
 
   // Within window, check count
-  if (entry.count >= MAX_UPLOADS_PER_WINDOW) {
+  if (entry.count >= MAX_DELETES_PER_WINDOW) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
     return { exceeded: true, retryAfter };
   }
 
   // Increment count
   entry.count += 1;
-  uploadRateLimits.set(ip, entry);
+  deleteRateLimits.set(ip, entry);
   return { exceeded: false };
 }
 
@@ -133,43 +128,21 @@ function getSessionToken(request: NextRequest): string | undefined {
 }
 
 /**
- * POST /api/admin/blog/upload
- * Upload image file with authentication and validation
+ * DELETE /api/admin/blog/delete-image
+ * Delete image from Vercel Blob Store with authentication
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
   try {
     // Authentication: Verify session token
-    console.log("[UPLOAD] Request received");
-    console.log("[UPLOAD] Cookie header:", request.headers.get("cookie"));
-
     const sessionToken = getSessionToken(request);
-    console.log(
-      "[UPLOAD] Parsed session token:",
-      sessionToken ? "EXISTS" : "MISSING",
-    );
-
-    if (!sessionToken) {
-      console.log("[UPLOAD] No session token found in cookies");
+    if (!sessionToken || !(await verifySessionToken(sessionToken))) {
       return NextResponse.json(
         { error: "Unauthorized. Admin authentication required." },
         { status: 401 },
       );
     }
 
-    const isValid = await verifySessionToken(sessionToken);
-    console.log("[UPLOAD] Session token valid:", isValid);
-
-    if (!isValid) {
-      console.log("[UPLOAD] Invalid or expired session token");
-      return NextResponse.json(
-        { error: "Unauthorized. Admin authentication required." },
-        { status: 401 },
-      );
-    }
-
-    console.log("[UPLOAD] Authentication successful");
-
-    // Rate limiting: Check upload rate
+    // Rate limiting: Check delete rate
     const clientIP = getClientIP(request);
     const rateLimitResult = checkRateLimit(clientIP);
     if (rateLimitResult.exceeded) {
@@ -191,64 +164,57 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return response;
     }
 
-    // Parse multipart form data
-    let formData: FormData;
+    // Parse JSON body
+    let body: { url?: string };
     try {
-      formData = await request.formData();
+      body = await request.json();
     } catch (_error) {
       return NextResponse.json(
-        { error: "Invalid request. Expected multipart/form-data." },
+        { error: "Invalid request. Expected JSON body with 'url' field." },
         { status: 400 },
       );
     }
 
-    // Extract file from form data
-    const file = formData.get("file");
-    if (!file || !(file instanceof Blob)) {
+    // Validate URL field
+    const { url } = body;
+    if (!url || typeof url !== "string") {
       return NextResponse.json(
-        { error: "No file provided. Include 'file' field in form data." },
+        { error: "Missing or invalid 'url' field in request body." },
         { status: 400 },
       );
     }
 
-    // Validate file
-    const validation = validateUploadFile(file);
-    if (!validation.valid) {
+    // Validate URL format (basic check for Vercel Blob URLs)
+    if (!url.startsWith("https://")) {
       return NextResponse.json(
-        { error: validation.error || "Invalid file" },
+        { error: "Invalid URL. Must be a valid HTTPS URL." },
         { status: 400 },
       );
     }
 
-    // Sanitize filename for secure upload
-    let sanitizedFilename = "upload.png"; // Default fallback
-    if (file instanceof File && file.name) {
-      sanitizedFilename = sanitizeFilename(file.name);
-    }
-
-    // Upload to Vercel Blob Store
-    let uploadedUrl: string;
+    // Delete from Vercel Blob Store
     try {
-      uploadedUrl = await uploadImage(file, sanitizedFilename);
+      await deleteImage(url);
     } catch (error) {
-      console.error("Vercel Blob upload error:", error);
+      console.error("Vercel Blob delete error:", error);
       return NextResponse.json(
-        { error: "Upload failed. Please try again." },
+        { error: "Delete failed. Please try again." },
         { status: 500 },
       );
     }
 
-    // Return success with uploaded URL
+    // Return success
     return NextResponse.json(
       {
-        url: uploadedUrl,
+        success: true,
+        message: "Image deleted successfully.",
       },
       { status: 200 },
     );
   } catch (error) {
-    console.error("Unexpected upload error:", error);
+    console.error("Unexpected delete error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred during upload." },
+      { error: "An unexpected error occurred during deletion." },
       { status: 500 },
     );
   }

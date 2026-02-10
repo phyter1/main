@@ -7,6 +7,12 @@ import { v } from "convex/values";
  */
 
 export default defineSchema({
+  // Admin sessions table
+  sessions: defineTable({
+    token: v.string(),
+    expiresAt: v.number(),
+  }).index("by_token", ["token"]),
+
   // Prompt versions table
   promptVersions: defineTable({
     agentType: v.union(v.literal("chat"), v.literal("fit-assessment")),

@@ -1,7 +1,9 @@
 /**
  * Upload Service for Image Management
- * Handles file uploads to Cloudinary or S3 based on environment configuration
+ * Handles file uploads to Vercel Blob Store
  */
+
+import { del, put } from "@vercel/blob";
 
 /**
  * Upload configuration constants
@@ -16,126 +18,58 @@ const ACCEPTED_IMAGE_TYPES = [
 ];
 
 /**
- * Upload service configuration
- */
-interface UploadConfig {
-  provider: "cloudinary" | "s3" | "local";
-  cloudinaryUrl?: string;
-  cloudinaryPreset?: string;
-  s3Bucket?: string;
-  s3Region?: string;
-}
-
-/**
- * Get upload service configuration from environment
- */
-function getUploadConfig(): UploadConfig {
-  const provider = (process.env.UPLOAD_PROVIDER || "cloudinary") as
-    | "cloudinary"
-    | "s3"
-    | "local";
-
-  return {
-    provider,
-    cloudinaryUrl: process.env.CLOUDINARY_UPLOAD_URL,
-    cloudinaryPreset: process.env.CLOUDINARY_UPLOAD_PRESET,
-    s3Bucket: process.env.S3_BUCKET,
-    s3Region: process.env.S3_REGION || "us-east-1",
-  };
-}
-
-/**
- * Upload file to Cloudinary
+ * Upload file to Vercel Blob Store
  * @param file - File or Blob to upload
+ * @param filename - Sanitized filename for the upload
  * @returns Promise resolving to uploaded image URL
  */
-export async function uploadToCloudinary(file: File | Blob): Promise<string> {
-  const config = getUploadConfig();
-
-  // Validate configuration
-  if (!config.cloudinaryUrl) {
+export async function uploadImage(
+  file: File | Blob,
+  filename: string,
+): Promise<string> {
+  // Validate environment configuration
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw new Error(
-      "Cloudinary upload URL not configured. Set CLOUDINARY_UPLOAD_URL environment variable.",
+      "Blob token not configured. Set BLOB_READ_WRITE_TOKEN environment variable.",
     );
   }
 
-  // Create form data for Cloudinary API
-  const formData = new FormData();
-  formData.append("file", file);
+  try {
+    // Upload to Vercel Blob Store
+    const blob = await put(filename, file, {
+      access: "public",
+      addRandomSuffix: true,
+      contentType: file.type,
+      cacheControlMaxAge: 60 * 60 * 24 * 365, // 1 year CDN cache
+    });
 
-  if (config.cloudinaryPreset) {
-    formData.append("upload_preset", config.cloudinaryPreset);
+    return blob.url;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Vercel Blob upload failed: ${errorMessage}`);
   }
-
-  // Upload to Cloudinary
-  const response = await fetch(config.cloudinaryUrl, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Cloudinary upload failed: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-
-  // Return secure URL from Cloudinary response
-  if (!data.secure_url) {
-    throw new Error("Cloudinary response missing secure_url");
-  }
-
-  return data.secure_url;
 }
 
 /**
- * Upload file to S3
- * @param file - File or Blob to upload
- * @returns Promise resolving to uploaded image URL
+ * Delete image from Vercel Blob Store
+ * @param url - URL of the image to delete
+ * @returns Promise resolving when deletion completes
  */
-export async function uploadToS3(_file: File | Blob): Promise<string> {
-  const config = getUploadConfig();
-
-  if (!config.s3Bucket) {
+export async function deleteImage(url: string): Promise<void> {
+  // Validate environment configuration
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw new Error(
-      "S3 bucket not configured. Set S3_BUCKET environment variable.",
+      "Blob token not configured. Set BLOB_READ_WRITE_TOKEN environment variable.",
     );
   }
 
-  // Note: In production, you would use AWS SDK here
-  // For now, this is a placeholder that will be implemented when S3 is chosen
-  throw new Error("S3 upload not yet implemented. Use Cloudinary provider.");
-}
-
-/**
- * Upload file to local storage (development only)
- * @param file - File or Blob to upload
- * @returns Promise resolving to local file URL
- */
-export async function uploadToLocal(_file: File | Blob): Promise<string> {
-  // Local storage is not recommended for production
-  // This is a placeholder for development/testing
-  throw new Error(
-    "Local upload not implemented. Use Cloudinary or S3 provider.",
-  );
-}
-
-/**
- * Main upload function that routes to appropriate service
- * @param file - File or Blob to upload
- * @returns Promise resolving to uploaded image URL
- */
-export async function uploadImage(file: File | Blob): Promise<string> {
-  const config = getUploadConfig();
-
-  switch (config.provider) {
-    case "cloudinary":
-      return uploadToCloudinary(file);
-    case "s3":
-      return uploadToS3(file);
-    case "local":
-      return uploadToLocal(file);
-    default:
-      throw new Error(`Unknown upload provider: ${config.provider}`);
+  try {
+    await del(url);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Vercel Blob delete failed: ${errorMessage}`);
   }
 }
 
@@ -186,8 +120,14 @@ export function sanitizeFilename(filename: string): string {
   // Prevent multiple consecutive dots
   sanitized = sanitized.replace(/\.{2,}/g, ".");
 
-  // Ensure filename is not empty
-  if (sanitized.length === 0) {
+  // Remove multiple consecutive underscores
+  sanitized = sanitized.replace(/_{2,}/g, "_");
+
+  // Remove leading/trailing underscores
+  sanitized = sanitized.replace(/^_+|_+$/g, "");
+
+  // Ensure filename is not empty or only underscores
+  if (sanitized.length === 0 || /^_+$/.test(sanitized)) {
     sanitized = `upload_${Date.now()}`;
   }
 
@@ -200,5 +140,4 @@ export function sanitizeFilename(filename: string): string {
 export const uploadConfig = {
   MAX_FILE_SIZE,
   ACCEPTED_IMAGE_TYPES,
-  getConfig: getUploadConfig,
 };

@@ -152,6 +152,7 @@ export function ImageUploader({
     const response = await fetch(UPLOAD_SERVICE_URL, {
       method: "POST",
       body: formData,
+      credentials: "same-origin",
     });
 
     if (!response.ok) {
@@ -332,8 +333,9 @@ export function ImageUploader({
               </Button>
             </div>
           ) : (
-            <button
-              type="button"
+            // biome-ignore lint/a11y/useSemanticElements: must be div not button to avoid nested button HTML error
+            <div
+              data-testid="drop-zone"
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
@@ -344,6 +346,14 @@ export function ImageUploader({
                   ? "border-primary bg-primary/5"
                   : "border-muted-foreground/25 hover:border-muted-foreground/50"
               }`}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
             >
               <Upload className="size-12 mx-auto mb-4 text-muted-foreground" />
               <p className="text-sm font-medium mb-2">
@@ -372,7 +382,7 @@ export function ImageUploader({
                 aria-label="Upload image file"
                 className="hidden"
               />
-            </button>
+            </div>
           )}
 
           {/* Upload Progress */}

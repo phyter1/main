@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       const sessionToken = cookies.session;
       if (sessionToken) {
         // Invalidate the session token
-        invalidateSessionToken(sessionToken);
+        await invalidateSessionToken(sessionToken);
       }
     }
 

@@ -345,7 +345,7 @@ describe("ImageUploader Component", () => {
         />,
       );
 
-      const dropzone = screen.getByText(/Drag and drop/i).closest("button");
+      const dropzone = screen.getByTestId("drop-zone");
       expect(dropzone).toBeTruthy();
 
       // Simulate drag enter
@@ -369,7 +369,7 @@ describe("ImageUploader Component", () => {
       });
       Object.defineProperty(file, "size", { value: 1024 * 1024 });
 
-      const dropzone = screen.getByText(/Drag and drop/i).closest("button");
+      const dropzone = screen.getByTestId("drop-zone");
       expect(dropzone).toBeTruthy();
 
       // Simulate drop
@@ -399,7 +399,7 @@ describe("ImageUploader Component", () => {
         />,
       );
 
-      const dropzone = screen.getByText(/Drag and drop/i).closest("button");
+      const dropzone = screen.getByTestId("drop-zone");
       expect(dropzone).toBeTruthy();
 
       const dragOverEvent = new Event("dragover", { bubbles: true });

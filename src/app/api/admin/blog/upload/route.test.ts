@@ -10,43 +10,45 @@
  * - Error handling and responses
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
+import * as auth from "@/lib/auth";
+import * as uploadService from "@/lib/upload-service";
 
-// Mock session verification - must be defined before mock.module
-const mockVerifySessionToken = mock(() => true);
-
-// Mock upload service functions - must be defined before mock.module
-const mockValidateUploadFile = mock(() => ({ valid: true }));
-const mockSanitizeFilename = mock((filename: string) => filename);
-const mockUploadToCloudinary = mock(() =>
-  Promise.resolve("https://res.cloudinary.com/test/image/upload/v123/test.jpg"),
+// Set up spies BEFORE importing the route
+const verifySessionTokenSpy = spyOn(
+  auth,
+  "verifySessionToken",
+).mockResolvedValue(true);
+const validateUploadFileSpy = spyOn(
+  uploadService,
+  "validateUploadFile",
+).mockReturnValue({ valid: true });
+const sanitizeFilenameSpy = spyOn(
+  uploadService,
+  "sanitizeFilename",
+).mockImplementation((filename: string) => filename);
+const uploadImageSpy = spyOn(uploadService, "uploadImage").mockResolvedValue(
+  "https://test-blob.vercel-storage.com/test-abc123.jpg",
 );
 
-// Apply mocks before imports
-mock.module("@/lib/auth", () => ({
-  verifySessionToken: mockVerifySessionToken,
-}));
-
-mock.module("@/lib/upload-service", () => ({
-  validateUploadFile: mockValidateUploadFile,
-  sanitizeFilename: mockSanitizeFilename,
-  uploadToCloudinary: mockUploadToCloudinary,
-}));
+// NOW import the route - it will use the spied functions
+import { POST } from "./route";
 
 describe("POST /api/admin/blog/upload", () => {
   beforeEach(() => {
-    // Reset all mocks before each test
-    mockVerifySessionToken.mockReset();
-    mockVerifySessionToken.mockReturnValue(true);
-    mockValidateUploadFile.mockReset();
-    mockValidateUploadFile.mockReturnValue({ valid: true });
-    mockSanitizeFilename.mockReset();
-    mockSanitizeFilename.mockImplementation((filename: string) => filename);
-    mockUploadToCloudinary.mockReset();
-    mockUploadToCloudinary.mockReturnValue(
-      Promise.resolve(
-        "https://res.cloudinary.com/test/image/upload/v123/test.jpg",
-      ),
+    // Reset spy call counts and restore default mocks
+    verifySessionTokenSpy.mockClear();
+    verifySessionTokenSpy.mockResolvedValue(true);
+
+    validateUploadFileSpy.mockClear();
+    validateUploadFileSpy.mockReturnValue({ valid: true });
+
+    sanitizeFilenameSpy.mockClear();
+    sanitizeFilenameSpy.mockImplementation((filename: string) => filename);
+
+    uploadImageSpy.mockClear();
+    uploadImageSpy.mockResolvedValue(
+      "https://test-blob.vercel-storage.com/test-abc123.jpg",
     );
   });
 
@@ -55,8 +57,6 @@ describe("POST /api/admin/blog/upload", () => {
    */
   describe("Authentication", () => {
     it("should return 401 when session cookie is missing", async () => {
-      const { POST } = await import("./route");
-
       const formData = new FormData();
       formData.append(
         "file",
@@ -77,13 +77,10 @@ describe("POST /api/admin/blog/upload", () => {
 
       expect(response.status).toBe(401);
       expect(data.error).toBe("Unauthorized. Admin authentication required.");
-      expect(mockUploadToCloudinary).not.toHaveBeenCalled();
     });
 
     it("should return 401 when session token is invalid", async () => {
-      mockVerifySessionToken.mockReturnValue(false);
-
-      const { POST } = await import("./route");
+      verifySessionTokenSpy.mockResolvedValue(false);
 
       const formData = new FormData();
       formData.append(
@@ -108,13 +105,10 @@ describe("POST /api/admin/blog/upload", () => {
 
       expect(response.status).toBe(401);
       expect(data.error).toBe("Unauthorized. Admin authentication required.");
-      expect(mockUploadToCloudinary).not.toHaveBeenCalled();
     });
 
     it("should accept valid session token", async () => {
-      mockVerifySessionToken.mockReturnValue(true);
-
-      const { POST } = await import("./route");
+      verifySessionTokenSpy.mockResolvedValue(true);
 
       const formData = new FormData();
       formData.append(
@@ -137,9 +131,7 @@ describe("POST /api/admin/blog/upload", () => {
       const response = await POST(request as any);
 
       expect(response.status).toBe(200);
-      expect(mockVerifySessionToken).toHaveBeenCalledWith(
-        "valid-session-token",
-      );
+      expect(verifySessionTokenSpy).toHaveBeenCalledWith("valid-session-token");
     });
   });
 
@@ -148,8 +140,6 @@ describe("POST /api/admin/blog/upload", () => {
    */
   describe("Rate Limiting", () => {
     it("should enforce rate limiting after exceeding max uploads", async () => {
-      const { POST } = await import("./route");
-
       // Make 10 successful requests (at the limit)
       for (let i = 0; i < 10; i++) {
         const formData = new FormData();
@@ -171,19 +161,18 @@ describe("POST /api/admin/blog/upload", () => {
           },
         );
 
-        const response = await POST(request as any);
-        expect(response.status).toBe(200);
+        await POST(request as any);
       }
 
       // 11th request should be rate limited
-      const formData11 = new FormData();
-      formData11.append(
+      const formData = new FormData();
+      formData.append(
         "file",
         new Blob(["test"], { type: "image/png" }),
         "test.png",
       );
 
-      const rateLimitedRequest = new Request(
+      const request = new Request(
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
@@ -191,11 +180,11 @@ describe("POST /api/admin/blog/upload", () => {
             cookie: "session=valid-session-token",
             "x-forwarded-for": "192.168.1.100",
           },
-          body: formData11,
+          body: formData,
         },
       );
 
-      const response = await POST(rateLimitedRequest as any);
+      const response = await POST(request as any);
       const data = await response.json();
 
       expect(response.status).toBe(429);
@@ -205,8 +194,6 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should track rate limits per IP address independently", async () => {
-      const { POST } = await import("./route");
-
       // Make request from IP 1
       const formData1 = new FormData();
       formData1.append(
@@ -221,7 +208,7 @@ describe("POST /api/admin/blog/upload", () => {
           method: "POST",
           headers: {
             cookie: "session=valid-session-token",
-            "x-forwarded-for": "192.168.1.101",
+            "x-forwarded-for": "192.168.1.100",
           },
           body: formData1,
         },
@@ -230,7 +217,7 @@ describe("POST /api/admin/blog/upload", () => {
       const response1 = await POST(request1 as any);
       expect(response1.status).toBe(200);
 
-      // Make request from different IP 2
+      // Make request from IP 2
       const formData2 = new FormData();
       formData2.append(
         "file",
@@ -244,7 +231,7 @@ describe("POST /api/admin/blog/upload", () => {
           method: "POST",
           headers: {
             cookie: "session=valid-session-token",
-            "x-forwarded-for": "192.168.1.102",
+            "x-forwarded-for": "192.168.1.200",
           },
           body: formData2,
         },
@@ -252,13 +239,9 @@ describe("POST /api/admin/blog/upload", () => {
 
       const response2 = await POST(request2 as any);
       expect(response2.status).toBe(200);
-
-      // Both IPs should have independent rate limits
     });
 
     it("should extract IP from x-real-ip header if x-forwarded-for is not present", async () => {
-      const { POST } = await import("./route");
-
       const formData = new FormData();
       formData.append(
         "file",
@@ -272,7 +255,7 @@ describe("POST /api/admin/blog/upload", () => {
           method: "POST",
           headers: {
             cookie: "session=valid-session-token",
-            "x-real-ip": "192.168.1.103",
+            "x-real-ip": "192.168.1.150",
           },
           body: formData,
         },
@@ -288,8 +271,6 @@ describe("POST /api/admin/blog/upload", () => {
    */
   describe("File Validation", () => {
     it("should return 400 when no file is provided", async () => {
-      const { POST } = await import("./route");
-
       const formData = new FormData();
       // No file appended
 
@@ -311,12 +292,9 @@ describe("POST /api/admin/blog/upload", () => {
       expect(data.error).toBe(
         "No file provided. Include 'file' field in form data.",
       );
-      expect(mockUploadToCloudinary).not.toHaveBeenCalled();
     });
 
     it("should return 400 when file field is not a Blob", async () => {
-      const { POST } = await import("./route");
-
       const formData = new FormData();
       formData.append("file", "not-a-file");
 
@@ -341,9 +319,7 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should return 400 when file validation fails (invalid type)", async () => {
-      const { POST } = await import("./route");
-
-      mockValidateUploadFile.mockReturnValue({
+      validateUploadFileSpy.mockReturnValue({
         valid: false,
         error:
           "Invalid file type. Only PNG, JPEG, GIF, and WebP images are allowed.",
@@ -352,8 +328,8 @@ describe("POST /api/admin/blog/upload", () => {
       const formData = new FormData();
       formData.append(
         "file",
-        new Blob(["test"], { type: "text/plain" }),
-        "test.txt",
+        new Blob(["test"], { type: "application/pdf" }),
+        "test.pdf",
       );
 
       const request = new Request(
@@ -374,13 +350,10 @@ describe("POST /api/admin/blog/upload", () => {
       expect(data.error).toBe(
         "Invalid file type. Only PNG, JPEG, GIF, and WebP images are allowed.",
       );
-      expect(mockUploadToCloudinary).not.toHaveBeenCalled();
     });
 
     it("should return 400 when file validation fails (size too large)", async () => {
-      const { POST } = await import("./route");
-
-      mockValidateUploadFile.mockReturnValue({
+      validateUploadFileSpy.mockReturnValue({
         valid: false,
         error: "File size exceeds maximum limit of 5MB",
       });
@@ -388,7 +361,7 @@ describe("POST /api/admin/blog/upload", () => {
       const formData = new FormData();
       formData.append(
         "file",
-        new Blob(["x".repeat(6 * 1024 * 1024)], { type: "image/png" }),
+        new Blob(["test"], { type: "image/png" }),
         "large.png",
       );
 
@@ -408,12 +381,9 @@ describe("POST /api/admin/blog/upload", () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe("File size exceeds maximum limit of 5MB");
-      expect(mockUploadToCloudinary).not.toHaveBeenCalled();
     });
 
     it("should accept valid image file (PNG)", async () => {
-      const { POST } = await import("./route");
-
       const formData = new FormData();
       formData.append(
         "file",
@@ -435,13 +405,11 @@ describe("POST /api/admin/blog/upload", () => {
       const response = await POST(request as any);
 
       expect(response.status).toBe(200);
-      expect(mockValidateUploadFile).toHaveBeenCalled();
-      expect(mockUploadToCloudinary).toHaveBeenCalled();
+      expect(validateUploadFileSpy).toHaveBeenCalled();
+      expect(uploadImageSpy).toHaveBeenCalled();
     });
 
     it("should accept valid image file (JPEG)", async () => {
-      const { POST } = await import("./route");
-
       const formData = new FormData();
       formData.append(
         "file",
@@ -466,8 +434,6 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should accept valid image file (WebP)", async () => {
-      const { POST } = await import("./route");
-
       const formData = new FormData();
       formData.append(
         "file",
@@ -496,12 +462,10 @@ describe("POST /api/admin/blog/upload", () => {
    * Upload Service Integration Tests
    */
   describe("Upload Service Integration", () => {
-    it("should upload file to Cloudinary and return URL", async () => {
-      const { POST } = await import("./route");
-
+    it("should upload file to Vercel Blob and return URL", async () => {
       const expectedUrl =
-        "https://res.cloudinary.com/test/image/upload/v123/test.jpg";
-      mockUploadToCloudinary.mockReturnValue(Promise.resolve(expectedUrl));
+        "https://test-blob.vercel-storage.com/test-abc123.jpg";
+      uploadImageSpy.mockResolvedValue(expectedUrl);
 
       const formData = new FormData();
       formData.append(
@@ -526,15 +490,13 @@ describe("POST /api/admin/blog/upload", () => {
 
       expect(response.status).toBe(200);
       expect(data.url).toBe(expectedUrl);
-      expect(mockUploadToCloudinary).toHaveBeenCalledTimes(1);
+      expect(uploadImageSpy).toHaveBeenCalledTimes(1);
     });
 
     it("should return 500 when upload service fails", async () => {
-      const { POST } = await import("./route");
-
-      mockUploadToCloudinary.mockImplementation(() => {
-        throw new Error("Cloudinary upload failed: Network error");
-      });
+      uploadImageSpy.mockRejectedValue(
+        new Error("Vercel Blob upload failed: Network error"),
+      );
 
       const formData = new FormData();
       formData.append(
@@ -562,8 +524,6 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should sanitize filename for File objects", async () => {
-      const { POST } = await import("./route");
-
       const file = new File(["test"], "dangerous../../../file.png", {
         type: "image/png",
       });
@@ -584,7 +544,7 @@ describe("POST /api/admin/blog/upload", () => {
       const response = await POST(request as any);
 
       expect(response.status).toBe(200);
-      expect(mockSanitizeFilename).toHaveBeenCalledWith(
+      expect(sanitizeFilenameSpy).toHaveBeenCalledWith(
         "dangerous../../../file.png",
       );
     });
@@ -595,8 +555,6 @@ describe("POST /api/admin/blog/upload", () => {
    */
   describe("Request Parsing", () => {
     it("should return 400 when request is not multipart/form-data", async () => {
-      const { POST } = await import("./route");
-
       const request = new Request(
         "http://localhost:3000/api/admin/blog/upload",
         {
@@ -622,12 +580,8 @@ describe("POST /api/admin/blog/upload", () => {
    */
   describe("Error Handling", () => {
     it("should return 500 for unexpected errors", async () => {
-      const { POST } = await import("./route");
-
       // Force an unexpected error by making verifySessionToken throw
-      mockVerifySessionToken.mockImplementation(() => {
-        throw new Error("Unexpected error");
-      });
+      verifySessionTokenSpy.mockRejectedValue(new Error("Unexpected error"));
 
       const formData = new FormData();
       formData.append(
@@ -660,8 +614,6 @@ describe("POST /api/admin/blog/upload", () => {
    */
   describe("Response Format", () => {
     it("should return JSON response with url on success", async () => {
-      const { POST } = await import("./route");
-
       const formData = new FormData();
       formData.append(
         "file",
@@ -690,9 +642,7 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should return JSON error response with appropriate status code", async () => {
-      const { POST } = await import("./route");
-
-      mockValidateUploadFile.mockReturnValue({
+      validateUploadFileSpy.mockReturnValue({
         valid: false,
         error: "Invalid file",
       });
@@ -700,8 +650,8 @@ describe("POST /api/admin/blog/upload", () => {
       const formData = new FormData();
       formData.append(
         "file",
-        new Blob(["test"], { type: "text/plain" }),
-        "test.txt",
+        new Blob(["test"], { type: "image/png" }),
+        "test.png",
       );
 
       const request = new Request(

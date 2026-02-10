@@ -63,6 +63,49 @@ mock.module("@/lib/blog-utils", () => ({
   validateSlug: mockValidateSlug,
 }));
 
+// Mock ImageUploader component
+const mockOnUploadComplete = mock(() => {});
+const mockOnError = mock(() => {});
+
+mock.module("./ImageUploader", () => ({
+  ImageUploader: ({
+    initialImageUrl,
+    onUploadComplete,
+    onError,
+  }: {
+    initialImageUrl?: string;
+    onUploadComplete: (url: string) => void;
+    onError: (error: string) => void;
+  }) => {
+    // Store callbacks for test access
+    mockOnUploadComplete.mockImplementation(onUploadComplete);
+    mockOnError.mockImplementation(onError);
+
+    return (
+      <div data-testid="image-uploader">
+        <label htmlFor="cover-image">Cover Image</label>
+        {initialImageUrl && (
+          // biome-ignore lint/performance/noImgElement: test mock component
+          <img
+            src={initialImageUrl}
+            alt="Cover preview"
+            data-testid="image-preview"
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => onUploadComplete("https://example.com/uploaded.jpg")}
+        >
+          Simulate Upload
+        </button>
+        <button type="button" onClick={() => onError("Upload failed")}>
+          Simulate Error
+        </button>
+      </div>
+    );
+  },
+}));
+
 // Now import the components AFTER all mocks are set up
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -87,6 +130,7 @@ describe("BlogPostMetadata", () => {
     mock.restore();
     mockUseQuery.mockReturnValue([]);
     mockUseMutation.mockReturnValue(mock(() => Promise.resolve("mock-id")));
+    mockOnChange.mockClear();
   });
 
   afterEach(() => {
@@ -116,8 +160,8 @@ describe("BlogPostMetadata", () => {
       // Check for featured checkbox
       expect(screen.getByLabelText(/featured/i)).toBeDefined();
 
-      // Check for cover image input
-      expect(screen.getByLabelText(/cover image/i)).toBeDefined();
+      // Check for cover image uploader
+      expect(screen.getByTestId("image-uploader")).toBeDefined();
 
       // Check for SEO fields
       expect(screen.getByLabelText(/meta title/i)).toBeDefined();
@@ -155,10 +199,12 @@ describe("BlogPostMetadata", () => {
       ) as HTMLInputElement;
       expect(featuredCheckbox.checked).toBe(true);
 
-      const coverImageInput = screen.getByLabelText(
-        /cover image/i,
-      ) as HTMLInputElement;
-      expect(coverImageInput.value).toBe("https://example.com/image.jpg");
+      // Verify cover image is passed to ImageUploader
+      const preview = screen.getByAltText(/cover image preview/i);
+      expect(preview).toBeDefined();
+      expect((preview as HTMLImageElement).src).toContain(
+        "https://example.com/image.jpg",
+      );
     });
   });
 
@@ -473,7 +519,9 @@ describe("BlogPostMetadata", () => {
       const removeButton = reactBadge?.querySelector("button");
       expect(removeButton).toBeDefined();
 
-      await user.click(removeButton!);
+      if (removeButton) {
+        await user.click(removeButton);
+      }
 
       await waitFor(() => {
         expect(mockOnChange).toHaveBeenCalledWith(
@@ -538,7 +586,30 @@ describe("BlogPostMetadata", () => {
   });
 
   describe("Cover Image", () => {
-    it("should display cover image preview when URL is provided", () => {
+    beforeEach(() => {
+      // Clear mock fetch for each test
+      globalThis.fetch = mock(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        } as Response),
+      ) as any;
+    });
+
+    it("should render ImageUploader component", () => {
+      render(
+        <BlogPostMetadata
+          title="Test"
+          metadata={defaultMetadata}
+          onChange={mockOnChange}
+        />,
+      );
+
+      const uploader = screen.getByTestId("image-uploader");
+      expect(uploader).toBeDefined();
+    });
+
+    it("should pass initialImageUrl to ImageUploader when coverImage is set", () => {
       const metadata = {
         ...defaultMetadata,
         coverImage: "https://example.com/image.jpg",
@@ -559,7 +630,7 @@ describe("BlogPostMetadata", () => {
       );
     });
 
-    it("should update preview when URL changes", async () => {
+    it("should update metadata when ImageUploader calls onUploadComplete", async () => {
       const user = userEvent.setup();
 
       render(
@@ -570,19 +641,179 @@ describe("BlogPostMetadata", () => {
         />,
       );
 
-      const imageInput = screen.getByLabelText(/cover image/i);
-      await user.type(imageInput, "https://example.com/new-image.jpg");
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
 
       await waitFor(() => {
         expect(mockOnChange).toHaveBeenCalledWith(
           expect.objectContaining({
-            coverImage: "https://example.com/new-image.jpg",
+            coverImage: "https://example.com/uploaded.jpg",
           }),
         );
       });
     });
 
-    it("should show placeholder when no cover image URL", () => {
+    it("should delete old Vercel Blob image when replacing with new image", async () => {
+      const user = userEvent.setup();
+      const mockFetch = mock(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        } as Response),
+      ) as any;
+      globalThis.fetch = mockFetch;
+
+      const metadata = {
+        ...defaultMetadata,
+        coverImage: "https://test-blob.vercel-storage.com/old-image.jpg",
+      };
+
+      render(
+        <BlogPostMetadata
+          title="Test"
+          metadata={metadata}
+          onChange={mockOnChange}
+        />,
+      );
+
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
+
+      await waitFor(() => {
+        // Should have called delete API
+        expect(mockFetch).toHaveBeenCalledWith(
+          "/api/admin/blog/delete-image",
+          expect.objectContaining({
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: "https://test-blob.vercel-storage.com/old-image.jpg",
+            }),
+          }),
+        );
+
+        // Should update metadata with new image
+        expect(mockOnChange).toHaveBeenCalledWith(
+          expect.objectContaining({
+            coverImage: "https://example.com/uploaded.jpg",
+          }),
+        );
+      });
+    });
+
+    it("should not delete old image if not from Vercel Blob", async () => {
+      const user = userEvent.setup();
+      const mockFetch = mock(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        } as Response),
+      ) as any;
+      globalThis.fetch = mockFetch;
+
+      const metadata = {
+        ...defaultMetadata,
+        coverImage: "https://example.com/external-image.jpg",
+      };
+
+      render(
+        <BlogPostMetadata
+          title="Test"
+          metadata={metadata}
+          onChange={mockOnChange}
+        />,
+      );
+
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
+
+      await waitFor(() => {
+        // Should NOT have called delete API
+        expect(mockFetch).not.toHaveBeenCalledWith(
+          "/api/admin/blog/delete-image",
+          expect.anything(),
+        );
+
+        // Should still update metadata with new image
+        expect(mockOnChange).toHaveBeenCalledWith(
+          expect.objectContaining({
+            coverImage: "https://example.com/uploaded.jpg",
+          }),
+        );
+      });
+    });
+
+    it("should not delete image when URL is the same", async () => {
+      const user = userEvent.setup();
+      const mockFetch = mock(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        } as Response),
+      ) as any;
+      globalThis.fetch = mockFetch;
+
+      // Mock ImageUploader to return same URL
+      const sameUrlMock = mock(
+        ({ onUploadComplete }: { onUploadComplete: (url: string) => void }) => (
+          <div data-testid="image-uploader">
+            <button
+              type="button"
+              onClick={() =>
+                onUploadComplete(
+                  "https://test-blob.vercel-storage.com/same-image.jpg",
+                )
+              }
+            >
+              Simulate Upload
+            </button>
+          </div>
+        ),
+      );
+
+      mock.module("./ImageUploader", () => ({
+        ImageUploader: sameUrlMock,
+      }));
+
+      const metadata = {
+        ...defaultMetadata,
+        coverImage: "https://test-blob.vercel-storage.com/same-image.jpg",
+      };
+
+      // Need to re-import component with new mock
+      const { BlogPostMetadata: UpdatedComponent } = await import(
+        "./BlogPostMetadata"
+      );
+
+      render(
+        <UpdatedComponent
+          title="Test"
+          metadata={metadata}
+          onChange={mockOnChange}
+        />,
+      );
+
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
+
+      await waitFor(() => {
+        // Should NOT have called delete API when URL is the same
+        expect(mockFetch).not.toHaveBeenCalledWith(
+          "/api/admin/blog/delete-image",
+          expect.anything(),
+        );
+      });
+    });
+
+    it("should render without initial image", () => {
       render(
         <BlogPostMetadata
           title="Test"
@@ -591,8 +822,128 @@ describe("BlogPostMetadata", () => {
         />,
       );
 
+      // Should render uploader without preview
+      const uploader = screen.getByTestId("image-uploader");
+      expect(uploader).toBeDefined();
       expect(screen.queryByAltText(/cover image preview/i)).toBeNull();
-      expect(screen.getByText(/no cover image/i)).toBeDefined();
+    });
+
+    it("should auto-populate OG image when cover image is uploaded and OG image is empty", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <BlogPostMetadata
+          title="Test"
+          metadata={defaultMetadata}
+          onChange={mockOnChange}
+        />,
+      );
+
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
+
+      await waitFor(() => {
+        expect(mockOnChange).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            coverImage: "https://example.com/uploaded.jpg",
+            seoMetadata: expect.objectContaining({
+              ogImage: "https://example.com/uploaded.jpg",
+            }),
+          }),
+        );
+      });
+    });
+
+    it("should update OG image when it matches the old cover image", async () => {
+      const user = userEvent.setup();
+      const metadata = {
+        ...defaultMetadata,
+        coverImage: "https://test-blob.vercel-storage.com/old.jpg",
+        seoMetadata: {
+          metaTitle: "",
+          metaDescription: "",
+          ogImage: "https://test-blob.vercel-storage.com/old.jpg",
+        },
+      };
+
+      render(
+        <BlogPostMetadata
+          title="Test"
+          metadata={metadata}
+          onChange={mockOnChange}
+        />,
+      );
+
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
+
+      await waitFor(() => {
+        expect(mockOnChange).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            coverImage: "https://example.com/uploaded.jpg",
+            seoMetadata: expect.objectContaining({
+              ogImage: "https://example.com/uploaded.jpg",
+            }),
+          }),
+        );
+      });
+    });
+
+    it("should NOT update OG image when user has set a custom OG image", async () => {
+      const user = userEvent.setup();
+      const metadata = {
+        ...defaultMetadata,
+        coverImage: "https://test-blob.vercel-storage.com/cover.jpg",
+        seoMetadata: {
+          metaTitle: "",
+          metaDescription: "",
+          ogImage: "https://example.com/custom-og-image.jpg",
+        },
+      };
+
+      render(
+        <BlogPostMetadata
+          title="Test"
+          metadata={metadata}
+          onChange={mockOnChange}
+        />,
+      );
+
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
+
+      await waitFor(() => {
+        expect(mockOnChange).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            coverImage: "https://example.com/uploaded.jpg",
+            seoMetadata: expect.objectContaining({
+              ogImage: "https://example.com/custom-og-image.jpg", // Should keep custom OG image
+            }),
+          }),
+        );
+      });
+    });
+
+    it("should display helper text about OG image auto-population", () => {
+      render(
+        <BlogPostMetadata
+          title="Test"
+          metadata={defaultMetadata}
+          onChange={mockOnChange}
+        />,
+      );
+
+      expect(
+        screen.getByText(
+          /cover image will automatically be used for social media sharing/i,
+        ),
+      ).toBeDefined();
     });
   });
 
@@ -738,9 +1089,11 @@ describe("BlogPostMetadata", () => {
       const featuredCheckbox = screen.getByLabelText(/featured/i);
       await user.click(featuredCheckbox);
 
-      // Test cover image change
-      const imageInput = screen.getByLabelText(/cover image/i);
-      await user.type(imageInput, "https://example.com/img.jpg");
+      // Test cover image change (simulate ImageUploader)
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
 
       // Verify onChange was called for each field
       await waitFor(() => {
@@ -794,9 +1147,11 @@ describe("BlogPostMetadata", () => {
       await user.type(tagInput, "react{Enter}");
       await user.type(tagInput, "tutorial{Enter}");
 
-      // Set cover image
-      const imageInput = screen.getByLabelText(/cover image/i);
-      await user.type(imageInput, "https://example.com/cover.jpg");
+      // Upload cover image (simulate ImageUploader)
+      const uploadButton = screen.getByRole("button", {
+        name: /simulate upload/i,
+      });
+      await user.click(uploadButton);
 
       // Set SEO metadata
       const metaTitleInput = screen.getByLabelText(/meta title/i);

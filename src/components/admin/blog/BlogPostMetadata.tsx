@@ -14,8 +14,7 @@
  */
 
 import { useMutation, useQuery } from "convex/react";
-import { Image as ImageIcon, Plus, X } from "lucide-react";
-import Image from "next/image";
+import { Plus, X } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +40,7 @@ import { generateSlug, validateSlug } from "@/lib/blog-utils";
 import type { SEOMetadata } from "@/types/blog";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { ImageUploader } from "./ImageUploader";
 
 export interface BlogPostMetadataProps {
   title: string;
@@ -66,7 +66,7 @@ export function BlogPostMetadata({
   const newCategoryNameId = useId();
   const newCategoryDescId = useId();
   const tagsId = useId();
-  const coverImageId = useId();
+  const _coverImageId = useId();
   const featuredId = useId();
   const metaTitleId = useId();
   const metaDescId = useId();
@@ -432,33 +432,52 @@ export function BlogPostMetadata({
 
       {/* Cover Image */}
       <div className="space-y-2">
-        <Label htmlFor={coverImageId}>Cover Image URL</Label>
-        <Input
-          id={coverImageId}
-          value={metadata.coverImage || ""}
-          onChange={(e) =>
-            onChange({ ...metadata, coverImage: e.target.value })
-          }
-          placeholder="https://example.com/image.jpg"
-          type="url"
+        <Label>Cover Image</Label>
+        <ImageUploader
+          initialImageUrl={metadata.coverImage}
+          onUploadComplete={async (url) => {
+            // Delete old Vercel Blob image if replacing with new one
+            if (
+              metadata.coverImage &&
+              metadata.coverImage !== url &&
+              metadata.coverImage.includes("vercel-storage.com")
+            ) {
+              try {
+                await fetch("/api/admin/blog/delete-image", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ url: metadata.coverImage }),
+                });
+              } catch (error) {
+                console.error("Failed to delete old cover image:", error);
+              }
+            }
+
+            // Auto-populate OG image if it's empty or matches the old cover image
+            const shouldUpdateOgImage =
+              !metadata.seoMetadata.ogImage ||
+              metadata.seoMetadata.ogImage === metadata.coverImage;
+
+            // Update metadata with new URL and auto-populate OG image
+            onChange({
+              ...metadata,
+              coverImage: url,
+              seoMetadata: {
+                ...metadata.seoMetadata,
+                ogImage: shouldUpdateOgImage
+                  ? url
+                  : metadata.seoMetadata.ogImage,
+              },
+            });
+          }}
+          onError={(error) => {
+            console.error("Cover image upload error:", error);
+          }}
         />
-        {metadata.coverImage ? (
-          <div className="mt-2 border rounded-md overflow-hidden relative h-48">
-            <Image
-              src={metadata.coverImage}
-              alt="Cover image preview"
-              fill
-              className="object-cover"
-            />
-          </div>
-        ) : (
-          <div className="mt-2 border rounded-md h-48 flex items-center justify-center bg-muted">
-            <div className="text-center text-muted-foreground">
-              <ImageIcon className="size-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No cover image</p>
-            </div>
-          </div>
-        )}
+        <p className="text-muted-foreground text-xs">
+          Cover image will automatically be used for social media sharing (OG
+          image) unless you specify a different OG image below.
+        </p>
       </div>
 
       {/* Featured Post Checkbox */}

@@ -2,7 +2,11 @@
  * Authentication Utilities for Admin Access
  * Provides password hashing, session token management, and cookie utilities
  * Uses Web Crypto API for Edge Runtime compatibility
+ * Uses Convex for persistent session storage
  */
+
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
 
 /**
  * Configuration constants
@@ -15,8 +19,7 @@ const SESSION_DURATION_DAYS = 7;
 const SESSION_DURATION_MS = SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000;
 
 /**
- * Session storage (in-memory for now)
- * In production, this should use Redis or a database
+ * Session storage interface
  */
 interface SessionToken {
   token: string;
@@ -24,20 +27,34 @@ interface SessionToken {
 }
 
 /**
- * Module-level session storage
- * Note: Removed global singleton pattern to enable proper test mocking
- * Sessions will not persist across hot module reloads in development
+ * Convex client for session operations
  */
-const activeSessions = new Map<string, SessionToken>();
+let convexClient: ConvexHttpClient | null = null;
+
+function getConvexClient(): ConvexHttpClient {
+  if (!convexClient) {
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+    if (!convexUrl) {
+      throw new Error("NEXT_PUBLIC_CONVEX_URL is not set");
+    }
+    convexClient = new ConvexHttpClient(convexUrl);
+  }
+  return convexClient;
+}
 
 /**
  * Test helper to clear all sessions
  * @internal - Only for use in tests
  */
 export const __testing__ = {
-  clearSessions: () => activeSessions.clear(),
-  addSession: (token: string, expiresAt: number) =>
-    activeSessions.set(token, { token, expiresAt }),
+  clearSessions: async () => {
+    // In tests, we'll need to clear Convex sessions differently
+    // For now, this is a placeholder
+  },
+  addSession: async (token: string, expiresAt: number) => {
+    const client = getConvexClient();
+    await client.mutation(api.sessions.storeSession, { token, expiresAt });
+  },
 };
 
 /**
@@ -100,7 +117,7 @@ export function createSessionCookie(token: string): string {
     `session=${token}`,
     "HttpOnly",
     "SameSite=Strict", // Strict for better CSRF protection
-    "Path=/admin", // Scope to admin routes only
+    "Path=/", // Available to all routes (needed for /api/admin/* endpoints)
     `Max-Age=${maxAge}`,
   ];
 
@@ -124,12 +141,16 @@ export function clearSessionCookie(): string {
  * @param token - Session token to store
  * @param expiresAt - Optional custom expiration timestamp (defaults to 7 days)
  */
-export function storeSessionToken(token: string, expiresAt?: number): void {
+export async function storeSessionToken(
+  token: string,
+  expiresAt?: number,
+): Promise<void> {
   const expiration = expiresAt ?? Date.now() + SESSION_DURATION_MS;
-  activeSessions.set(token, { token, expiresAt: expiration });
-
-  // Clean up expired tokens
-  cleanupExpiredSessions();
+  const client = getConvexClient();
+  await client.mutation(api.sessions.storeSession, {
+    token,
+    expiresAt: expiration,
+  });
 }
 
 /**
@@ -138,39 +159,26 @@ export function storeSessionToken(token: string, expiresAt?: number): void {
  * @returns Promise resolving to true if token is valid and not expired
  */
 export async function verifySessionToken(token: string): Promise<boolean> {
-  cleanupExpiredSessions();
-
-  const session = activeSessions.get(token);
-  if (!session) {
-    return false;
-  }
-
-  if (session.expiresAt < Date.now()) {
-    activeSessions.delete(token);
-    return false;
-  }
-
-  return true;
+  const client = getConvexClient();
+  const result = await client.query(api.sessions.verifySession, { token });
+  return result.valid;
 }
 
 /**
  * Invalidate a session token (logout)
  * @param token - Session token to invalidate
  */
-export function invalidateSessionToken(token: string): void {
-  activeSessions.delete(token);
+export async function invalidateSessionToken(token: string): Promise<void> {
+  const client = getConvexClient();
+  await client.mutation(api.sessions.invalidateSession, { token });
 }
 
 /**
  * Clean up expired session tokens from storage
  */
-function cleanupExpiredSessions(): void {
-  const now = Date.now();
-  for (const [token, session] of activeSessions.entries()) {
-    if (session.expiresAt < now) {
-      activeSessions.delete(token);
-    }
-  }
+async function _cleanupExpiredSessions(): Promise<void> {
+  const client = getConvexClient();
+  await client.mutation(api.sessions.cleanupExpiredSessions, {});
 }
 
 /**

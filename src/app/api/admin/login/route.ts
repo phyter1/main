@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     const sessionToken = generateSessionToken();
 
     // Store session token
-    storeSessionToken(sessionToken);
+    await storeSessionToken(sessionToken);
 
     // Create session cookie
     const cookieHeader = createSessionCookie(sessionToken);

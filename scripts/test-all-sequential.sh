@@ -61,6 +61,7 @@ run_test "src/lib/blog-sitemap.test.ts" "blog-sitemap"
 run_test "src/lib/input-sanitization.test.ts" "input-sanitization"
 run_test "src/lib/prompt-versioning.test.ts" "prompt-versioning"
 run_test "src/lib/test-runner.test.ts" "test-runner"
+run_test "src/lib/upload-service.test.ts" "upload-service"
 echo ""
 
 # MDX Configuration Tests
@@ -214,6 +215,7 @@ run_test "src/app/api/admin/blog/create/route.test.ts" "blog create API"
 run_test "src/app/api/admin/blog/[id]/route.test.ts" "blog update/delete API"
 run_test "src/app/api/admin/blog/publish/route.test.ts" "blog publish API"
 run_test "src/app/api/admin/blog/upload/route.test.ts" "blog upload API"
+run_test "src/app/api/admin/blog/delete-image/route.test.ts" "blog delete-image API"
 run_test "src/app/api/admin/blog/categories/route.test.ts" "blog categories API"
 run_test "src/app/api/admin/blog/categories/[id]/route.test.ts" "blog category update/delete API"
 echo ""
@@ -235,6 +237,7 @@ run_test "src/app/admin/__tests__/workflows.integration.test.tsx" "workflows int
 run_test "src/app/__tests__/guardrail-feedback.integration.test.tsx" "guardrail-feedback integration"
 run_test "src/app/__tests__/ai-features-integration.test.tsx" "ai-features integration"
 run_test "src/app/__tests__/blog-workflows.integration.test.tsx" "blog-workflows integration"
+run_test "src/__tests__/integration/blog-image-upload.test.ts" "blog-image-upload integration"
 run_test "src/__tests__/git-hooks.integration.test.ts" "git-hooks integration"
 echo ""
 

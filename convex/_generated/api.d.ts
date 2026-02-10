@@ -10,6 +10,7 @@
 
 import type * as blog from "../blog.js";
 import type * as prompts from "../prompts.js";
+import type * as sessions from "../sessions.js";
 import type * as testCases from "../testCases.js";
 import type * as validators from "../validators.js";
 
@@ -22,6 +23,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   blog: typeof blog;
   prompts: typeof prompts;
+  sessions: typeof sessions;
   testCases: typeof testCases;
   validators: typeof validators;
 }>;
