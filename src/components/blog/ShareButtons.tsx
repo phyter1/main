@@ -74,10 +74,12 @@ export function ShareButtons({
 
   /**
    * Generate LinkedIn share URL with proper encoding
+   * Includes title parameter to pre-fill the share dialog
    */
   const getLinkedInUrl = () => {
     const url = encodeURIComponent(postUrl);
-    return `https://www.linkedin.com/sharing/share-offsite?url=${url}`;
+    const encodedTitle = encodeURIComponent(title);
+    return `https://www.linkedin.com/sharing/share-offsite/?url=${url}&title=${encodedTitle}`;
   };
 
   /**

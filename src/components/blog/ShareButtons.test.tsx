@@ -164,6 +164,20 @@ describe("ShareButtons", () => {
       );
     });
 
+    it("should include title parameter in LinkedIn URL", () => {
+      const { container } = render(
+        <ShareButtons title={mockPost.title} slug={mockPost.slug} />,
+      );
+
+      const linkedinButton = container.querySelector(
+        '[aria-label*="LinkedIn"]',
+      );
+      const dataUrl = linkedinButton?.getAttribute("data-url");
+
+      expect(dataUrl).toContain("title=");
+      expect(dataUrl).toContain(encodeURIComponent(mockPost.title));
+    });
+
     it("should properly URL encode LinkedIn parameters", () => {
       const { container } = render(
         <ShareButtons title={mockPost.title} slug={mockPost.slug} />,
