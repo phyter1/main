@@ -160,11 +160,11 @@ describe("ShareButtons", () => {
         '[aria-label*="LinkedIn"]',
       );
       expect(linkedinButton?.getAttribute("data-url")).toContain(
-        "https://www.linkedin.com/sharing/share-offsite",
+        "https://www.linkedin.com/shareArticle",
       );
     });
 
-    it("should include title parameter in LinkedIn URL", () => {
+    it("should include mini parameter in LinkedIn URL", () => {
       const { container } = render(
         <ShareButtons title={mockPost.title} slug={mockPost.slug} />,
       );
@@ -174,8 +174,7 @@ describe("ShareButtons", () => {
       );
       const dataUrl = linkedinButton?.getAttribute("data-url");
 
-      expect(dataUrl).toContain("title=");
-      expect(dataUrl).toContain(encodeURIComponent(mockPost.title));
+      expect(dataUrl).toContain("mini=true");
     });
 
     it("should properly URL encode LinkedIn parameters", () => {
@@ -207,7 +206,7 @@ describe("ShareButtons", () => {
 
       expect(mockOpen).toHaveBeenCalledTimes(1);
       expect(mockOpen.mock.calls[0][0]).toContain(
-        "https://www.linkedin.com/sharing/share-offsite",
+        "https://www.linkedin.com/shareArticle",
       );
     });
   });

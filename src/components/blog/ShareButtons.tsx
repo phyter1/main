@@ -74,12 +74,12 @@ export function ShareButtons({
 
   /**
    * Generate LinkedIn share URL with proper encoding
-   * Includes title parameter to pre-fill the share dialog
+   * Uses shareArticle endpoint with mini=true for better compatibility
+   * LinkedIn will pull og:title, og:description, and og:image from the page metadata
    */
   const getLinkedInUrl = () => {
     const url = encodeURIComponent(postUrl);
-    const encodedTitle = encodeURIComponent(title);
-    return `https://www.linkedin.com/sharing/share-offsite/?url=${url}&title=${encodedTitle}`;
+    return `https://www.linkedin.com/shareArticle?mini=true&url=${url}`;
   };
 
   /**
