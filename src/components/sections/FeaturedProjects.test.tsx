@@ -1,9 +1,9 @@
-import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { FeaturedProjects } from "./FeaturedProjects";
 
 // Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
+vi.mock("framer-motion", () => ({
   motion: {
     section: ({ children, ...props }: any) => (
       <section {...props}>{children}</section>
@@ -13,12 +13,12 @@ mock.module("framer-motion", () => ({
 }));
 
 // Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
+vi.mock("@/hooks/useReducedMotion", () => ({
   useReducedMotion: () => false,
 }));
 
 // Mock projects data
-mock.module("@/data/projects", () => ({
+vi.mock("@/data/projects", () => ({
   getFeaturedProjects: () => [
     {
       id: "project-1",
