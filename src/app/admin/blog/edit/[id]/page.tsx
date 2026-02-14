@@ -64,6 +64,7 @@ export default function EditBlogPostPage() {
   const publishPost = useMutation(api.blog.publishPost);
   const unpublishPost = useMutation(api.blog.unpublishPost);
   const deletePost = useMutation(api.blog.deletePost);
+  const saveSuggestions = useMutation(api.blog.saveSuggestions);
 
   // Form state
   const [formData, setFormData] = useState<PostFormState>({
@@ -163,6 +164,54 @@ export default function EditBlogPostPage() {
       }
 
       const suggestions = await response.json();
+
+      // Transform suggestions to AIMetadataSuggestions format for Convex
+      const aiSuggestions = {
+        excerpt: suggestions.excerpt
+          ? { value: suggestions.excerpt, state: "pending" as const }
+          : undefined,
+        tags: suggestions.tags
+          ? {
+              value: suggestions.tags,
+              state: "pending" as const,
+              rejectedTags: [],
+            }
+          : undefined,
+        category: suggestions.category
+          ? { value: suggestions.category, state: "pending" as const }
+          : undefined,
+        seoMetadata: suggestions.seoMetadata
+          ? {
+              metaTitle: suggestions.seoMetadata.metaTitle
+                ? {
+                    value: suggestions.seoMetadata.metaTitle,
+                    state: "pending" as const,
+                  }
+                : undefined,
+              metaDescription: suggestions.seoMetadata.metaDescription
+                ? {
+                    value: suggestions.seoMetadata.metaDescription,
+                    state: "pending" as const,
+                  }
+                : undefined,
+              keywords: suggestions.seoMetadata.keywords
+                ? {
+                    value: suggestions.seoMetadata.keywords,
+                    state: "pending" as const,
+                  }
+                : undefined,
+            }
+          : undefined,
+        analysis: suggestions.analysis,
+      };
+
+      // Save suggestions to Convex
+      await saveSuggestions({
+        postId,
+        suggestions: aiSuggestions,
+        currentContent: formData.content,
+        currentTitle: formData.title,
+      });
 
       // Update hashes
       setLastAnalyzedContentHash(await hashContent(formData.content));
