@@ -218,6 +218,12 @@ export default function EditBlogPostPage() {
     setIsSaving(true);
     try {
       await savePostData();
+
+      // Trigger AI metadata suggestions if content has changed
+      if (formData.title || formData.content) {
+        await handleSuggestMetadata();
+      }
+
       // Stay on page after saving (allow continued editing)
     } catch (error) {
       console.error("Failed to save post:", error);
@@ -234,6 +240,11 @@ export default function EditBlogPostPage() {
     try {
       // Save changes first
       await savePostData();
+
+      // Trigger AI metadata suggestions if content has changed
+      if (formData.title || formData.content) {
+        await handleSuggestMetadata();
+      }
 
       // Then publish
       await publishPost({ id: postId });

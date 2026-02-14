@@ -183,6 +183,11 @@ export default function NewBlogPostPage() {
       // Store post ID for future AI suggestions
       if (newPostId) {
         setPostId(newPostId);
+
+        // Trigger AI metadata suggestions if content exists
+        if (formData.title || formData.content) {
+          await handleSuggestMetadata();
+        }
       }
 
       // Navigate to blog list
@@ -229,6 +234,12 @@ export default function NewBlogPostPage() {
       // Store post ID and publish immediately if post was created
       if (newPostId) {
         setPostId(newPostId);
+
+        // Trigger AI metadata suggestions if content exists
+        if (formData.title || formData.content) {
+          await handleSuggestMetadata();
+        }
+
         await publishPost({ id: newPostId });
       }
 
