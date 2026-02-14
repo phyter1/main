@@ -109,7 +109,7 @@ describe("Admin Agent Workbench Layout", () => {
     it("should have proper layout structure", async () => {
       const { default: AdminLayout } = await import("./layout");
 
-      const { container } = render(
+      render(
         <AdminLayout>
           <div>Content</div>
         </AdminLayout>,

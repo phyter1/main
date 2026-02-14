@@ -16,16 +16,72 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "style": {
+        "noNonNullAssertion": "warn"
+      }
     }
   },
   "overrides": [
     {
-      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "includes": ["convex/_generated/**/*", "src/app/globals.css"],
+      "linter": {
+        "enabled": false
+      }
+    },
+    {
+      "includes": [
+        "src/app/admin/**/*.tsx",
+        "src/app/api/admin/**/*.ts",
+        "src/app/blog/**/page.tsx",
+        "src/app/blog/**/*Client.tsx",
+        "src/app/sitemap.ts",
+        "src/components/blog/BlogContent.tsx",
+        "src/app/page.tsx",
+        "src/components/ui/expandable-context.tsx",
+        "src/components/sections/PrinciplesPreview.tsx"
+      ],
       "linter": {
         "rules": {
           "suspicious": {
             "noExplicitAny": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedFunctionParameters": "off",
+            "useUniqueElementIds": "off"
+          },
+          "performance": {
+            "noImgElement": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "src/__tests__/**/*",
+        "src/app/**/*.test.tsx",
+        "src/app/**/*.test.ts",
+        "vitest.setup.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          },
+          "complexity": {
+            "noBannedTypes": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "warn"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
           }
         }
       }

@@ -608,7 +608,6 @@ describe("ChatInterface Component - T007", () => {
         expect(mockFetch).toHaveBeenCalled();
 
         // Check fetch was called with correct URL
-        // biome-ignore lint/suspicious/noExplicitAny: Mock function type is not easily typed
         const call = (mockFetch as any).mock.calls[0];
         expect(call[0]).toBe("/api/chat");
       });

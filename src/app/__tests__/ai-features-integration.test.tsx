@@ -646,7 +646,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
       // Verify fetch was called or error appeared
       await waitFor(
         () => {
-          const fetchCalled = (global.fetch as any).mock?.calls?.length > 0; // biome-ignore lint/suspicious/noExplicitAny: Mock type checking for test
+          const fetchCalled = (global.fetch as any).mock?.calls?.length > 0;
           const errorElement = screen.queryByRole("alert");
           expect(fetchCalled || errorElement !== null).toBe(true);
         },
