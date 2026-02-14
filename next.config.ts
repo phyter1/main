@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.vercel-storage.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
   },
   // Configure MDX support for .mdx files
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],

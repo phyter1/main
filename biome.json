@@ -49,8 +49,7 @@
           },
           "correctness": {
             "noUnusedVariables": "off",
-            "noUnusedFunctionParameters": "off",
-            "useUniqueElementIds": "off"
+            "noUnusedFunctionParameters": "off"
           },
           "performance": {
             "noImgElement": "off"

@@ -1,8 +1,40 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BlogContent } from "./BlogContent";
 
+// Mock Next.js Image component for testing
+vi.mock("next/image", () => ({
+  default: ({
+    src,
+    alt,
+    onError,
+    ...props
+  }: {
+    src: string;
+    alt: string;
+    onError?: () => void;
+    [key: string]: unknown;
+  }) => {
+    // Simulate image error for test URLs containing "broken"
+    if (src.includes("broken") && onError) {
+      setTimeout(() => onError(), 0);
+    }
+    return (
+      <img
+        src={src}
+        alt={alt}
+        data-testid="next-image"
+        {...(props as Record<string, unknown>)}
+      />
+    );
+  },
+}));
+
 describe("BlogContent", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   afterEach(() => {
     cleanup();
   });
@@ -496,6 +528,168 @@ Check out https://example.com for more.
       expect(document.querySelector("pre")).toBeDefined();
       expect(document.querySelector("blockquote")).toBeDefined();
       expect(document.querySelector("hr")).toBeDefined();
+    });
+  });
+
+  describe("Next.js Image Integration (Issue #42)", () => {
+    it("should render images using Next.js Image component", () => {
+      const content = "![Test Image](https://example.com/test.jpg)";
+      render(<BlogContent content={content} />);
+
+      const image = screen.getByTestId("next-image");
+      expect(image).toBeDefined();
+      expect(image.getAttribute("src")).toBe("https://example.com/test.jpg");
+    });
+
+    it("should render image with proper wrapper div", () => {
+      const content = "![Test](https://example.com/test.jpg)";
+      const { container } = render(<BlogContent content={content} />);
+
+      const wrapper = container.querySelector(".relative.w-full.my-6");
+      expect(wrapper).toBeDefined();
+      expect(wrapper?.querySelector("img")).toBeDefined();
+    });
+
+    it("should not render image when src is missing", () => {
+      const content = "![Alt text]()";
+      render(<BlogContent content={content} />);
+
+      const images = screen.queryAllByTestId("next-image");
+      expect(images.length).toBe(0);
+    });
+
+    it("should apply lazy loading to images", () => {
+      const content = "![Test](https://example.com/test.jpg)";
+      render(<BlogContent content={content} />);
+
+      const image = screen.getByTestId("next-image");
+      expect(image.getAttribute("loading")).toBe("lazy");
+    });
+
+    it("should render multiple images with Next.js Image", () => {
+      const content = `
+![Image 1](https://example.com/image1.jpg)
+
+Some text here.
+
+![Image 2](https://example.com/image2.jpg)
+      `;
+      render(<BlogContent content={content} />);
+
+      const images = screen.getAllByTestId("next-image");
+      expect(images.length).toBe(2);
+      expect(images[0].getAttribute("src")).toBe(
+        "https://example.com/image1.jpg",
+      );
+      expect(images[1].getAttribute("src")).toBe(
+        "https://example.com/image2.jpg",
+      );
+    });
+
+    it("should show error fallback when image fails to load", async () => {
+      const content = "![Broken Image](https://example.com/broken.jpg)";
+      render(<BlogContent content={content} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to load image")).toBeDefined();
+      });
+    });
+
+    it("should display alt text in error fallback", async () => {
+      const content =
+        "![Description of broken image](https://example.com/broken.jpg)";
+      render(<BlogContent content={content} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Description of broken image")).toBeDefined();
+      });
+    });
+
+    it("should show error icon when image fails", async () => {
+      const content = "![Error](https://example.com/broken.jpg)";
+      const { container } = render(<BlogContent content={content} />);
+
+      await waitFor(() => {
+        // Check for ImageOff icon (Lucide icon renders as svg)
+        const errorContainer = container.querySelector(
+          ".bg-muted.rounded-lg.border",
+        );
+        expect(errorContainer).toBeDefined();
+        const svgIcon = errorContainer?.querySelector("svg");
+        expect(svgIcon).toBeDefined();
+      });
+    });
+
+    it("should not show alt text in error fallback when not provided", async () => {
+      const content = "![](https://example.com/broken.jpg)";
+      const { container } = render(<BlogContent content={content} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to load image")).toBeDefined();
+        // Should not have a second paragraph with alt text
+        const errorDiv = container.querySelector(".bg-muted.rounded-lg.border");
+        const paragraphs = errorDiv?.querySelectorAll("p");
+        expect(paragraphs?.length).toBe(1); // Only "Failed to load image"
+      });
+    });
+
+    it("should apply correct CSS classes to image wrapper", () => {
+      const content = "![Test](https://example.com/test.jpg)";
+      const { container } = render(<BlogContent content={content} />);
+
+      const wrapper = container.querySelector("div");
+      expect(wrapper?.className).toContain("relative");
+      expect(wrapper?.className).toContain("w-full");
+      expect(wrapper?.className).toContain("my-6");
+    });
+
+    it("should apply rounded-lg and shadow-md to images", () => {
+      const content = "![Test](https://example.com/test.jpg)";
+      render(<BlogContent content={content} />);
+
+      const image = screen.getByTestId("next-image");
+      expect(image.className).toContain("rounded-lg");
+      expect(image.className).toContain("shadow-md");
+      expect(image.className).toContain("w-full");
+      expect(image.className).toContain("h-auto");
+    });
+
+    it("should handle images with Vercel Blob Storage URLs", () => {
+      const content =
+        "![Uploaded](https://abc123.vercel-storage.com/image-xyz.jpg)";
+      render(<BlogContent content={content} />);
+
+      const image = screen.getByTestId("next-image");
+      expect(image.getAttribute("src")).toContain("vercel-storage.com");
+    });
+
+    it("should handle images from Unsplash", () => {
+      const content = "![Unsplash](https://images.unsplash.com/photo-123456)";
+      render(<BlogContent content={content} />);
+
+      const image = screen.getByTestId("next-image");
+      expect(image.getAttribute("src")).toContain("unsplash.com");
+    });
+
+    it("should integrate images with other markdown content", () => {
+      const content = `
+# Blog Post with Image
+
+This is some intro text.
+
+![Featured Image](https://example.com/featured.jpg)
+
+## Section After Image
+
+More content here.
+      `;
+      render(<BlogContent content={content} />);
+
+      expect(screen.getByText("Blog Post with Image")).toBeDefined();
+      expect(screen.getByText("This is some intro text.")).toBeDefined();
+      expect(screen.getByTestId("next-image")).toBeDefined();
+      expect(screen.getByText("Section After Image")).toBeDefined();
+      expect(screen.getByText("More content here.")).toBeDefined();
     });
   });
 });
