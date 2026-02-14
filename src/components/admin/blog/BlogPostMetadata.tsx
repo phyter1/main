@@ -21,7 +21,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { Plus, X } from "lucide-react";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,6 +130,33 @@ export function BlogPostMetadata({
   const [dismissedNewSuggestions, setDismissedNewSuggestions] = useState<
     Set<string>
   >(new Set());
+
+  // T014: Filter rejected tags from new suggestions on mount/update
+  useEffect(() => {
+    if (!newSuggestions?.tags || !metadata.aiSuggestions?.tags?.rejectedTags) {
+      return;
+    }
+
+    const rejectedTags = metadata.aiSuggestions.tags.rejectedTags;
+    const filteredTags = newSuggestions.tags.filter(
+      (tag) => !rejectedTags.includes(tag),
+    );
+
+    // If any tags were filtered out, update metadata with filtered tags
+    if (filteredTags.length < newSuggestions.tags.length) {
+      onChange({
+        ...metadata,
+        aiSuggestions: {
+          ...metadata.aiSuggestions,
+          tags: {
+            value: filteredTags,
+            state: "pending",
+            rejectedTags: metadata.aiSuggestions.tags.rejectedTags,
+          },
+        },
+      });
+    }
+  }, [newSuggestions, metadata, onChange]);
 
   // T014: Helper to check if field has an approved suggestion
   const hasApprovedSuggestion = (
