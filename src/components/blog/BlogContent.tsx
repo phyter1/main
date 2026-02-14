@@ -1,5 +1,8 @@
 "use client";
 
+import { ImageOff } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeHighlight from "rehype-highlight";
@@ -28,6 +31,39 @@ interface BlogContentProps {
  * @param className - Optional additional CSS classes
  */
 export function BlogContent({ content, className = "" }: BlogContentProps) {
+  /**
+   * Component for rendering markdown images with error handling
+   */
+  const MarkdownImage = ({ src, alt }: { src?: string; alt?: string }) => {
+    const [hasError, setHasError] = useState(false);
+
+    if (!src) return null;
+
+    if (hasError) {
+      return (
+        <div className="relative w-full my-6 flex flex-col items-center justify-center p-8 bg-muted rounded-lg border border-border">
+          <ImageOff className="h-12 w-12 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Failed to load image</p>
+          {alt && <p className="text-xs text-muted-foreground mt-1">{alt}</p>}
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative w-full my-6">
+        <Image
+          src={src}
+          alt={alt || ""}
+          width={800}
+          height={600}
+          className="rounded-lg shadow-md w-full h-auto"
+          loading="lazy"
+          onError={() => setHasError(true)}
+        />
+      </div>
+    );
+  };
+
   return (
     <article
       className={`prose prose-neutral dark:prose-invert max-w-none ${className}`}
@@ -81,13 +117,8 @@ export function BlogContent({ content, className = "" }: BlogContentProps) {
               {...props}
             />
           ),
-          img: ({ node, ...props }) => (
-            // biome-ignore lint/a11y/useAltText: alt is provided via props spread
-            <img
-              className="rounded-lg shadow-md max-w-full h-auto my-6"
-              loading="lazy"
-              {...props}
-            />
+          img: ({ node, src, alt, ...props }) => (
+            <MarkdownImage src={src} alt={alt} />
           ),
           code: ({ node, className, children, ...props }: any) => {
             // Handle inline code vs code blocks
