@@ -132,44 +132,59 @@ export default function NewBlogPostPage() {
       const suggestions = await response.json();
 
       // Transform suggestions to AIMetadataSuggestions format for Convex
-      const aiSuggestions = {
-        excerpt: suggestions.excerpt
-          ? { value: suggestions.excerpt, state: "pending" as const }
-          : undefined,
-        tags: suggestions.tags
-          ? {
-              value: suggestions.tags,
-              state: "pending" as const,
-              rejectedTags: [],
-            }
-          : undefined,
-        category: suggestions.category
-          ? { value: suggestions.category, state: "pending" as const }
-          : undefined,
-        seoMetadata: suggestions.seoMetadata
-          ? {
-              metaTitle: suggestions.seoMetadata.metaTitle
-                ? {
-                    value: suggestions.seoMetadata.metaTitle,
-                    state: "pending" as const,
-                  }
-                : undefined,
-              metaDescription: suggestions.seoMetadata.metaDescription
-                ? {
-                    value: suggestions.seoMetadata.metaDescription,
-                    state: "pending" as const,
-                  }
-                : undefined,
-              keywords: suggestions.seoMetadata.keywords
-                ? {
-                    value: suggestions.seoMetadata.keywords,
-                    state: "pending" as const,
-                  }
-                : undefined,
-            }
-          : undefined,
-        analysis: suggestions.analysis,
-      };
+      // Only include defined fields (Convex validator rejects undefined)
+      const aiSuggestions: any = {};
+
+      if (suggestions.excerpt) {
+        aiSuggestions.excerpt = {
+          value: suggestions.excerpt,
+          state: "pending" as const,
+        };
+      }
+
+      if (suggestions.tags) {
+        aiSuggestions.tags = {
+          value: suggestions.tags,
+          state: "pending" as const,
+          rejectedTags: [],
+        };
+      }
+
+      if (suggestions.category) {
+        aiSuggestions.category = {
+          value: suggestions.category,
+          state: "pending" as const,
+        };
+      }
+
+      if (suggestions.seoMetadata) {
+        aiSuggestions.seoMetadata = {};
+
+        if (suggestions.seoMetadata.metaTitle) {
+          aiSuggestions.seoMetadata.metaTitle = {
+            value: suggestions.seoMetadata.metaTitle,
+            state: "pending" as const,
+          };
+        }
+
+        if (suggestions.seoMetadata.metaDescription) {
+          aiSuggestions.seoMetadata.metaDescription = {
+            value: suggestions.seoMetadata.metaDescription,
+            state: "pending" as const,
+          };
+        }
+
+        if (suggestions.seoMetadata.keywords) {
+          aiSuggestions.seoMetadata.keywords = {
+            value: suggestions.seoMetadata.keywords,
+            state: "pending" as const,
+          };
+        }
+      }
+
+      if (suggestions.analysis) {
+        aiSuggestions.analysis = suggestions.analysis;
+      }
 
       // Save suggestions to Convex if post exists
       if (postId) {
