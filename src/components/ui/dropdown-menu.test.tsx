@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
 
 // T003: Dropdown Menu Component Installation Tests
 // Testing that shadcn/ui dropdown-menu component is properly installed
