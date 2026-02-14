@@ -113,23 +113,8 @@ function getClientIP(request: NextRequest): string {
  * @returns Session token or undefined
  */
 function getSessionToken(request: NextRequest): string | undefined {
-  const cookieHeader = request.headers.get("cookie");
-  if (!cookieHeader) {
-    return undefined;
-  }
-
-  const cookies = cookieHeader.split(";").reduce(
-    (acc, cookie) => {
-      const [key, value] = cookie.trim().split("=");
-      if (key && value) {
-        acc[key] = value;
-      }
-      return acc;
-    },
-    {} as Record<string, string>,
-  );
-
-  return cookies.session;
+  const sessionCookie = request.cookies.get("session")?.value;
+  return sessionCookie;
 }
 
 /**
