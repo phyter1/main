@@ -9,13 +9,13 @@
  * - Accessibility (useId for form fields)
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BlogPostEditor } from "./BlogPostEditor";
 
 // Mock BlogContent component
-mock.module("@/components/blog/BlogContent", () => ({
+vi.mock("@/components/blog/BlogContent", () => ({
   BlogContent: ({ content }: { content: string }) => (
     <div data-testid="blog-content">{content}</div>
   ),
@@ -26,19 +26,18 @@ describe("BlogPostEditor", () => {
 
   beforeEach(() => {
     user = userEvent.setup();
-    mock.restore();
+
     cleanup();
   });
 
   afterEach(() => {
-    mock.restore();
     cleanup();
   });
 
   describe("Component Rendering", () => {
     it("should render title input field", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -55,8 +54,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should render content textarea in edit mode", async () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -76,8 +75,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should render with provided title", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -93,8 +92,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should render with provided content", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -111,8 +110,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should display character and word count", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -131,8 +130,8 @@ describe("BlogPostEditor", () => {
 
   describe("Title Editing", () => {
     it("should call onTitleChange when title is typed", async () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -153,8 +152,8 @@ describe("BlogPostEditor", () => {
 
   describe("Content Editing", () => {
     it("should call onContentChange when content is typed", async () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -179,8 +178,8 @@ describe("BlogPostEditor", () => {
 
   describe("Preview Toggle", () => {
     it("should show preview by default", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -200,8 +199,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should switch to edit mode when Edit button clicked", async () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -221,8 +220,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should switch back to preview mode when Preview button clicked", async () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -248,8 +247,8 @@ describe("BlogPostEditor", () => {
 
   describe("Character and Word Count", () => {
     it("should count words correctly", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -264,8 +263,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should count characters correctly", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -280,8 +279,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should handle empty content", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -297,8 +296,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should not count whitespace-only as words", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -315,8 +314,8 @@ describe("BlogPostEditor", () => {
 
   describe("Accessibility", () => {
     it("should have unique IDs for form fields", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -336,8 +335,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should have proper label associations", async () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -363,8 +362,8 @@ describe("BlogPostEditor", () => {
 
   describe("Preview Content", () => {
     it("should display 'Untitled' when title is empty", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -380,8 +379,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should display title in preview", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor
@@ -396,8 +395,8 @@ describe("BlogPostEditor", () => {
     });
 
     it("should display message when content is empty", () => {
-      const onTitleChange = mock(() => {});
-      const onContentChange = mock(() => {});
+      const onTitleChange = vi.fn(() => {});
+      const onContentChange = vi.fn(() => {});
 
       render(
         <BlogPostEditor

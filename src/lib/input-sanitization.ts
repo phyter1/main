@@ -183,7 +183,7 @@ function categorizePromptInjection(pattern: RegExp): string {
  * Check for prompt injection patterns
  */
 function checkPromptInjection(input: string): ValidationResult {
-  const lowerInput = input.toLowerCase();
+  const _lowerInput = input.toLowerCase();
 
   for (const pattern of PROMPT_INJECTION_PATTERNS) {
     if (pattern.test(input)) {
@@ -566,7 +566,7 @@ export function validateAIOutput(
   output: string,
   context: "chat" | "assessment",
 ): boolean {
-  const lower = output.toLowerCase();
+  const _lower = output.toLowerCase();
 
   // Check for leaked system information
   const leakPatterns = [

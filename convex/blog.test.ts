@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 /**
  * Convex Blog Functions Tests
@@ -30,8 +30,8 @@ describe("Blog Functions - Validation Logic", () => {
         expect(validPost.excerpt).toBeDefined();
         expect(validPost.content).toBeDefined();
         expect(validPost.author).toBeDefined();
-        expect(validPost.tags).toBeArray();
-        expect(validPost.readingTimeMinutes).toBeNumber();
+        expect(Array.isArray(validPost.tags)).toBe(true);
+        expect(typeof validPost.readingTimeMinutes).toBe("number");
         expect(validPost.seoMetadata).toBeDefined();
       });
 
@@ -111,7 +111,7 @@ describe("Blog Functions - Validation Logic", () => {
         }
 
         expect(validMetadata.ogImage).toMatch(/^https?:\/\//);
-        expect(validMetadata.keywords).toBeArray();
+        expect(Array.isArray(validMetadata.keywords)).toBe(true);
       });
     });
 
@@ -445,7 +445,7 @@ describe("Blog Function Integration Contract", () => {
     // This test validates the function contract exists
     expect(requiredQueries.length).toBe(8);
     requiredQueries.forEach((query) => {
-      expect(query).toBeString();
+      expect(typeof query).toBe("string");
       expect(query.length).toBeGreaterThan(0);
     });
   });
@@ -463,7 +463,7 @@ describe("Blog Function Integration Contract", () => {
     // This test validates the function contract exists
     expect(requiredMutations.length).toBe(6);
     requiredMutations.forEach((mutation) => {
-      expect(mutation).toBeString();
+      expect(typeof mutation).toBe("string");
       expect(mutation.length).toBeGreaterThan(0);
     });
   });

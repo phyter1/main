@@ -5,16 +5,16 @@
  * live results dropdown, keyboard navigation, and search term highlighting.
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useQuery } from "convex/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BlogPost } from "@/types/blog";
 import { BlogSearch } from "./BlogSearch";
 
 // Mock Convex hooks
-const mockUseQuery = mock(() => null);
-mock.module("convex/react", () => ({
-  useQuery: mockUseQuery,
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => null),
 }));
 
 // Mock search results data
@@ -85,13 +85,13 @@ const mockSearchResults: BlogPost[] = [
 ];
 
 // Mock useRouter from Next.js
-const mockPush = mock(() => Promise.resolve(true));
+const mockPush = vi.fn(() => Promise.resolve(true));
 const mockRouter = {
   push: mockPush,
   pathname: "/blog",
 };
 
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => mockRouter,
 }));
 
@@ -100,16 +100,14 @@ describe("BlogSearch Component", () => {
 
   beforeEach(() => {
     user = userEvent.setup();
-    mock.restore();
 
     // Reset mock implementations
-    mockUseQuery.mockReturnValue(null);
+    vi.mocked(useQuery).mockReturnValue(null);
     mockPush.mockClear();
   });
 
   afterEach(() => {
     cleanup();
-    mock.restore();
   });
 
   describe("Search Input", () => {
@@ -163,7 +161,7 @@ describe("BlogSearch Component", () => {
       await user.type(input, "r");
 
       // Query should be "skip" while debouncing
-      const recentCalls = mockUseQuery.mock.calls.slice(-5);
+      const recentCalls = vi.mocked(useQuery).mock.calls.slice(-5);
       const hasSearchCall = recentCalls.some((call) => call[1]?.query === "r");
       expect(hasSearchCall).toBe(false);
     });
@@ -177,9 +175,9 @@ describe("BlogSearch Component", () => {
       // Wait for debounce delay
       await waitFor(
         () => {
-          expect(mockUseQuery).toHaveBeenCalledWith(
+          expect(vi.mocked(useQuery)).toHaveBeenCalledWith(
             expect.anything(),
-            expect.objectContaining({ query: "react" }),
+            expect.objectContaining({ searchQuery: "react" }),
           );
         },
         { timeout: 400 },
@@ -200,7 +198,7 @@ describe("BlogSearch Component", () => {
       await new Promise((resolve) => setTimeout(resolve, 400));
 
       // Should have search call for "re" but not for "r"
-      const calls = mockUseQuery.mock.calls;
+      const calls = vi.mocked(useQuery).mock.calls;
       const rCalls = calls.filter((call) => call[1]?.query === "r");
       expect(rCalls.length).toBe(0);
     });
@@ -208,7 +206,7 @@ describe("BlogSearch Component", () => {
 
   describe("Live Search Results", () => {
     it("should show dropdown when search results are available", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults);
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults);
 
       render(<BlogSearch />);
 
@@ -221,7 +219,7 @@ describe("BlogSearch Component", () => {
     });
 
     it("should display search results with titles", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 2));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 2));
 
       render(<BlogSearch />);
 
@@ -239,7 +237,7 @@ describe("BlogSearch Component", () => {
 
     it("should show loading state during search", async () => {
       // Start with no results, then return undefined to simulate loading
-      mockUseQuery.mockReturnValue(undefined);
+      vi.mocked(useQuery).mockReturnValue(undefined);
 
       render(<BlogSearch />);
 
@@ -261,7 +259,7 @@ describe("BlogSearch Component", () => {
     });
 
     it("should show no results message when no posts found", async () => {
-      mockUseQuery.mockReturnValue([]);
+      vi.mocked(useQuery).mockReturnValue([]);
 
       render(<BlogSearch />);
 
@@ -274,7 +272,7 @@ describe("BlogSearch Component", () => {
     });
 
     it("should hide dropdown when input is cleared", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults);
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults);
 
       render(<BlogSearch />);
 
@@ -296,7 +294,7 @@ describe("BlogSearch Component", () => {
 
   describe("Keyboard Navigation", () => {
     beforeEach(() => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 2));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 2));
     });
 
     it("should navigate to first result with ArrowDown", async () => {
@@ -424,7 +422,7 @@ describe("BlogSearch Component", () => {
 
   describe("Click Navigation", () => {
     it("should navigate to post when result is clicked", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 1));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 1));
 
       render(<BlogSearch />);
 
@@ -442,7 +440,7 @@ describe("BlogSearch Component", () => {
     });
 
     it("should close dropdown after clicking result", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 1));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 1));
 
       render(<BlogSearch />);
 
@@ -464,7 +462,7 @@ describe("BlogSearch Component", () => {
 
   describe("Search Term Highlighting", () => {
     it("should highlight search terms in result titles", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 1));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 1));
 
       render(<BlogSearch />);
 
@@ -478,7 +476,7 @@ describe("BlogSearch Component", () => {
     });
 
     it("should highlight search terms case-insensitively", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 1));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 1));
 
       render(<BlogSearch />);
 
@@ -493,7 +491,7 @@ describe("BlogSearch Component", () => {
 
     it("should highlight multiple occurrences of search term", async () => {
       // Use both posts with "React" in title
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 2));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 2));
 
       render(<BlogSearch />);
 
@@ -509,9 +507,52 @@ describe("BlogSearch Component", () => {
   });
 
   describe("Result Information", () => {
-    it("should display post excerpt in results", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 1));
+    beforeEach(() => {
+      // Create mock data in Convex format
+      const mockConvexPost = {
+        _id: "post1",
+        _creationTime: Date.now(),
+        title: "Getting Started with React",
+        slug: "getting-started-with-react",
+        excerpt: "Learn React fundamentals and build your first component",
+        content: "React is a JavaScript library...",
+        status: "published" as const,
+        author: "John Doe",
+        publishedAt: Date.now(),
+        updatedAt: Date.now(),
+        categoryId: "cat1",
+        tags: ["react", "javascript"],
+        featured: false,
+        viewCount: 100,
+        readingTimeMinutes: 5,
+        seoMetadata: {
+          metaTitle: "Getting Started with React",
+          metaDescription: "Learn React fundamentals",
+        },
+      };
 
+      // Mock useQuery to return categories or search results based on second param
+      vi.mocked(useQuery).mockImplementation(
+        (_apiFunc: unknown, params: unknown) => {
+          // If params is "skip" or no search query, return null for search results
+          if (params === "skip") {
+            return null;
+          }
+          // If params is empty object, it's the categories query
+          if (
+            params &&
+            typeof params === "object" &&
+            !("searchQuery" in params)
+          ) {
+            return [{ _id: "cat1", name: "Technology" }];
+          }
+          // Otherwise it's a search query
+          return [mockConvexPost];
+        },
+      );
+    });
+
+    it("should display post excerpt in results", async () => {
       render(<BlogSearch />);
 
       const input = screen.getByPlaceholderText(/search posts/i);
@@ -524,8 +565,6 @@ describe("BlogSearch Component", () => {
     });
 
     it("should display reading time in results", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 1));
-
       render(<BlogSearch />);
 
       const input = screen.getByPlaceholderText(/search posts/i);
@@ -537,8 +576,6 @@ describe("BlogSearch Component", () => {
     });
 
     it("should display category in results", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 1));
-
       render(<BlogSearch />);
 
       const input = screen.getByPlaceholderText(/search posts/i);
@@ -560,7 +597,7 @@ describe("BlogSearch Component", () => {
     });
 
     it("should have proper ARIA attributes on dropdown", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 2));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 2));
 
       render(<BlogSearch />);
 
@@ -574,7 +611,7 @@ describe("BlogSearch Component", () => {
     });
 
     it("should announce selected result to screen readers", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 2));
+      vi.mocked(useQuery).mockReturnValue(mockSearchResults.slice(0, 2));
 
       render(<BlogSearch />);
 
@@ -606,7 +643,15 @@ describe("BlogSearch Component", () => {
     });
 
     it("should handle special characters in search query", async () => {
-      mockUseQuery.mockReturnValue(mockSearchResults.slice(0, 1));
+      let callCount = 0;
+      vi.mocked(useQuery).mockImplementation(() => {
+        callCount++;
+        // First call is for categories, second is for search results
+        if (callCount === 1) {
+          return [{ _id: "cat1", name: "Technology" }];
+        }
+        return mockSearchResults.slice(0, 1);
+      });
 
       render(<BlogSearch />);
 
@@ -614,9 +659,9 @@ describe("BlogSearch Component", () => {
       await user.type(input, "react & typescript!");
 
       await waitFor(() => {
-        expect(mockUseQuery).toHaveBeenCalledWith(
+        expect(vi.mocked(useQuery)).toHaveBeenCalledWith(
           expect.anything(),
-          expect.objectContaining({ query: "react & typescript!" }),
+          expect.objectContaining({ searchQuery: "react & typescript!" }),
         );
       });
     });
@@ -633,7 +678,7 @@ describe("BlogSearch Component", () => {
     });
 
     it("should handle null/undefined search results", async () => {
-      mockUseQuery.mockReturnValue(null);
+      vi.mocked(useQuery).mockReturnValue(null);
 
       render(<BlogSearch />);
 

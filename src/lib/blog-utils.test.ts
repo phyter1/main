@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import {
   calculateReadingTime,
   formatDate,
@@ -217,7 +217,7 @@ describe("Blog Utilities", () => {
   describe("formatDate", () => {
     describe("Basic Date Formatting", () => {
       it("should format date as 'MMM dd, yyyy'", () => {
-        const timestamp = new Date("2024-01-15").getTime();
+        const timestamp = new Date("2024-01-15T12:00:00Z").getTime();
         const result = formatDate(timestamp);
         expect(result).toBe("Jan 15, 2024");
       });
@@ -225,15 +225,15 @@ describe("Blog Utilities", () => {
       it("should format different months correctly", () => {
         const dates = [
           {
-            timestamp: new Date("2024-03-20").getTime(),
+            timestamp: new Date("2024-03-20T12:00:00Z").getTime(),
             expected: "Mar 20, 2024",
           },
           {
-            timestamp: new Date("2024-06-10").getTime(),
+            timestamp: new Date("2024-06-10T12:00:00Z").getTime(),
             expected: "Jun 10, 2024",
           },
           {
-            timestamp: new Date("2024-12-25").getTime(),
+            timestamp: new Date("2024-12-25T12:00:00Z").getTime(),
             expected: "Dec 25, 2024",
           },
         ];
@@ -244,13 +244,13 @@ describe("Blog Utilities", () => {
       });
 
       it("should handle single-digit days", () => {
-        const timestamp = new Date("2024-05-05").getTime();
+        const timestamp = new Date("2024-05-05T12:00:00Z").getTime();
         const result = formatDate(timestamp);
         expect(result).toBe("May 05, 2024");
       });
 
       it("should handle end of month", () => {
-        const timestamp = new Date("2024-01-31").getTime();
+        const timestamp = new Date("2024-01-31T12:00:00Z").getTime();
         const result = formatDate(timestamp);
         expect(result).toBe("Jan 31, 2024");
       });
@@ -260,15 +260,15 @@ describe("Blog Utilities", () => {
       it("should format dates from different years", () => {
         const dates = [
           {
-            timestamp: new Date("2020-01-01").getTime(),
+            timestamp: new Date("2020-01-01T12:00:00Z").getTime(),
             expected: "Jan 01, 2020",
           },
           {
-            timestamp: new Date("2023-12-31").getTime(),
+            timestamp: new Date("2023-12-31T12:00:00Z").getTime(),
             expected: "Dec 31, 2023",
           },
           {
-            timestamp: new Date("2025-06-15").getTime(),
+            timestamp: new Date("2025-06-15T12:00:00Z").getTime(),
             expected: "Jun 15, 2025",
           },
         ];
@@ -282,29 +282,31 @@ describe("Blog Utilities", () => {
     describe("Edge Cases", () => {
       it("should handle timestamp 0 (Unix epoch)", () => {
         const result = formatDate(0);
-        expect(result).toBe("Jan 01, 1970");
+        // Unix epoch is Jan 1, 1970 00:00:00 UTC, but displays in local timezone
+        // PST is UTC-8, so it shows Dec 31, 1969 16:00:00
+        expect(result).toMatch(/(?:Dec 31, 1969|Jan 01, 1970)/);
       });
 
       it("should handle negative timestamps", () => {
-        const timestamp = new Date("1969-12-31").getTime();
+        const timestamp = new Date("1969-12-31T12:00:00Z").getTime();
         const result = formatDate(timestamp);
         expect(result).toBe("Dec 31, 1969");
       });
 
       it("should handle future dates", () => {
-        const timestamp = new Date("2030-12-25").getTime();
+        const timestamp = new Date("2030-12-25T12:00:00Z").getTime();
         const result = formatDate(timestamp);
         expect(result).toBe("Dec 25, 2030");
       });
 
       it("should handle Date object input", () => {
-        const date = new Date("2024-07-04");
+        const date = new Date("2024-07-04T12:00:00Z");
         const result = formatDate(date);
         expect(result).toBe("Jul 04, 2024");
       });
 
       it("should handle string date input", () => {
-        const dateString = "2024-08-15";
+        const dateString = "2024-08-15T12:00:00Z";
         const result = formatDate(dateString);
         expect(result).toBe("Aug 15, 2024");
       });

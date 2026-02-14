@@ -3,17 +3,17 @@
  * Validates password authentication and session creation
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock auth utilities
-const mockVerifyAdminPassword = mock(() => Promise.resolve(false));
-const mockGenerateSessionToken = mock(() => "mock-session-token-12345");
-const mockCreateSessionCookie = mock(
+const mockVerifyAdminPassword = vi.fn(() => Promise.resolve(false));
+const mockGenerateSessionToken = vi.fn(() => "mock-session-token-12345");
+const mockCreateSessionCookie = vi.fn(
   (token: string) => `session=${token}; HttpOnly; Path=/`,
 );
-const mockStoreSessionToken = mock(() => {});
+const mockStoreSessionToken = vi.fn(() => {});
 
-mock.module("@/lib/auth", () => ({
+vi.mock("@/lib/auth", () => ({
   verifyAdminPassword: mockVerifyAdminPassword,
   generateSessionToken: mockGenerateSessionToken,
   createSessionCookie: mockCreateSessionCookie,

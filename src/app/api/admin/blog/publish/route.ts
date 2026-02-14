@@ -20,9 +20,7 @@ const PublishPostSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Verify admin session
-    const cookies = request.headers.get("cookie") || "";
-    const sessionMatch = cookies.match(/session=([^;]+)/);
-    const sessionCookie = sessionMatch?.[1];
+    const sessionCookie = request.cookies.get("session")?.value;
 
     if (!sessionCookie || !(await verifySessionToken(sessionCookie))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

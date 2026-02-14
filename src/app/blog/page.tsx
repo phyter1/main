@@ -14,7 +14,7 @@
  * - Loading and empty states
  *
  * Note: Uses client-side rendering for interactive features.
- * ISR configuration handled at route segment level.
+ * Uses Convex real-time queries for live data updates.
  */
 
 import { useQuery } from "convex/react";

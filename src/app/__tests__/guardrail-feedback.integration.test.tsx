@@ -13,7 +13,6 @@
  * - Scope enforcement
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import {
   cleanup,
   fireEvent,
@@ -22,6 +21,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GuardrailViolation } from "@/types/guardrails";
 
 // Save original fetch
@@ -59,7 +59,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 400,
@@ -158,7 +158,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 429,
@@ -236,7 +236,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 400,
@@ -321,7 +321,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 400,
@@ -394,7 +394,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 400,
@@ -466,7 +466,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 400,
@@ -508,7 +508,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 429,
@@ -548,7 +548,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 400,
@@ -602,7 +602,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 429,
@@ -652,7 +652,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 400,
@@ -728,7 +728,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
           },
         };
 
-        global.fetch = mock(() =>
+        global.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
             status: 400,
@@ -799,7 +799,7 @@ describe("T010: Guardrail Feedback Integration Tests", () => {
         },
       };
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 429,

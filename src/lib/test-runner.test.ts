@@ -5,13 +5,13 @@
  * Uses mocked AI SDK generateText for predictable, fast testing
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Criterion, TestCase } from "./test-runner";
 
 /**
  * Mock AI SDK generateText implementation
  */
-const mockGenerateText = mock(async () => ({
+const mockGenerateText = vi.fn(async () => ({
   text: "I have 7 years of TypeScript experience working on production applications at Hugo Health.",
   usage: {
     promptTokens: 150,
@@ -21,13 +21,13 @@ const mockGenerateText = mock(async () => ({
 }));
 
 // Mock the AI SDK module
-mock.module("ai", () => ({
+vi.mock("ai", () => ({
   generateText: mockGenerateText,
 }));
 
 // Mock AI config
-mock.module("@/lib/ai-config", () => ({
-  createOpenAIClient: mock(() => "mock-openai-client"),
+vi.mock("@/lib/ai-config", () => ({
+  createOpenAIClient: vi.fn(() => "mock-openai-client"),
   AI_MODEL: "gpt-4.1-nano",
 }));
 

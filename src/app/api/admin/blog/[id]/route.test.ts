@@ -3,46 +3,38 @@
  * Tests PATCH /api/admin/blog/[id] and DELETE /api/admin/blog/[id] endpoints
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock session verification
-const mockVerifySessionToken = mock(() => true);
-mock.module("@/lib/auth", () => ({
-  verifySessionToken: mockVerifySessionToken,
+// Mock auth module
+vi.mock("@/lib/auth", () => ({
+  verifySessionToken: vi.fn(() => Promise.resolve(true)),
 }));
 
-// Mock Convex mutation
-const mockFetchMutation = mock(() => undefined);
-mock.module("convex/nextjs", () => ({
-  fetchMutation: mockFetchMutation,
+// Mock Convex fetchMutation
+vi.mock("convex/nextjs", () => ({
+  fetchMutation: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 // Mock Convex API
-mock.module("../../../../../../convex/_generated/api", () => ({
+vi.mock("../../../../../../convex/_generated/api", () => ({
   api: {
     blog: {
-      updatePost: "updatePost",
-      deletePost: "deletePost",
+      updatePost: "blog:updatePost",
+      deletePost: "blog:deletePost",
     },
   },
 }));
 
+import { fetchMutation } from "convex/nextjs";
+// Import mocks and route after setup
+import { verifySessionToken } from "@/lib/auth";
+import { DELETE, PATCH } from "./route";
+
 describe("PATCH /api/admin/blog/[id]", () => {
-  // Import PATCH/DELETE dynamically after mocks are set up
-  let PATCH: any;
-  let _DELETE: any;
-
-  beforeEach(async () => {
-    // Reset individual mocks instead of mock.restore() which destroys module mocks
-    mockVerifySessionToken.mockReset();
-    mockVerifySessionToken.mockImplementation(() => true);
-    mockFetchMutation.mockReset();
-    mockFetchMutation.mockImplementation(() => undefined);
-
-    // Dynamically import to get mocked version
-    const module = await import("./route");
-    PATCH = module.PATCH;
-    _DELETE = module.DELETE;
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(true));
+    vi.mocked(fetchMutation).mockResolvedValue(undefined);
   });
 
   it("should update a post with valid data and authentication", async () => {
@@ -58,25 +50,32 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: JSON.stringify(updateData),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.message).toBe("Post updated successfully");
-    expect(mockFetchMutation).toHaveBeenCalledTimes(1);
+    expect(fetchMutation).toHaveBeenCalledTimes(1);
   });
 
   it("should return 401 when session is invalid", async () => {
-    mockVerifySessionToken.mockReturnValue(false);
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(false));
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/test-id",
@@ -84,14 +83,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=invalid-token",
         },
         body: JSON.stringify({ title: "Updated" }),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property with invalid token
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "invalid-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -104,13 +110,20 @@ describe("PATCH /api/admin/blog/[id]", () => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
       },
       body: JSON.stringify({ title: "Updated" }),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
-    const response = await PATCH(request as any, {
-      params: { id: "" },
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "" }),
     });
     const data = await response.json();
 
@@ -125,14 +138,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: "invalid json {",
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -151,14 +171,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: JSON.stringify(invalidData),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -167,9 +194,7 @@ describe("PATCH /api/admin/blog/[id]", () => {
   });
 
   it("should return 404 when post is not found", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Post not found");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(new Error("Post not found"));
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/nonexistent-id",
@@ -177,14 +202,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: JSON.stringify({ title: "Updated" }),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "nonexistent-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "nonexistent-id" }),
     });
     const data = await response.json();
 
@@ -193,9 +225,9 @@ describe("PATCH /api/admin/blog/[id]", () => {
   });
 
   it("should return 409 when slug is already in use", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error('Slug "new-slug" is already in use');
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(
+      new Error('Slug "new-slug" is already in use'),
+    );
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/test-id",
@@ -203,14 +235,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: JSON.stringify({ slug: "new-slug" }),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -219,9 +258,7 @@ describe("PATCH /api/admin/blog/[id]", () => {
   });
 
   it("should return 500 when Convex mutation fails", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Database error");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(new Error("Database error"));
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/test-id",
@@ -229,14 +266,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: JSON.stringify({ title: "Updated" }),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -255,14 +299,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: JSON.stringify(partialUpdate),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -281,14 +332,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: JSON.stringify(invalidUpdate),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -311,14 +369,21 @@ describe("PATCH /api/admin/blog/[id]", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: JSON.stringify(multiFieldUpdate),
       },
-    );
+    ) as any;
 
-    const response = await PATCH(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -328,18 +393,10 @@ describe("PATCH /api/admin/blog/[id]", () => {
 });
 
 describe("DELETE /api/admin/blog/[id]", () => {
-  beforeEach(async () => {
-    // Reset individual mocks instead of mock.restore() which destroys module mocks
-    mockVerifySessionToken.mockReset();
-    mockVerifySessionToken.mockImplementation(() => true);
-    mockFetchMutation.mockReset();
-    mockFetchMutation.mockImplementation(() => undefined);
-
-    // Dynamically import to get mocked version (already imported in PATCH describe block)
-    if (!DELETE) {
-      const module = await import("./route");
-      DELETE = module.DELETE;
-    }
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(true));
+    vi.mocked(fetchMutation).mockResolvedValue(undefined);
   });
 
   it("should archive a post with valid ID and authentication", async () => {
@@ -347,38 +404,48 @@ describe("DELETE /api/admin/blog/[id]", () => {
       "http://localhost:3000/api/admin/blog/test-id",
       {
         method: "DELETE",
-        headers: {
-          Cookie: "session=valid-session-token",
-        },
       },
-    );
+    ) as any;
 
-    const response = await DELETE(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.message).toBe("Post archived successfully");
-    expect(mockFetchMutation).toHaveBeenCalledTimes(1);
+    expect(fetchMutation).toHaveBeenCalledTimes(1);
   });
 
   it("should return 401 when session is invalid", async () => {
-    mockVerifySessionToken.mockReturnValue(false);
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(false));
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/test-id",
       {
         method: "DELETE",
-        headers: {
-          Cookie: "session=invalid-token",
-        },
       },
-    );
+    ) as any;
 
-    const response = await DELETE(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property with invalid token
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "invalid-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -389,13 +456,18 @@ describe("DELETE /api/admin/blog/[id]", () => {
   it("should return 400 when post ID is missing", async () => {
     const request = new Request("http://localhost:3000/api/admin/blog/", {
       method: "DELETE",
-      headers: {
-        Cookie: "session=valid-session-token",
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
       },
+      writable: true,
     });
 
-    const response = await DELETE(request as any, {
-      params: { id: "" },
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "" }),
     });
     const data = await response.json();
 
@@ -404,22 +476,25 @@ describe("DELETE /api/admin/blog/[id]", () => {
   });
 
   it("should return 404 when post is not found", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Post not found");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(new Error("Post not found"));
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/nonexistent-id",
       {
         method: "DELETE",
-        headers: {
-          Cookie: "session=valid-session-token",
-        },
       },
-    );
+    ) as any;
 
-    const response = await DELETE(request as any, {
-      params: { id: "nonexistent-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "nonexistent-id" }),
     });
     const data = await response.json();
 
@@ -428,22 +503,27 @@ describe("DELETE /api/admin/blog/[id]", () => {
   });
 
   it("should return 409 when post is already archived", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Post is already archived");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(
+      new Error("Post is already archived"),
+    );
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/test-id",
       {
         method: "DELETE",
-        headers: {
-          Cookie: "session=valid-session-token",
-        },
       },
-    );
+    ) as any;
 
-    const response = await DELETE(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 
@@ -452,22 +532,25 @@ describe("DELETE /api/admin/blog/[id]", () => {
   });
 
   it("should return 500 when Convex mutation fails", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Database error");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(new Error("Database error"));
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/test-id",
       {
         method: "DELETE",
-        headers: {
-          Cookie: "session=valid-session-token",
-        },
       },
-    );
+    ) as any;
 
-    const response = await DELETE(request as any, {
-      params: { id: "test-id" },
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "test-id" }),
     });
     const data = await response.json();
 

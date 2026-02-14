@@ -1,10 +1,10 @@
-import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import type React from "react";
+import { describe, expect, it, vi } from "vitest";
 import Home from "./page";
 
 // Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
+vi.mock("framer-motion", () => ({
   motion: {
     section: ({ children, ...props }: React.PropsWithChildren<object>) => (
       <section {...props}>{children}</section>
@@ -22,21 +22,21 @@ mock.module("framer-motion", () => ({
 }));
 
 // Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
+vi.mock("@/hooks/useReducedMotion", () => ({
   useReducedMotion: () => false,
 }));
 
 // Mock visual effects components
-mock.module("@/components/effects/CursorGlow", () => ({
+vi.mock("@/components/effects/CursorGlow", () => ({
   CursorGlow: () => <div data-testid="cursor-glow" />,
 }));
 
-mock.module("@/components/effects/GrainOverlay", () => ({
+vi.mock("@/components/effects/GrainOverlay", () => ({
   GrainOverlay: () => <div data-testid="grain-overlay" />,
 }));
 
 // Mock Hero component
-mock.module("@/components/sections/Hero", () => ({
+vi.mock("@/components/sections/Hero", () => ({
   Hero: () => (
     <section data-testid="hero-section">
       <h1>Tech Lead AI-First Development</h1>
@@ -49,7 +49,7 @@ mock.module("@/components/sections/Hero", () => ({
 }));
 
 // Mock FeaturedProjects component
-mock.module("@/components/sections/FeaturedProjects", () => ({
+vi.mock("@/components/sections/FeaturedProjects", () => ({
   FeaturedProjects: () => (
     <section data-testid="featured-projects">
       <h2>Featured Projects</h2>
@@ -60,7 +60,7 @@ mock.module("@/components/sections/FeaturedProjects", () => ({
 }));
 
 // Mock PrinciplesPreview component
-mock.module("@/components/sections/PrinciplesPreview", () => ({
+vi.mock("@/components/sections/PrinciplesPreview", () => ({
   PrinciplesPreview: () => (
     <section data-testid="principles-preview">
       <h2>Engineering Principles</h2>

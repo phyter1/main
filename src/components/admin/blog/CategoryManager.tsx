@@ -495,6 +495,18 @@ export function CategoryManager() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive" role="alert">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {validationError && (
+            <Alert variant="destructive" role="alert">
+              <AlertDescription>{validationError}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor={nameId}>Category Name</Label>
             <Input

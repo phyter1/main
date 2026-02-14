@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import ChatPage from "./page";
 
 // Mock ChatInterface component
-mock.module("@/components/sections/ChatInterface", () => ({
+vi.mock("@/components/sections/ChatInterface", () => ({
   ChatInterface: ({ className }: { className?: string }) => (
     <div data-testid="chat-interface" className={className}>
       Mock ChatInterface

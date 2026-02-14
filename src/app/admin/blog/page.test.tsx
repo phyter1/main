@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Admin Blog Dashboard Page Tests (T015)
@@ -13,78 +13,145 @@ import { cleanup, render, screen } from "@testing-library/react";
  * - Navigation and routing
  */
 
-// Mock blog components
-interface BlogPostListProps {
-  posts: unknown[];
-  categories: unknown[];
-}
-
-mock.module("@/components/admin/blog/BlogPostList", () => ({
-  BlogPostList: mock(({ posts, categories }: BlogPostListProps) => (
-    <div data-testid="blog-post-list">
-      <div>BlogPostList Component</div>
-      <div>Posts: {posts.length}</div>
-      <div>Categories: {categories.length}</div>
-    </div>
-  )),
-}));
-
-// Mock blog mock data
-const mockBlogPosts = [
+// Mock blog posts data
+const mockConvexPosts = [
   {
+    _id: "1",
+    _creationTime: Date.now(),
     title: "Published Post 1",
     slug: "published-post-1",
     status: "published" as const,
-    category: "tutorials",
+    categoryId: "cat1",
     viewCount: 100,
+    publishedAt: Date.now(),
     updatedAt: Date.now(),
+    content: "Content 1",
+    excerpt: "Excerpt 1",
+    featuredImage: null,
+    tags: [],
+    author: "Ryan",
   },
   {
+    _id: "2",
+    _creationTime: Date.now(),
     title: "Published Post 2",
     slug: "published-post-2",
     status: "published" as const,
-    category: "tutorials",
+    categoryId: "cat1",
     viewCount: 200,
+    publishedAt: Date.now(),
     updatedAt: Date.now(),
+    content: "Content 2",
+    excerpt: "Excerpt 2",
+    featuredImage: null,
+    tags: [],
+    author: "Ryan",
   },
   {
+    _id: "3",
+    _creationTime: Date.now(),
     title: "Draft Post",
     slug: "draft-post",
     status: "draft" as const,
-    category: "tutorials",
+    categoryId: "cat1",
     viewCount: 0,
+    publishedAt: null,
     updatedAt: Date.now(),
+    content: "Content 3",
+    excerpt: "Excerpt 3",
+    featuredImage: null,
+    tags: [],
+    author: "Ryan",
   },
 ];
 
-const mockBlogCategories = [
+const mockCategories = [
   {
+    _id: "cat1",
+    _creationTime: Date.now(),
     name: "Tutorials",
     slug: "tutorials",
     description: "Tutorials",
-    postCount: 2,
   },
-  { name: "News", slug: "news", description: "News", postCount: 1 },
+  {
+    _id: "cat2",
+    _creationTime: Date.now(),
+    name: "News",
+    slug: "news",
+    description: "News",
+  },
 ];
 
-mock.module("@/data/blog-mock", () => ({
-  mockBlogPosts,
-  mockBlogCategories,
+// Track which query is being called
+let queryCallCount = 0;
+
+// Mock Convex hooks
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => {
+    // First call is listPosts, second is getCategories
+    queryCallCount++;
+    if (queryCallCount === 1 || queryCallCount % 2 === 1) {
+      return { posts: mockConvexPosts };
+    }
+    return mockCategories;
+  }),
+  useMutation: vi.fn(() => vi.fn()),
+}));
+
+// Mock blog components
+vi.mock("@/components/admin/blog/BlogPostList", () => ({
+  BlogPostList: vi.fn(
+    ({ posts, categories }: { posts: unknown[]; categories: unknown[] }) => (
+      <div data-testid="blog-post-list">
+        <div>BlogPostList Component</div>
+        <div>Posts: {posts.length}</div>
+        <div>Categories: {categories.length}</div>
+      </div>
+    ),
+  ),
 }));
 
 // Mock Next.js navigation
-const mockPush = mock(() => {});
-const mockUseRouter = mock(() => ({
+const mockPush = vi.fn();
+const mockUseRouter = vi.fn(() => ({
   push: mockPush,
   pathname: "/admin/blog",
 }));
 
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: mockUseRouter,
-  usePathname: mock(() => "/admin/blog"),
+  usePathname: vi.fn(() => "/admin/blog"),
+}));
+
+// Mock Convex API
+vi.mock("../../../../convex/_generated/api", () => ({
+  api: {
+    blog: {
+      listPosts: "listPosts",
+      getCategories: "getCategories",
+      deletePost: "deletePost",
+    },
+  },
+}));
+
+// Mock blog transforms
+vi.mock("@/lib/blog-transforms", () => ({
+  transformConvexPosts: vi.fn((posts) =>
+    posts.map((p: { status: string }) => ({
+      ...p,
+      category: "tutorials",
+    })),
+  ),
+  buildCategoryMap: vi.fn(() => ({})),
 }));
 
 describe("Admin Blog Dashboard Page", () => {
+  beforeEach(() => {
+    // Reset query call count before each test
+    queryCallCount = 0;
+    vi.clearAllMocks();
+  });
+
   afterEach(() => {
     cleanup();
   });
@@ -227,19 +294,13 @@ describe("Admin Blog Dashboard Page", () => {
     });
   });
 
-  describe("Metadata", () => {
-    it("should export metadata object", async () => {
-      const module = await import("./page");
+  describe("Page Structure", () => {
+    it("should be a client component", async () => {
+      const { default: BlogPage } = await import("./page");
 
-      expect(module.metadata).toBeDefined();
-      expect(module.metadata.title).toBeDefined();
-      expect(module.metadata.description).toBeDefined();
-    });
-
-    it("should have appropriate page title in metadata", async () => {
-      const module = await import("./page");
-
-      expect(module.metadata.title).toMatch(/blog/i);
+      // Client components don't export metadata, they render directly
+      expect(BlogPage).toBeDefined();
+      expect(typeof BlogPage).toBe("function");
     });
   });
 });

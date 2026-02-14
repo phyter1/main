@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { JobFitAnalyzer } from "./JobFitAnalyzer";
 
 // Mock fetch for API calls
-const mockFetch = mock(() =>
+const mockFetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
     status: 200,

@@ -10,46 +10,54 @@
  * - Error handling and responses
  */
 
-import { beforeEach, describe, expect, it, spyOn } from "bun:test";
-import * as auth from "@/lib/auth";
-import * as uploadService from "@/lib/upload-service";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { verifySessionToken } from "@/lib/auth";
 
-// Set up spies BEFORE importing the route
-const verifySessionTokenSpy = spyOn(
-  auth,
-  "verifySessionToken",
-).mockResolvedValue(true);
-const validateUploadFileSpy = spyOn(
-  uploadService,
-  "validateUploadFile",
-).mockReturnValue({ valid: true });
-const sanitizeFilenameSpy = spyOn(
-  uploadService,
-  "sanitizeFilename",
-).mockImplementation((filename: string) => filename);
-const uploadImageSpy = spyOn(uploadService, "uploadImage").mockResolvedValue(
-  "https://test-blob.vercel-storage.com/test-abc123.jpg",
-);
+// Mock auth module
+vi.mock("@/lib/auth", () => ({
+  verifySessionToken: vi.fn(() => Promise.resolve(true)),
+}));
 
-// NOW import the route - it will use the spied functions
-import { POST } from "./route";
+// Mock upload service
+vi.mock("@/lib/upload-service", () => ({
+  validateUploadFile: vi.fn(() => ({ valid: true })),
+  sanitizeFilename: vi.fn((filename: string) => filename),
+  uploadImage: vi.fn(() =>
+    Promise.resolve("https://test-blob.vercel-storage.com/test-abc123.jpg"),
+  ),
+}));
+
+// Import upload service after mocks
+import {
+  sanitizeFilename,
+  uploadImage,
+  validateUploadFile,
+} from "@/lib/upload-service";
 
 describe("POST /api/admin/blog/upload", () => {
-  beforeEach(() => {
-    // Reset spy call counts and restore default mocks
-    verifySessionTokenSpy.mockClear();
-    verifySessionTokenSpy.mockResolvedValue(true);
+  let POST: any;
 
-    validateUploadFileSpy.mockClear();
-    validateUploadFileSpy.mockReturnValue({ valid: true });
+  beforeEach(async () => {
+    // Clear all mock call counts
+    vi.clearAllMocks();
 
-    sanitizeFilenameSpy.mockClear();
-    sanitizeFilenameSpy.mockImplementation((filename: string) => filename);
+    // Set default: auth succeeds
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(true));
 
-    uploadImageSpy.mockClear();
-    uploadImageSpy.mockResolvedValue(
+    // Reset upload service mocks to defaults
+    vi.mocked(validateUploadFile).mockReturnValue({ valid: true });
+    vi.mocked(sanitizeFilename).mockImplementation(
+      (filename: string) => filename,
+    );
+    vi.mocked(uploadImage).mockResolvedValue(
       "https://test-blob.vercel-storage.com/test-abc123.jpg",
     );
+
+    // Clear rate limit state by re-importing the module
+    // This forces the uploadRateLimits Map to be reset
+    vi.resetModules();
+    const module = await import("./route");
+    POST = module.POST;
   });
 
   /**
@@ -70,9 +78,17 @@ describe("POST /api/admin/blog/upload", () => {
           method: "POST",
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property with no session token
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => undefined,
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -80,7 +96,7 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should return 401 when session token is invalid", async () => {
-      verifySessionTokenSpy.mockResolvedValue(false);
+      vi.mocked(verifySessionToken).mockResolvedValue(false);
 
       const formData = new FormData();
       formData.append(
@@ -93,14 +109,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=invalid-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property with invalid token
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "invalid-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -108,7 +129,7 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should accept valid session token", async () => {
-      verifySessionTokenSpy.mockResolvedValue(true);
+      vi.mocked(verifySessionToken).mockResolvedValue(true);
 
       const formData = new FormData();
       formData.append(
@@ -121,17 +142,24 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
 
       expect(response.status).toBe(200);
-      expect(verifySessionTokenSpy).toHaveBeenCalledWith("valid-session-token");
+      expect(vi.mocked(verifySessionToken)).toHaveBeenCalledWith(
+        "valid-session-token",
+      );
     });
   });
 
@@ -153,15 +181,28 @@ describe("POST /api/admin/blog/upload", () => {
           "http://localhost:3000/api/admin/blog/upload",
           {
             method: "POST",
-            headers: {
-              cookie: "session=valid-session-token",
-              "x-forwarded-for": "192.168.1.100",
-            },
             body: formData,
           },
-        );
+        ) as any;
 
-        await POST(request as any);
+        // Mock cookies property
+        Object.defineProperty(request, "cookies", {
+          value: {
+            get: () => ({ value: "valid-session-token" }),
+          },
+          writable: true,
+        });
+
+        // Mock headers for IP tracking
+        const originalGet = request.headers.get.bind(request.headers);
+        request.headers.get = (name: string) => {
+          if (name.toLowerCase() === "x-forwarded-for") {
+            return "192.168.1.100";
+          }
+          return originalGet(name);
+        };
+
+        await POST(request);
       }
 
       // 11th request should be rate limited
@@ -176,15 +217,28 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-            "x-forwarded-for": "192.168.1.100",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      // Mock headers for IP tracking
+      const originalGet = request.headers.get.bind(request.headers);
+      request.headers.get = (name: string) => {
+        if (name.toLowerCase() === "x-forwarded-for") {
+          return "192.168.1.100";
+        }
+        return originalGet(name);
+      };
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(429);
@@ -206,15 +260,28 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-            "x-forwarded-for": "192.168.1.100",
-          },
           body: formData1,
         },
-      );
+      ) as any;
 
-      const response1 = await POST(request1 as any);
+      // Mock cookies property
+      Object.defineProperty(request1, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      // Mock headers for IP 1
+      const originalGet1 = request1.headers.get.bind(request1.headers);
+      request1.headers.get = (name: string) => {
+        if (name.toLowerCase() === "x-forwarded-for") {
+          return "192.168.1.100";
+        }
+        return originalGet1(name);
+      };
+
+      const response1 = await POST(request1);
       expect(response1.status).toBe(200);
 
       // Make request from IP 2
@@ -229,15 +296,28 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-            "x-forwarded-for": "192.168.1.200",
-          },
           body: formData2,
         },
-      );
+      ) as any;
 
-      const response2 = await POST(request2 as any);
+      // Mock cookies property
+      Object.defineProperty(request2, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      // Mock headers for IP 2
+      const originalGet2 = request2.headers.get.bind(request2.headers);
+      request2.headers.get = (name: string) => {
+        if (name.toLowerCase() === "x-forwarded-for") {
+          return "192.168.1.200";
+        }
+        return originalGet2(name);
+      };
+
+      const response2 = await POST(request2);
       expect(response2.status).toBe(200);
     });
 
@@ -253,15 +333,28 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-            "x-real-ip": "192.168.1.150",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      // Mock headers for IP
+      const originalGet = request.headers.get.bind(request.headers);
+      request.headers.get = (name: string) => {
+        if (name.toLowerCase() === "x-real-ip") {
+          return "192.168.1.150";
+        }
+        return originalGet(name);
+      };
+
+      const response = await POST(request);
       expect(response.status).toBe(200);
     });
   });
@@ -278,14 +371,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -302,14 +400,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -319,7 +422,7 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should return 400 when file validation fails (invalid type)", async () => {
-      validateUploadFileSpy.mockReturnValue({
+      vi.mocked(validateUploadFile).mockReturnValue({
         valid: false,
         error:
           "Invalid file type. Only PNG, JPEG, GIF, and WebP images are allowed.",
@@ -336,14 +439,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -353,7 +461,7 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should return 400 when file validation fails (size too large)", async () => {
-      validateUploadFileSpy.mockReturnValue({
+      vi.mocked(validateUploadFile).mockReturnValue({
         valid: false,
         error: "File size exceeds maximum limit of 5MB",
       });
@@ -369,14 +477,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -395,18 +508,23 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
 
       expect(response.status).toBe(200);
-      expect(validateUploadFileSpy).toHaveBeenCalled();
-      expect(uploadImageSpy).toHaveBeenCalled();
+      expect(vi.mocked(validateUploadFile)).toHaveBeenCalled();
+      expect(vi.mocked(uploadImage)).toHaveBeenCalled();
     });
 
     it("should accept valid image file (JPEG)", async () => {
@@ -421,14 +539,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
 
       expect(response.status).toBe(200);
     });
@@ -445,14 +568,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
 
       expect(response.status).toBe(200);
     });
@@ -465,7 +593,7 @@ describe("POST /api/admin/blog/upload", () => {
     it("should upload file to Vercel Blob and return URL", async () => {
       const expectedUrl =
         "https://test-blob.vercel-storage.com/test-abc123.jpg";
-      uploadImageSpy.mockResolvedValue(expectedUrl);
+      vi.mocked(uploadImage).mockResolvedValue(expectedUrl);
 
       const formData = new FormData();
       formData.append(
@@ -478,23 +606,28 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.url).toBe(expectedUrl);
-      expect(uploadImageSpy).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(uploadImage)).toHaveBeenCalledTimes(1);
     });
 
     it("should return 500 when upload service fails", async () => {
-      uploadImageSpy.mockRejectedValue(
+      vi.mocked(uploadImage).mockRejectedValue(
         new Error("Vercel Blob upload failed: Network error"),
       );
 
@@ -509,14 +642,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -534,17 +672,22 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
 
       expect(response.status).toBe(200);
-      expect(sanitizeFilenameSpy).toHaveBeenCalledWith(
+      expect(vi.mocked(sanitizeFilename)).toHaveBeenCalledWith(
         "dangerous../../../file.png",
       );
     });
@@ -560,14 +703,21 @@ describe("POST /api/admin/blog/upload", () => {
         {
           method: "POST",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({ file: "test" }),
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -581,7 +731,9 @@ describe("POST /api/admin/blog/upload", () => {
   describe("Error Handling", () => {
     it("should return 500 for unexpected errors", async () => {
       // Force an unexpected error by making verifySessionToken throw
-      verifySessionTokenSpy.mockRejectedValue(new Error("Unexpected error"));
+      vi.mocked(verifySessionToken).mockRejectedValue(
+        new Error("Unexpected error"),
+      );
 
       const formData = new FormData();
       formData.append(
@@ -594,14 +746,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -625,14 +782,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -642,7 +804,7 @@ describe("POST /api/admin/blog/upload", () => {
     });
 
     it("should return JSON error response with appropriate status code", async () => {
-      validateUploadFileSpy.mockReturnValue({
+      vi.mocked(validateUploadFile).mockReturnValue({
         valid: false,
         error: "Invalid file",
       });
@@ -658,14 +820,19 @@ describe("POST /api/admin/blog/upload", () => {
         "http://localhost:3000/api/admin/blog/upload",
         {
           method: "POST",
-          headers: {
-            cookie: "session=valid-session-token",
-          },
           body: formData,
         },
-      );
+      ) as any;
 
-      const response = await POST(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);

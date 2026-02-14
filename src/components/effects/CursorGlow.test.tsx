@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render } from "@testing-library/react";
 import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CursorGlow } from "./CursorGlow";
 
 // Helper to get source file path
@@ -23,28 +23,33 @@ describe("CursorGlow Component - T005", () => {
     const mockMediaQueryList = {
       matches: false,
       media: "(prefers-reduced-motion: reduce)",
-      addEventListener: mock(),
-      removeEventListener: mock(),
-      addListener: mock(),
-      removeListener: mock(),
-      dispatchEvent: mock(() => true),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
       onchange: null,
     };
 
-    mockMatchMedia = mock(() => mockMediaQueryList);
+    mockMatchMedia = vi.fn(() => mockMediaQueryList);
     window.matchMedia = mockMatchMedia as unknown as typeof matchMedia;
 
     // Mock MutationObserver
     mockObserver = {
-      observe: mock(),
-      disconnect: mock(),
+      observe: vi.fn(),
+      disconnect: vi.fn(),
     };
 
+    // Create a proper constructor function for MutationObserver that can be spied on
     // @ts-expect-error - Mock MutationObserver constructor
-    global.MutationObserver = mock((callback: MutationCallback) => {
+    global.MutationObserver = vi.fn(function MockMutationObserver(
+      callback: MutationCallback,
+    ) {
       // Store callback for testing
       // @ts-expect-error - Adding test property to mock
       mockObserver.callback = callback;
+
+      // Return the observer instance
       return mockObserver;
     });
 
@@ -187,7 +192,7 @@ describe("CursorGlow Component - T005", () => {
       // @ts-expect-error - Simulate touch device
       window.ontouchstart = () => {};
 
-      const addEventListenerSpy = mock();
+      const addEventListenerSpy = vi.fn();
       const originalAddEventListener = window.addEventListener;
       // @ts-expect-error - Mock window addEventListener for testing
       window.addEventListener = addEventListenerSpy;
@@ -211,18 +216,18 @@ describe("CursorGlow Component - T005", () => {
       const mockReducedMotionQueryList = {
         matches: true, // Reduced motion enabled
         media: "(prefers-reduced-motion: reduce)",
-        addEventListener: mock(),
-        removeEventListener: mock(),
-        addListener: mock(),
-        removeListener: mock(),
-        dispatchEvent: mock(() => true),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
         onchange: null,
       };
 
-      mockMatchMedia = mock(() => mockReducedMotionQueryList);
+      mockMatchMedia = vi.fn(() => mockReducedMotionQueryList);
       window.matchMedia = mockMatchMedia as unknown as typeof matchMedia;
 
-      const addEventListenerSpy = mock();
+      const addEventListenerSpy = vi.fn();
       const originalAddEventListener = window.addEventListener;
       // @ts-expect-error - Mock window addEventListener for testing
       window.addEventListener = addEventListenerSpy;

@@ -11,9 +11,9 @@
  * Run with: INTEGRATION_TEST=true bun test src/app/api/chat/route.integration.test.ts
  */
 
-import { beforeAll, describe, expect, it } from "bun:test";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { beforeAll, describe, expect, it } from "vitest";
 import { POST } from "./route";
 
 // Load .env.local for tests
@@ -333,7 +333,7 @@ describeIntegration("Chat API Integration Tests", () => {
 
 // Summary at the end
 if (INTEGRATION_ENABLED) {
-  console.log("\n" + "=".repeat(80));
+  console.log(`\n${"=".repeat(80)}`);
   console.log("INTEGRATION TEST SUMMARY");
   console.log("=".repeat(80));
   console.log(

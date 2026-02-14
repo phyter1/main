@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PromptEditor } from "./PromptEditor";
 
 describe("PromptEditor", () => {
@@ -8,7 +8,7 @@ describe("PromptEditor", () => {
 
   beforeEach(() => {
     // Reset fetch mock before each test
-    global.fetch = mock(() =>
+    global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: () =>
@@ -25,7 +25,6 @@ describe("PromptEditor", () => {
 
   afterEach(() => {
     cleanup();
-    mock.restore();
   });
 
   describe("Core Functionality", () => {
@@ -254,7 +253,7 @@ describe("PromptEditor", () => {
       const user = userEvent.setup();
 
       // Mock delayed response
-      global.fetch = mock(
+      global.fetch = vi.fn(
         () =>
           new Promise((resolve) => {
             setTimeout(
@@ -325,7 +324,7 @@ describe("PromptEditor", () => {
     it("should handle API errors gracefully", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -356,7 +355,7 @@ describe("PromptEditor", () => {
     it("should handle network errors", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() => Promise.reject(new Error("Network error")));
+      global.fetch = vi.fn(() => Promise.reject(new Error("Network error")));
 
       render(
         <PromptEditor agentType="chat" initialPrompt={mockInitialPrompt} />,
@@ -394,7 +393,7 @@ describe("PromptEditor", () => {
   describe("API Integration", () => {
     it("should call /api/admin/refine-prompt with correct payload", async () => {
       const user = userEvent.setup();
-      const mockFetch = mock(() =>
+      const mockFetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () =>

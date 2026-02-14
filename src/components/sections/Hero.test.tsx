@@ -1,9 +1,9 @@
-import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { Hero } from "./Hero";
 
 // Mock TypeWriter component
-mock.module("@/components/effects/TypeWriter", () => ({
+vi.mock("@/components/effects/TypeWriter", () => ({
   TypeWriter: ({
     text,
     onComplete,
@@ -17,17 +17,17 @@ mock.module("@/components/effects/TypeWriter", () => ({
 }));
 
 // Mock RotatingTypeWriter component
-mock.module("@/components/effects/RotatingTypeWriter", () => ({
+vi.mock("@/components/effects/RotatingTypeWriter", () => ({
   RotatingTypeWriter: ({ words }: { words: string[] }) => <div>{words[0]}</div>,
 }));
 
 // Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
+vi.mock("@/hooks/useReducedMotion", () => ({
   useReducedMotion: () => false,
 }));
 
 // Mock stack data
-mock.module("@/data/stack", () => ({
+vi.mock("@/data/stack", () => ({
   stackItems: [
     { label: "React", proficiency: "expert" },
     { label: "TypeScript", proficiency: "expert" },

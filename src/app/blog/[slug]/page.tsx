@@ -28,6 +28,13 @@ interface BlogPostPageProps {
 }
 
 /**
+ * ISR Configuration for Blog Posts
+ * - Revalidate every 3600 seconds (1 hour)
+ * - Posts change less frequently than listing pages
+ */
+export const revalidate = 3600;
+
+/**
  * Make this route dynamic since we're using ConvexHttpClient
  */
 export const dynamic = "force-dynamic";

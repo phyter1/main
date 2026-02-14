@@ -10,30 +10,34 @@
  * - Error handling and responses
  */
 
-import { beforeEach, describe, expect, it, spyOn } from "bun:test";
-import * as auth from "@/lib/auth";
-import * as uploadService from "@/lib/upload-service";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Set up spies BEFORE importing the route
-const verifySessionTokenSpy = spyOn(
-  auth,
-  "verifySessionToken",
-).mockResolvedValue(true);
-const deleteImageSpy = spyOn(uploadService, "deleteImage").mockResolvedValue(
-  undefined,
-);
+// Mock auth module
+const mockVerifySessionToken = vi.fn(() => Promise.resolve(true));
+vi.mock("@/lib/auth", () => ({
+  verifySessionToken: mockVerifySessionToken,
+}));
 
-// NOW import the route - it will use the spied functions
-import { DELETE } from "./route";
+// Mock upload service
+const mockDeleteImage = vi.fn(() => Promise.resolve());
+vi.mock("@/lib/upload-service", () => ({
+  deleteImage: mockDeleteImage,
+}));
 
 describe("DELETE /api/admin/blog/delete-image", () => {
-  beforeEach(() => {
-    // Reset spy call counts and restore default mocks
-    verifySessionTokenSpy.mockClear();
-    verifySessionTokenSpy.mockResolvedValue(true);
+  let DELETE: any;
 
-    deleteImageSpy.mockClear();
-    deleteImageSpy.mockResolvedValue(undefined);
+  beforeEach(async () => {
+    // Reset mocks
+    mockVerifySessionToken.mockReset();
+    mockVerifySessionToken.mockImplementation(() => Promise.resolve(true));
+
+    mockDeleteImage.mockReset();
+    mockDeleteImage.mockImplementation(() => Promise.resolve());
+
+    // Dynamically import to get mocked version
+    const module = await import("./route");
+    DELETE = module.DELETE;
   });
 
   /**
@@ -52,62 +56,86 @@ describe("DELETE /api/admin/blog/delete-image", () => {
             url: "https://test-blob.vercel-storage.com/test.png",
           }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property with no session
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => undefined,
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(401);
       expect(data.error).toBe("Unauthorized. Admin authentication required.");
-      expect(deleteImageSpy).not.toHaveBeenCalled();
+      expect(mockDeleteImage).not.toHaveBeenCalled();
     });
 
     it("should return 401 when session token is invalid", async () => {
-      verifySessionTokenSpy.mockResolvedValue(false);
+      mockVerifySessionToken.mockResolvedValue(false);
 
       const request = new Request(
         "http://localhost:3000/api/admin/blog/delete-image",
         {
           method: "DELETE",
           headers: {
-            cookie: "session=invalid-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({
             url: "https://test-blob.vercel-storage.com/test.png",
           }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property with invalid token
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "invalid-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(401);
       expect(data.error).toBe("Unauthorized. Admin authentication required.");
-      expect(deleteImageSpy).not.toHaveBeenCalled();
+      expect(mockDeleteImage).not.toHaveBeenCalled();
     });
 
     it("should accept valid session token", async () => {
-      verifySessionTokenSpy.mockResolvedValue(true);
+      mockVerifySessionToken.mockResolvedValue(true);
 
       const request = new Request(
         "http://localhost:3000/api/admin/blog/delete-image",
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({
             url: "https://test-blob.vercel-storage.com/test.png",
           }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property with valid token
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
 
       expect(response.status).toBe(200);
-      expect(verifySessionTokenSpy).toHaveBeenCalledWith("valid-session-token");
+      expect(mockVerifySessionToken).toHaveBeenCalledWith(
+        "valid-session-token",
+      );
     });
   });
 
@@ -123,7 +151,6 @@ describe("DELETE /api/admin/blog/delete-image", () => {
           {
             method: "DELETE",
             headers: {
-              cookie: "session=valid-session-token",
               "x-forwarded-for": "192.168.1.100",
               "content-type": "application/json",
             },
@@ -131,9 +158,17 @@ describe("DELETE /api/admin/blog/delete-image", () => {
               url: `https://test-blob.vercel-storage.com/test-${i}.png`,
             }),
           },
-        );
+        ) as any;
 
-        await DELETE(request as any);
+        // Mock cookies property
+        Object.defineProperty(request, "cookies", {
+          value: {
+            get: () => ({ value: "valid-session-token" }),
+          },
+          writable: true,
+        });
+
+        await DELETE(request);
       }
 
       // 11th request should be rate limited
@@ -142,7 +177,6 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "x-forwarded-for": "192.168.1.100",
             "content-type": "application/json",
           },
@@ -150,9 +184,17 @@ describe("DELETE /api/admin/blog/delete-image", () => {
             url: "https://test-blob.vercel-storage.com/test-11.png",
           }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(429);
@@ -162,23 +204,34 @@ describe("DELETE /api/admin/blog/delete-image", () => {
     });
 
     it("should track rate limits per IP address independently", async () => {
+      // Use unique IPs that haven't been used in other tests
+      const ip1 = "10.0.0.1";
+      const ip2 = "10.0.0.2";
+
       // Make request from IP 1
       const request1 = new Request(
         "http://localhost:3000/api/admin/blog/delete-image",
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
-            "x-forwarded-for": "192.168.1.100",
+            "x-forwarded-for": ip1,
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            url: "https://test-blob.vercel-storage.com/test-1.png",
+            url: "https://test-blob.vercel-storage.com/test-independent-1.png",
           }),
         },
-      );
+      ) as any;
 
-      const response1 = await DELETE(request1 as any);
+      // Mock cookies property
+      Object.defineProperty(request1, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response1 = await DELETE(request1);
       expect(response1.status).toBe(200);
 
       // Make request from IP 2
@@ -187,17 +240,24 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
-            "x-forwarded-for": "192.168.1.200",
+            "x-forwarded-for": ip2,
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            url: "https://test-blob.vercel-storage.com/test-2.png",
+            url: "https://test-blob.vercel-storage.com/test-independent-2.png",
           }),
         },
-      );
+      ) as any;
 
-      const response2 = await DELETE(request2 as any);
+      // Mock cookies property
+      Object.defineProperty(request2, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response2 = await DELETE(request2);
       expect(response2.status).toBe(200);
 
       // Both IPs should have independent rate limits
@@ -214,21 +274,28 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({}),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toBe(
         "Missing or invalid 'url' field in request body.",
       );
-      expect(deleteImageSpy).not.toHaveBeenCalled();
+      expect(mockDeleteImage).not.toHaveBeenCalled();
     });
 
     it("should return 400 when URL is not a string", async () => {
@@ -237,21 +304,28 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({ url: 123 }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toBe(
         "Missing or invalid 'url' field in request body.",
       );
-      expect(deleteImageSpy).not.toHaveBeenCalled();
+      expect(mockDeleteImage).not.toHaveBeenCalled();
     });
 
     it("should return 400 when URL is not HTTPS", async () => {
@@ -260,19 +334,26 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({ url: "http://insecure-url.com/image.png" }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toBe("Invalid URL. Must be a valid HTTPS URL.");
-      expect(deleteImageSpy).not.toHaveBeenCalled();
+      expect(mockDeleteImage).not.toHaveBeenCalled();
     });
 
     it("should accept valid HTTPS URL", async () => {
@@ -281,19 +362,26 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({
             url: "https://test-blob.vercel-storage.com/test.png",
           }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
 
       expect(response.status).toBe(200);
-      expect(deleteImageSpy).toHaveBeenCalledWith(
+      expect(mockDeleteImage).toHaveBeenCalledWith(
         "https://test-blob.vercel-storage.com/test.png",
       );
     });
@@ -311,25 +399,32 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({ url: testUrl }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.message).toBe("Image deleted successfully.");
-      expect(deleteImageSpy).toHaveBeenCalledTimes(1);
-      expect(deleteImageSpy).toHaveBeenCalledWith(testUrl);
+      expect(mockDeleteImage).toHaveBeenCalledTimes(1);
+      expect(mockDeleteImage).toHaveBeenCalledWith(testUrl);
     });
 
     it("should return 500 when delete service fails", async () => {
-      deleteImageSpy.mockRejectedValue(
+      mockDeleteImage.mockRejectedValue(
         new Error("Vercel Blob delete failed: Network error"),
       );
 
@@ -338,16 +433,23 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({
             url: "https://test-blob.vercel-storage.com/test.png",
           }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -365,14 +467,21 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "text/plain",
           },
           body: "not-json",
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -388,23 +497,30 @@ describe("DELETE /api/admin/blog/delete-image", () => {
   describe("Error Handling", () => {
     it("should return 500 for unexpected errors", async () => {
       // Force an unexpected error by making verifySessionToken throw
-      verifySessionTokenSpy.mockRejectedValue(new Error("Unexpected error"));
+      mockVerifySessionToken.mockRejectedValue(new Error("Unexpected error"));
 
       const request = new Request(
         "http://localhost:3000/api/admin/blog/delete-image",
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({
             url: "https://test-blob.vercel-storage.com/test.png",
           }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -422,16 +538,23 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({
             url: "https://test-blob.vercel-storage.com/test.png",
           }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -447,14 +570,21 @@ describe("DELETE /api/admin/blog/delete-image", () => {
         {
           method: "DELETE",
           headers: {
-            cookie: "session=valid-session-token",
             "content-type": "application/json",
           },
           body: JSON.stringify({ url: "http://insecure.com/test.png" }),
         },
-      );
+      ) as any;
 
-      const response = await DELETE(request as any);
+      // Mock cookies property
+      Object.defineProperty(request, "cookies", {
+        value: {
+          get: () => ({ value: "valid-session-token" }),
+        },
+        writable: true,
+      });
+
+      const response = await DELETE(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);

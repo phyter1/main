@@ -1,20 +1,20 @@
-import { afterEach, beforeAll, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // Mock @vercel/analytics/react
-mock.module("@vercel/analytics/react", () => ({
+vi.mock("@vercel/analytics/react", () => ({
   Analytics: () => <div data-testid="vercel-analytics">Analytics</div>,
 }));
 
 // Mock @vercel/speed-insights/next
-mock.module("@vercel/speed-insights/next", () => ({
+vi.mock("@vercel/speed-insights/next", () => ({
   SpeedInsights: () => (
     <div data-testid="vercel-speed-insights">SpeedInsights</div>
   ),
 }));
 
 // Mock next/font/google
-mock.module("next/font/google", () => ({
+vi.mock("next/font/google", () => ({
   Fira_Sans: () => ({
     variable: "--font-fira-sans",
     style: { fontFamily: "Fira Sans" },
@@ -30,7 +30,7 @@ mock.module("next/font/google", () => ({
 }));
 
 // Mock fonts module
-mock.module("@/lib/fonts", () => ({
+vi.mock("@/lib/fonts", () => ({
   firaSans: {
     variable: "--font-fira-sans",
     style: { fontFamily: "Fira Sans" },
@@ -46,24 +46,24 @@ mock.module("@/lib/fonts", () => ({
 }));
 
 // Mock ConvexClientProvider
-mock.module("./ConvexClientProvider", () => ({
+vi.mock("./ConvexClientProvider", () => ({
   ConvexClientProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="convex-provider">{children}</div>
   ),
 }));
 
 // Mock Footer component
-mock.module("@/components/layout/Footer", () => ({
+vi.mock("@/components/layout/Footer", () => ({
   Footer: () => <footer data-testid="footer">Footer</footer>,
 }));
 
 // Mock Navigation component
-mock.module("@/components/layout/Navigation", () => ({
+vi.mock("@/components/layout/Navigation", () => ({
   Navigation: () => <nav data-testid="navigation">Navigation</nav>,
 }));
 
 // Mock ThemeProvider
-mock.module("@/providers/ThemeProvider", () => ({
+vi.mock("@/providers/ThemeProvider", () => ({
   ThemeProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="theme-provider">{children}</div>
   ),
@@ -84,7 +84,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
   });
 
   describe("Mock Setup Verification", () => {
-    it("should successfully mock @vercel/analytics/react module using mock.module()", async () => {
+    it("should successfully mock @vercel/analytics/react module using vi.mock()", async () => {
       // Verify the mock module is set up correctly by dynamic import
       const { Analytics } = await import("@vercel/analytics/react");
       const { container } = render(<Analytics />);
@@ -226,7 +226,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
   });
 
   describe("Test Patterns from Existing Tests", () => {
-    it("should follow pattern of using mock.module() for external dependencies", async () => {
+    it("should follow pattern of using vi.mock() for external dependencies", async () => {
       // Verified by successfully mocking @vercel/analytics/react
       const { Analytics } = await import("@vercel/analytics/react");
       expect(Analytics).toBeDefined();
@@ -262,7 +262,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
       expect(RootLayout).toBeDefined();
     });
 
-    it("should successfully mock @vercel/analytics/react module using mock.module()", async () => {
+    it("should successfully mock @vercel/analytics/react module using vi.mock()", async () => {
       const { Analytics } = await import("@vercel/analytics/react");
       const { container } = render(<Analytics />);
 
@@ -298,7 +298,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
 
     it("should follow existing patterns from about/page.test.tsx", () => {
       // Pattern verification:
-      // - Use mock.module() for external dependencies ✓
+      // - Use vi.mock() for external dependencies ✓
       // - Use data-testid for component identification ✓
       // - Use describe blocks for organization ✓
       // - Use afterEach cleanup ✓
@@ -368,7 +368,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
   });
 
   describe("T006: ThemeProvider Integration", () => {
-    it("should successfully mock @/providers/ThemeProvider module using mock.module()", async () => {
+    it("should successfully mock @/providers/ThemeProvider module using vi.mock()", async () => {
       const { ThemeProvider } = await import("@/providers/ThemeProvider");
       const { container } = render(
         <ThemeProvider>
@@ -498,7 +498,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
 
     it("should follow existing test patterns for provider integration", () => {
       // Pattern verification:
-      // - Use mock.module() for provider mocking ✓
+      // - Use vi.mock() for provider mocking ✓
       // - Use data-testid for component identification ✓
       // - Verify component hierarchy and nesting ✓
       // - Test script content for FOUC prevention ✓
@@ -507,7 +507,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
   });
 
   describe("T003: SpeedInsights Component Integration", () => {
-    it("should successfully mock @vercel/speed-insights/next module using mock.module()", async () => {
+    it("should successfully mock @vercel/speed-insights/next module using vi.mock()", async () => {
       // Verify the mock module is set up correctly by dynamic import
       const { SpeedInsights } = await import("@vercel/speed-insights/next");
       const { container } = render(<SpeedInsights />);
@@ -593,7 +593,7 @@ describe("T002: Layout with Analytics Component Tests", () => {
 
     it("should follow existing test patterns from Analytics tests", () => {
       // Pattern verification:
-      // - Use mock.module() for external dependencies ✓
+      // - Use vi.mock() for external dependencies ✓
       // - Use data-testid for component identification ✓
       // - Use describe blocks for organization ✓
       // - Verify component order in DOM ✓

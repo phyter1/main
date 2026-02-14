@@ -17,25 +17,20 @@
  * that don't require full type safety or accessibility compliance.
  */
 
-/* biome-ignore lint/suspicious/noExplicitAny: Test mocks use any for simplicity */
-/* biome-ignore lint/a11y/noStaticElementInteractions: Test mocks don't need full a11y */
-/* biome-ignore lint/a11y/useKeyWithClickEvents: Test mocks don't need keyboard events */
-/* biome-ignore lint/a11y/useButtonType: Test mocks use default button behavior */
-/* biome-ignore lint/performance/noImgElement: Test mocks use img for simplicity */
-
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BlogCategory, BlogPost } from "@/types/blog";
 
 // Save original fetch
 const originalFetch = global.fetch;
 
 // Mock Next.js router
-const mockRouterPush = mock(() => {});
-const mockRouterReplace = mock(() => {});
-const mockRouterRefresh = mock(() => {});
+const mockRouterPush = vi.fn(() => {});
+const mockRouterReplace = vi.fn(() => {});
+const mockRouterRefresh = vi.fn(() => {});
 
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockRouterPush,
     replace: mockRouterReplace,
@@ -55,20 +50,16 @@ mock.module("next/navigation", () => ({
 }));
 
 // Mock Convex client
-const mockUseQuery = mock(() => undefined);
-const mockUseMutation = mock(() => mock(() => Promise.resolve()));
-const mockUseAction = mock(() => mock(() => Promise.resolve()));
-
-mock.module("convex/react", () => ({
-  useQuery: mockUseQuery,
-  useMutation: mockUseMutation,
-  useAction: mockUseAction,
-  usePreloadedQuery: mockUseQuery,
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => undefined),
+  useMutation: vi.fn(() => vi.fn(() => Promise.resolve())),
+  useAction: vi.fn(() => vi.fn(() => Promise.resolve())),
+  usePreloadedQuery: vi.fn(() => undefined),
   Preloaded: () => null,
 }));
 
 // Mock framer-motion
-mock.module("framer-motion", () => ({
+vi.mock("framer-motion", () => ({
   motion: {
     div: "div",
     article: "article",
@@ -78,7 +69,7 @@ mock.module("framer-motion", () => ({
 }));
 
 // Mock blog utility functions
-mock.module("@/lib/blog-utils", () => ({
+vi.mock("@/lib/blog-utils", () => ({
   formatDate: (timestamp: number) => new Date(timestamp).toLocaleDateString(),
   calculateReadingTime: (content: string) =>
     Math.max(1, Math.ceil(content.split(" ").length / 200)),
@@ -92,14 +83,14 @@ mock.module("@/lib/blog-utils", () => ({
 }));
 
 // Mock Next.js Image
-mock.module("next/image", () => ({
+vi.mock("next/image", () => ({
   default: ({ alt, src, ...props }: any) => (
     <img alt={alt} src={src} {...props} />
   ),
 }));
 
 // Mock Next.js Link
-mock.module("next/link", () => ({
+vi.mock("next/link", () => ({
   default: ({ children, href, ...props }: any) => (
     <a href={href} {...props}>
       {children}
@@ -108,7 +99,7 @@ mock.module("next/link", () => ({
 }));
 
 // Mock blog components
-mock.module("@/components/blog/BlogCard", () => ({
+vi.mock("@/components/blog/BlogCard", () => ({
   BlogCard: ({ post }: { post: BlogPost }) => (
     <div data-testid="blog-card" data-post-id={post._id}>
       <h3>{post.title}</h3>
@@ -119,11 +110,11 @@ mock.module("@/components/blog/BlogCard", () => ({
   ),
 }));
 
-mock.module("@/components/blog/BlogSidebar", () => ({
+vi.mock("@/components/blog/BlogSidebar", () => ({
   BlogSidebar: () => <aside data-testid="blog-sidebar">Sidebar</aside>,
 }));
 
-mock.module("@/components/blog/BlogSearch", () => ({
+vi.mock("@/components/blog/BlogSearch", () => ({
   BlogSearch: ({ onSearch }: { onSearch?: (query: string) => void }) => (
     <div data-testid="blog-search">
       <input
@@ -135,13 +126,13 @@ mock.module("@/components/blog/BlogSearch", () => ({
   ),
 }));
 
-mock.module("@/components/blog/BlogContent", () => ({
+vi.mock("@/components/blog/BlogContent", () => ({
   BlogContent: ({ content }: { content: string }) => (
     <div data-testid="blog-content">{content}</div>
   ),
 }));
 
-mock.module("@/components/blog/BlogHeader", () => ({
+vi.mock("@/components/blog/BlogHeader", () => ({
   BlogHeader: ({ post }: { post: BlogPost }) => (
     <header data-testid="blog-header">
       <h1>{post.title}</h1>
@@ -154,13 +145,13 @@ mock.module("@/components/blog/BlogHeader", () => ({
 const mockBlogPostsData: BlogPost[] = [];
 const mockBlogCategoriesData: BlogCategory[] = [];
 
-mock.module("@/data/blog-mock", () => ({
+vi.mock("@/data/blog-mock", () => ({
   mockBlogPosts: mockBlogPostsData,
   mockBlogCategories: mockBlogCategoriesData,
 }));
 
 // Mock admin blog components
-mock.module("@/components/admin/blog/BlogPostEditor", () => ({
+vi.mock("@/components/admin/blog/BlogPostEditor", () => ({
   BlogPostEditor: ({
     initialContent,
     onChange,
@@ -178,7 +169,7 @@ mock.module("@/components/admin/blog/BlogPostEditor", () => ({
   ),
 }));
 
-mock.module("@/components/admin/blog/BlogPostMetadata", () => ({
+vi.mock("@/components/admin/blog/BlogPostMetadata", () => ({
   BlogPostMetadata: ({
     post,
     onChange,
@@ -216,7 +207,7 @@ mock.module("@/components/admin/blog/BlogPostMetadata", () => ({
   ),
 }));
 
-mock.module("@/components/admin/blog/BlogPostList", () => ({
+vi.mock("@/components/admin/blog/BlogPostList", () => ({
   BlogPostList: ({
     posts,
     onEdit,
@@ -231,15 +222,19 @@ mock.module("@/components/admin/blog/BlogPostList", () => ({
         <div key={post._id} data-testid={`post-item-${post._id}`}>
           <span>{post.title}</span>
           <span>{post.status}</span>
-          <button onClick={() => onEdit?.(post)}>Edit</button>
-          <button onClick={() => onDelete?.(post)}>Delete</button>
+          <button type="button" onClick={() => onEdit?.(post)}>
+            Edit
+          </button>
+          <button type="button" onClick={() => onDelete?.(post)}>
+            Delete
+          </button>
         </div>
       ))}
     </div>
   ),
 }));
 
-mock.module("@/components/admin/blog/CategoryManager", () => ({
+vi.mock("@/components/admin/blog/CategoryManager", () => ({
   CategoryManager: ({
     categories,
     onCreate,
@@ -253,7 +248,7 @@ mock.module("@/components/admin/blog/CategoryManager", () => ({
         placeholder="New category name"
         data-field="category-name"
       />
-      <button onClick={() => onCreate?.("Test Category")}>
+      <button type="button" onClick={() => onCreate?.("Test Category")}>
         Create Category
       </button>
       <div>
@@ -268,7 +263,7 @@ mock.module("@/components/admin/blog/CategoryManager", () => ({
 }));
 
 // Mock UI components
-mock.module("@/components/ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({ children, onClick, disabled, type = "button" }: any) => (
     <button type={type} onClick={onClick} disabled={disabled}>
       {children}
@@ -276,8 +271,10 @@ mock.module("@/components/ui/button", () => ({
   ),
 }));
 
-mock.module("@/components/ui/select", () => ({
+vi.mock("@/components/ui/select", () => ({
   Select: ({ children, onValueChange }: any) => (
+    // biome-ignore lint/a11y/noStaticElementInteractions: Test mock doesn't need full a11y
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Test mock doesn't need keyboard events
     <div data-component="select" onClick={() => onValueChange?.("technology")}>
       {children}
     </div>
@@ -290,7 +287,7 @@ mock.module("@/components/ui/select", () => ({
   ),
 }));
 
-mock.module("@/components/ui/card", () => ({
+vi.mock("@/components/ui/card", () => ({
   Card: ({ children }: any) => <div data-component="card">{children}</div>,
   CardHeader: ({ children }: any) => <div>{children}</div>,
   CardTitle: ({ children }: any) => <h2>{children}</h2>,
@@ -298,7 +295,7 @@ mock.module("@/components/ui/card", () => ({
   CardContent: ({ children }: any) => <div>{children}</div>,
 }));
 
-mock.module("@/components/ui/input", () => ({
+vi.mock("@/components/ui/input", () => ({
   Input: ({ type = "text", placeholder, value, onChange, ...props }: any) => (
     <input
       type={type}
@@ -310,7 +307,7 @@ mock.module("@/components/ui/input", () => ({
   ),
 }));
 
-mock.module("@/components/ui/textarea", () => ({
+vi.mock("@/components/ui/textarea", () => ({
   Textarea: ({ placeholder, value, onChange, ...props }: any) => (
     <textarea
       placeholder={placeholder}
@@ -322,7 +319,7 @@ mock.module("@/components/ui/textarea", () => ({
 }));
 
 // Mock Convex API
-mock.module("../../../convex/_generated/api", () => ({
+vi.mock("../../../convex/_generated/api", () => ({
   api: {
     blog: {
       listPosts: "listPosts",
@@ -388,16 +385,16 @@ const mockCategories: BlogCategory[] = [
 describe("T036: Blog Workflows Integration Tests", () => {
   beforeEach(() => {
     // Reset all mocks before each test
-    mock.restore();
+
     global.fetch = originalFetch;
     mockRouterPush.mockClear();
     mockRouterReplace.mockClear();
     mockRouterRefresh.mockClear();
 
     // Default mock implementations
-    mockUseQuery.mockReturnValue(undefined);
-    mockUseMutation.mockReturnValue(mock(() => Promise.resolve()));
-    mockUseAction.mockReturnValue(mock(() => Promise.resolve()));
+    vi.mocked(useQuery).mockReturnValue(undefined);
+    vi.mocked(useMutation).mockReturnValue(vi.fn(() => Promise.resolve()));
+    vi.mocked(useAction).mockReturnValue(vi.fn(() => Promise.resolve()));
   });
 
   afterEach(() => {
@@ -434,7 +431,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
 
       // Step 3: Verify post would be accessible on public page
       // In a real scenario, the post would be queried by slug and displayed
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "getPostBySlug") {
           return createdPost;
         }
@@ -442,7 +439,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       });
 
       // Verify the query would return our published post
-      const queriedPost = mockUseQuery("getPostBySlug");
+      const queriedPost = vi.mocked(useQuery)("getPostBySlug");
       expect(queriedPost).toBe(createdPost);
       expect(queriedPost.status).toBe("published");
       expect(queriedPost.title).toBe("New Blog Post");
@@ -475,7 +472,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       expect(updatedPost.updatedAt).toBeGreaterThan(existingPost.updatedAt);
 
       // Verify changes would persist in public view
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "getPostBySlug") {
           return updatedPost;
         }
@@ -483,7 +480,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       });
 
       // Verify the query returns the updated post
-      const queriedPost = mockUseQuery("getPostBySlug");
+      const queriedPost = vi.mocked(useQuery)("getPostBySlug");
       expect(queriedPost).toBe(updatedPost);
       expect(queriedPost.title).toBe("Updated Title");
       expect(queriedPost.content).toContain("Updated content");
@@ -509,7 +506,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       expect(archivedPost.status).toBe("archived");
 
       // Verify archived posts are not visible on public blog
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "listPosts") {
           // Only return published posts (archived posts excluded)
           return {
@@ -570,7 +567,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       ).toBe(true);
 
       // Step 3: Verify category page would display assigned posts
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "listPosts") {
           return {
             posts: categoryPosts,
@@ -585,7 +582,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       });
 
       // Verify the query returns category posts
-      const queriedPosts = mockUseQuery("listPosts");
+      const queriedPosts = vi.mocked(useQuery)("listPosts");
       expect(queriedPosts.posts.length).toBe(2);
       expect(queriedPosts.posts[0].title).toBe("Category Post 1");
       expect(queriedPosts.posts[1].title).toBe("Category Post 2");
@@ -636,7 +633,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       expect(searchResults[1].title).toContain("React");
 
       // Verify results display correctly
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "listPosts" || queryName === "searchPosts") {
           return {
             posts: searchResults,
@@ -695,7 +692,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       ).toBe(true);
 
       // Verify filtered results display correctly
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "listPosts") {
           return {
             posts: filteredPosts,
@@ -747,7 +744,7 @@ describe("T036: Blog Workflows Integration Tests", () => {
       expect(page2Posts[0].title).toBe("Blog Post 21");
 
       // Verify page 1 displays correctly
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "listPosts") {
           return {
             posts: page1Posts,

@@ -1,11 +1,11 @@
-import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import * as React from "react";
+import { describe, expect, it, vi } from "vitest";
 import { Navigation } from "./Navigation";
 
 // Mock next/link
-mock.module("next/link", () => ({
+vi.mock("next/link", () => ({
   default: ({
     children,
     href,
@@ -22,12 +22,12 @@ mock.module("next/link", () => ({
 
 // Mock next/navigation
 let mockPathname = "/";
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
 }));
 
 // Mock Button component
-mock.module("@/components/ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({
     children,
     asChild,
@@ -52,14 +52,14 @@ mock.module("@/components/ui/button", () => ({
 }));
 
 // Mock lucide-react icons
-mock.module("lucide-react", () => ({
+vi.mock("lucide-react", () => ({
   Menu: () => <div data-testid="menu-icon">Menu</div>,
   Terminal: () => <div data-testid="terminal-icon">Terminal</div>,
   X: () => <div data-testid="x-icon">X</div>,
 }));
 
 // Mock ThemeToggle component
-mock.module("@/components/theme/ThemeToggle", () => ({
+vi.mock("@/components/theme/ThemeToggle", () => ({
   ThemeToggle: () => (
     <button type="button" data-testid="theme-toggle">
       Theme Toggle

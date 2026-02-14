@@ -11,9 +11,9 @@
  * Run with: INTEGRATION_TEST=true bun test src/app/api/fit-assessment/route.integration.test.ts
  */
 
-import { beforeAll, describe, expect, it } from "bun:test";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { beforeAll, describe, expect, it } from "vitest";
 import { POST } from "./route";
 
 // Load .env.local for tests
@@ -175,10 +175,14 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
       console.log("Job: Senior Full Stack Engineer - TypeScript/React");
       console.log(`Fit Level: ${result.fitLevel}`);
       console.log("\nReasoning:");
-      result.reasoning.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+      result.reasoning.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
       console.log("\nRecommendations:");
-      result.recommendations.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
-      console.log("\n" + "=".repeat(80) + "\n");
+      result.recommendations.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
+      console.log(`\n${"=".repeat(80)}\n`);
 
       // Validate response structure
       expect(result.fitLevel).toBe("strong");
@@ -204,10 +208,14 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
       console.log("Job: Senior Python Data Engineer");
       console.log(`Fit Level: ${result.fitLevel}`);
       console.log("\nReasoning:");
-      result.reasoning.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+      result.reasoning.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
       console.log("\nRecommendations:");
-      result.recommendations.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
-      console.log("\n" + "=".repeat(80) + "\n");
+      result.recommendations.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
+      console.log(`\n${"=".repeat(80)}\n`);
 
       // Note: Changed expectation from "moderate" to "weak"
       // The AI is correctly assessing this as weak because:
@@ -232,10 +240,14 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
       console.log("Job: Senior iOS Developer");
       console.log(`Fit Level: ${result.fitLevel}`);
       console.log("\nReasoning:");
-      result.reasoning.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+      result.reasoning.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
       console.log("\nRecommendations:");
-      result.recommendations.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
-      console.log("\n" + "=".repeat(80) + "\n");
+      result.recommendations.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
+      console.log(`\n${"=".repeat(80)}\n`);
 
       expect(result.fitLevel).toBe("weak");
       expect(result.reasoning.length).toBeGreaterThanOrEqual(2);
@@ -253,10 +265,14 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
       console.log("Job: Junior Frontend Developer");
       console.log(`Fit Level: ${result.fitLevel}`);
       console.log("\nReasoning:");
-      result.reasoning.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+      result.reasoning.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
       console.log("\nRecommendations:");
-      result.recommendations.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
-      console.log("\n" + "=".repeat(80) + "\n");
+      result.recommendations.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
+      console.log(`\n${"=".repeat(80)}\n`);
 
       // Should be weak or moderate due to experience level mismatch
       expect(["weak", "moderate"]).toContain(result.fitLevel);
@@ -272,10 +288,14 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
       console.log("Job: Rust Systems Programmer");
       console.log(`Fit Level: ${result.fitLevel}`);
       console.log("\nReasoning:");
-      result.reasoning.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+      result.reasoning.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
       console.log("\nRecommendations:");
-      result.recommendations.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
-      console.log("\n" + "=".repeat(80) + "\n");
+      result.recommendations.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
+      console.log(`\n${"=".repeat(80)}\n`);
 
       // Should be weak due to lack of Rust experience
       expect(result.fitLevel).toBe("weak");
@@ -291,7 +311,9 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
       const result = await assessJobFit(JOB_DESCRIPTIONS.strongFit);
 
       console.log("Checking reasoning specificity...");
-      result.reasoning.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+      result.reasoning.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
       console.log();
 
       // Reasoning should be specific
@@ -309,7 +331,9 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
       const result = await assessJobFit(JOB_DESCRIPTIONS.moderateFit);
 
       console.log("Checking recommendations quality...");
-      result.recommendations.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+      result.recommendations.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
       console.log();
 
       // Recommendations should be actionable and in first person
@@ -328,7 +352,9 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
 
       console.log("Checking honesty in weak fit assessment...");
       console.log(`Fit Level: ${result.fitLevel}`);
-      result.reasoning.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+      result.reasoning.forEach((r, i) => {
+        console.log(`  ${i + 1}. ${r}`);
+      });
       console.log();
 
       expect(result.fitLevel).toBe("weak");
@@ -378,7 +404,7 @@ describeIntegration("Fit Assessment API Integration Tests", () => {
 
 // Summary at the end
 if (INTEGRATION_ENABLED) {
-  console.log("\n" + "=".repeat(80));
+  console.log(`\n${"=".repeat(80)}`);
   console.log("FIT ASSESSMENT INTEGRATION TEST SUMMARY");
   console.log("=".repeat(80));
   console.log(

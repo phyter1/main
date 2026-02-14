@@ -1,16 +1,16 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Set up test environment with API key before any imports
 process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-for-testing";
 process.env.OPENAI_API_KEY = "sk-test-key-for-testing";
 
 // Mock the AI SDK module BEFORE any imports
-mock.module("ai", () => ({
+vi.mock("ai", () => ({
   // Export streamText for compatibility with other tests
-  streamText: mock(() => ({
+  streamText: vi.fn(() => ({
     toTextStreamResponse: () => new Response("mock", { status: 200 }),
   })),
-  generateObject: mock(async ({ prompt }: { prompt: string }) => {
+  generateObject: vi.fn(async ({ prompt }: { prompt: string }) => {
     // Parse the job description to determine fit level
     const jobDescLower = prompt.toLowerCase();
 
@@ -76,33 +76,32 @@ mock.module("ai", () => ({
 }));
 
 // Mock the prompt versioning system
-const mockGetActiveVersion = mock(() =>
-  Promise.resolve({
-    _id: "version-456" as any,
-    id: "version-456",
-    agentType: "fit-assessment" as const,
-    prompt:
-      "You are a job fit assessment AI. Analyze job descriptions and provide honest assessments.",
-    description: "Default test prompt",
-    author: "test",
-    tokenCount: 100,
-    _creationTime: Date.now(),
-    createdAt: new Date().toISOString(),
-    isActive: true,
-  }),
-);
-
-mock.module("@/lib/prompt-versioning", () => ({
-  getActiveVersion: mockGetActiveVersion,
+vi.mock("@/lib/prompt-versioning", () => ({
+  getActiveVersion: vi.fn(() =>
+    Promise.resolve({
+      _id: "version-456" as any,
+      id: "version-456",
+      agentType: "fit-assessment" as const,
+      prompt:
+        "You are a job fit assessment AI. Analyze job descriptions and provide honest assessments.",
+      description: "Default test prompt",
+      author: "test",
+      tokenCount: 100,
+      _creationTime: Date.now(),
+      createdAt: new Date().toISOString(),
+      isActive: true,
+    }),
+  ),
 }));
 
+import { getActiveVersion } from "@/lib/prompt-versioning";
 import { POST } from "./route";
 
 describe("T006: Job Fit Assessment API Route", () => {
   beforeEach(() => {
     // Reset mock state before each test
-    mockGetActiveVersion.mockClear();
-    mockGetActiveVersion.mockReturnValue(
+    vi.mocked(getActiveVersion).mockClear();
+    vi.mocked(getActiveVersion).mockReturnValue(
       Promise.resolve({
         _id: "version-456" as any,
         id: "version-456",
@@ -133,7 +132,9 @@ describe("T006: Job Fit Assessment API Route", () => {
         isActive: true,
       };
 
-      mockGetActiveVersion.mockReturnValue(Promise.resolve(mockActiveVersion));
+      vi.mocked(getActiveVersion).mockReturnValue(
+        Promise.resolve(mockActiveVersion),
+      );
 
       const jobDescription = `
         Senior TypeScript Developer
@@ -163,12 +164,14 @@ describe("T006: Job Fit Assessment API Route", () => {
       await POST(request);
 
       // Verify getActiveVersion was called
-      expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
+      expect(vi.mocked(getActiveVersion)).toHaveBeenCalledWith(
+        "fit-assessment",
+      );
     });
 
     it("should return error when no active version exists", async () => {
       // Mock no active version
-      mockGetActiveVersion.mockReturnValue(Promise.resolve(null));
+      vi.mocked(getActiveVersion).mockReturnValue(Promise.resolve(null));
 
       const jobDescription = `
         Senior TypeScript Developer
@@ -204,12 +207,14 @@ describe("T006: Job Fit Assessment API Route", () => {
       expect(data.error).toBeDefined();
       expect(data.error).toContain("Failed to process");
 
-      expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
+      expect(vi.mocked(getActiveVersion)).toHaveBeenCalledWith(
+        "fit-assessment",
+      );
     });
 
     it("should return error when version loading fails", async () => {
       // Mock error during version loading
-      mockGetActiveVersion.mockImplementation(() => {
+      vi.mocked(getActiveVersion).mockImplementation(() => {
         throw new Error("Failed to load prompt version");
       });
 
@@ -246,7 +251,9 @@ describe("T006: Job Fit Assessment API Route", () => {
       const data = await response.json();
       expect(data.error).toBeDefined();
 
-      expect(mockGetActiveVersion).toHaveBeenCalledWith("fit-assessment");
+      expect(vi.mocked(getActiveVersion)).toHaveBeenCalledWith(
+        "fit-assessment",
+      );
     });
   });
 

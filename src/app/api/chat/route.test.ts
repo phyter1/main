@@ -3,12 +3,12 @@
  * Validates POST endpoint with streaming, resume context, and rate limiting
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Message } from "ai";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the AI SDK
 const mockStreamTextResult = {
-  toTextStreamResponse: mock(() => {
+  toTextStreamResponse: vi.fn(() => {
     return new Response("mock stream response", {
       status: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
@@ -16,17 +16,17 @@ const mockStreamTextResult = {
   }),
 };
 
-const mockStreamText = mock(() => mockStreamTextResult);
+const mockStreamText = vi.fn(() => mockStreamTextResult);
 
 // Mock the AI SDK - include generateObject for compatibility with other tests
-mock.module("ai", () => ({
+vi.mock("ai", () => ({
   streamText: mockStreamText,
-  generateObject: mock(() => Promise.resolve({ object: {} })),
+  generateObject: vi.fn(() => Promise.resolve({ object: {} })),
 }));
 
 // Mock the AI config
-mock.module("@/lib/ai-config", () => ({
-  createOpenAIClient: mock(() => "mock-openai-client"),
+vi.mock("@/lib/ai-config", () => ({
+  createOpenAIClient: vi.fn(() => "mock-openai-client"),
   AI_RATE_LIMITS: {
     MAX_REQUESTS_PER_MINUTE: 10,
     MAX_TOKENS_PER_REQUEST: 4096,
@@ -53,17 +53,17 @@ const mockResume = {
   principles: [],
 };
 
-const mockFormatResumeAsLLMContext = mock(() => "# Test User\n\nTest context");
+const mockFormatResumeAsLLMContext = vi.fn(() => "# Test User\n\nTest context");
 
-mock.module("@/data/resume", () => ({
+vi.mock("@/data/resume", () => ({
   resume: mockResume,
   formatResumeAsLLMContext: mockFormatResumeAsLLMContext,
 }));
 
 // Mock the prompt-versioning module
-const mockGetActiveVersion = mock(() => Promise.resolve(null));
+const mockGetActiveVersion = vi.fn(() => Promise.resolve(null));
 
-mock.module("@/lib/prompt-versioning", () => ({
+vi.mock("@/lib/prompt-versioning", () => ({
   getActiveVersion: mockGetActiveVersion,
 }));
 
