@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeProvider } from "./ThemeProvider";
 
@@ -15,15 +15,15 @@ describe("ThemeProvider Component - T001", () => {
     const mockMediaQueryList = {
       matches: false,
       media: "(prefers-color-scheme: dark)",
-      addEventListener: mock(),
-      removeEventListener: mock(),
-      addListener: mock(),
-      removeListener: mock(),
-      dispatchEvent: mock(() => true),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
       onchange: null,
     };
 
-    mockMatchMedia = mock(() => mockMediaQueryList);
+    mockMatchMedia = vi.fn(() => mockMediaQueryList);
     window.matchMedia = mockMatchMedia as unknown as typeof matchMedia;
   });
 
@@ -249,15 +249,15 @@ describe("ThemeProvider Component - T001", () => {
       const mockMediaQueryList = {
         matches: true, // Dark mode
         media: "(prefers-color-scheme: dark)",
-        addEventListener: mock(),
-        removeEventListener: mock(),
-        addListener: mock(),
-        removeListener: mock(),
-        dispatchEvent: mock(() => true),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
         onchange: null,
       };
 
-      mockMatchMedia = mock(() => mockMediaQueryList);
+      mockMatchMedia = vi.fn(() => mockMediaQueryList);
       global.matchMedia = mockMatchMedia as unknown as typeof matchMedia;
 
       const TestComponent = () => {
@@ -279,15 +279,15 @@ describe("ThemeProvider Component - T001", () => {
       const mockMediaQueryList = {
         matches: false, // Light mode
         media: "(prefers-color-scheme: dark)",
-        addEventListener: mock(),
-        removeEventListener: mock(),
-        addListener: mock(),
-        removeListener: mock(),
-        dispatchEvent: mock(() => true),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
         onchange: null,
       };
 
-      mockMatchMedia = mock(() => mockMediaQueryList);
+      mockMatchMedia = vi.fn(() => mockMediaQueryList);
       global.matchMedia = mockMatchMedia as unknown as typeof matchMedia;
 
       const TestComponent = () => {
@@ -310,17 +310,17 @@ describe("ThemeProvider Component - T001", () => {
       const mockMediaQueryList = {
         matches: false,
         media: "(prefers-color-scheme: dark)",
-        addEventListener: mock((_event: string, listener: () => void) => {
+        addEventListener: vi.fn((_event: string, listener: () => void) => {
           listeners.push(listener as (e: MediaQueryListEvent) => void);
         }),
-        removeEventListener: mock(),
-        addListener: mock(),
-        removeListener: mock(),
-        dispatchEvent: mock(() => true),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
         onchange: null,
       };
 
-      mockMatchMedia = mock(() => mockMediaQueryList);
+      mockMatchMedia = vi.fn(() => mockMediaQueryList);
       global.matchMedia = mockMatchMedia as unknown as typeof matchMedia;
 
       const TestComponent = () => {
@@ -407,15 +407,15 @@ describe("ThemeProvider Component - T001", () => {
       const mockMediaQueryList = {
         matches: true, // Dark mode
         media: "(prefers-color-scheme: dark)",
-        addEventListener: mock(),
-        removeEventListener: mock(),
-        addListener: mock(),
-        removeListener: mock(),
-        dispatchEvent: mock(() => true),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
         onchange: null,
       };
 
-      mockMatchMedia = mock(() => mockMediaQueryList);
+      mockMatchMedia = vi.fn(() => mockMediaQueryList);
       global.matchMedia = mockMatchMedia as unknown as typeof matchMedia;
 
       render(
@@ -533,15 +533,15 @@ describe("ThemeProvider Component - T001", () => {
       const mockMediaQueryList = {
         matches: true, // System prefers dark
         media: "(prefers-color-scheme: dark)",
-        addEventListener: mock(),
-        removeEventListener: mock(),
-        addListener: mock(),
-        removeListener: mock(),
-        dispatchEvent: mock(() => true),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
         onchange: null,
       };
 
-      mockMatchMedia = mock(() => mockMediaQueryList);
+      mockMatchMedia = vi.fn(() => mockMediaQueryList);
       global.matchMedia = mockMatchMedia as unknown as typeof matchMedia;
 
       const TestComponent = () => {
@@ -576,7 +576,7 @@ describe("ThemeProvider Component - T001", () => {
 
       // Suppress console.error for this test
       const originalError = console.error;
-      console.error = mock(() => {});
+      console.error = vi.fn(() => {});
 
       expect(() => {
         render(<TestComponent />);
