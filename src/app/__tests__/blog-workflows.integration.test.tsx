@@ -929,11 +929,12 @@ describe("T036: Blog Workflows Integration Tests", () => {
     });
 
     it("filters rejected suggestions from public view", async () => {
-      // Create post with rejected AI suggestions
+      // Create post with rejected AI suggestions and no manual tags
       const post = createMockPost({
         _id: "reject-post-1",
         title: "Post",
         excerpt: "Manual excerpt",
+        tags: [], // No manual tags - only AI suggestion which was rejected
         status: "published",
       }) as any;
 

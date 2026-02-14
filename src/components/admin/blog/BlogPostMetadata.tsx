@@ -90,6 +90,7 @@ export function BlogPostMetadata({
   // Generate unique IDs for form fields to avoid conflicts
   const slugId = useId();
   const categoryId = useId();
+  const excerptId = useId();
   const newCategoryNameId = useId();
   const newCategoryDescId = useId();
   const tagsId = useId();
@@ -394,6 +395,27 @@ export function BlogPostMetadata({
         ...metadata.seoMetadata,
         [field]: value,
       },
+      aiSuggestions: updatedSuggestions,
+    });
+  };
+
+  // Update excerpt
+  const handleExcerptChange = (value: string) => {
+    // Clear AI suggestion for excerpt when manually edited (T011)
+    const updatedSuggestions = metadata.aiSuggestions
+      ? { ...metadata.aiSuggestions }
+      : undefined;
+
+    if (updatedSuggestions?.excerpt) {
+      updatedSuggestions.excerpt = {
+        ...updatedSuggestions.excerpt,
+        state: "rejected",
+      };
+    }
+
+    onChange({
+      ...metadata,
+      excerpt: value,
       aiSuggestions: updatedSuggestions,
     });
   };
@@ -712,6 +734,43 @@ export function BlogPostMetadata({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Excerpt Field */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Label htmlFor={excerptId}>Excerpt</Label>
+          {hasPendingSuggestion("excerpt") && (
+            <AISuggestionBadge onClick={() => setActiveOverlay("excerpt")} />
+          )}
+        </div>
+        <div className="relative">
+          <Textarea
+            id={excerptId}
+            value={metadata.excerpt || ""}
+            onChange={(e) => handleExcerptChange(e.target.value)}
+            placeholder="Brief summary of the post..."
+            rows={3}
+            maxLength={200}
+          />
+          <AISuggestionOverlay
+            isOpen={activeOverlay === "excerpt"}
+            onApprove={() => handleApproveSuggestion("excerpt")}
+            onReject={() => handleRejectSuggestion("excerpt")}
+            onClose={() => setActiveOverlay(null)}
+          />
+        </div>
+        <p className="text-muted-foreground text-xs">
+          {metadata.excerpt?.length || 0} / 200 characters
+        </p>
+        {/* T014: Show NewSuggestionChip for approved fields with new suggestions */}
+        {hasApprovedSuggestion("excerpt") && getNewSuggestion("excerpt") && (
+          <NewSuggestionChip
+            value={getNewSuggestion("excerpt") as string}
+            onReplace={(value) => handleReplaceNewSuggestion("excerpt", value)}
+            onDismiss={() => handleDismissNewSuggestion("excerpt")}
+          />
+        )}
+      </div>
 
       {/* Tags Input with Autocomplete */}
       <div className="space-y-2">
