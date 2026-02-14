@@ -3,40 +3,38 @@
  * Tests for the prompt history viewer page
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PromptHistoryPage from "./page";
 
 // Polyfill for pointer capture (not supported in happy-dom)
 if (typeof Element !== "undefined") {
   if (!Element.prototype.hasPointerCapture) {
-    Element.prototype.hasPointerCapture = function () {
-      return false;
-    };
+    Element.prototype.hasPointerCapture = () => false;
   }
   if (!Element.prototype.setPointerCapture) {
-    Element.prototype.setPointerCapture = function () {};
+    Element.prototype.setPointerCapture = () => {};
   }
   if (!Element.prototype.releasePointerCapture) {
-    Element.prototype.releasePointerCapture = function () {};
+    Element.prototype.releasePointerCapture = () => {};
   }
 }
 
 // Mock fetch globally
-const mockFetch = mock();
+const mockFetch = vi.fn();
 globalThis.fetch = mockFetch as unknown as typeof fetch;
 
 // Mock next/navigation
-const mockPush = mock();
-mock.module("next/navigation", () => ({
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
 }));
 
 // Mock admin components
-mock.module("@/components/admin", () => ({
+vi.mock("@/components/admin", () => ({
   PromptDiff: ({
     original,
     proposed,
@@ -112,7 +110,6 @@ describe("PromptHistoryPage", () => {
 
   afterEach(() => {
     cleanup();
-    mock.restore();
   });
 
   describe("Initial Rendering", () => {
