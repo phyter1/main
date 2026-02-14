@@ -3,27 +3,40 @@
  * Tests POST /api/admin/blog/create endpoint
  */
 
-import { beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { verifySessionToken } from "@/lib/auth";
 
-// Import mocks from preload file
-// Run with: bun test --preload ./src/app/api/admin/blog/__test-setup__.ts
-import { mockFetchMutation, mockVerifySessionToken } from "../__test-setup__";
+// Mock auth module
+vi.mock("@/lib/auth", () => ({
+  verifySessionToken: vi.fn(() => Promise.resolve(true)),
+}));
+
+// Mock Convex fetchMutation
+vi.mock("convex/nextjs", () => ({
+  fetchMutation: vi.fn(() => Promise.resolve("test-post-id-123")),
+}));
+
+// Mock Convex API
+vi.mock("../../../../../../convex/_generated/api", () => ({
+  api: {
+    blog: {
+      createPost: "blog:createPost",
+    },
+  },
+}));
+
+import { fetchMutation } from "convex/nextjs";
+// Import route after mocks are set up
+import { POST } from "./route";
 
 describe("POST /api/admin/blog/create", () => {
   beforeEach(() => {
-    mockVerifySessionToken.mockReset();
-    mockVerifySessionToken.mockImplementation(() => true);
-    mockFetchMutation.mockReset();
-    mockFetchMutation.mockImplementation(() => "test-post-id-123");
+    // Set default: auth succeeds
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(true));
+    vi.mocked(fetchMutation).mockResolvedValue("test-post-id-123");
   });
 
   it("should create a draft post with valid data and authentication", async () => {
-    mockVerifySessionToken.mockReturnValue(true);
-    mockFetchMutation.mockReturnValue("test-post-id-123");
-
-    // Import POST dynamically after mocks are set up
-    const { POST } = await import("./route");
-
     const validPostData = {
       title: "Test Blog Post",
       slug: "test-blog-post",
@@ -41,33 +54,43 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(validPostData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
-    const response = await POST(request as any);
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
     expect(data.postId).toBe("test-post-id-123");
     expect(data.message).toBe("Draft post created successfully");
-    expect(mockFetchMutation).toHaveBeenCalledTimes(1);
+    expect(fetchMutation).toHaveBeenCalledTimes(1);
   });
 
   it("should return 401 when session is invalid", async () => {
-    mockVerifySessionToken.mockReturnValue(false);
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(false)); // Override for this test
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=invalid-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: "Test" }),
+    }) as any;
+
+    // Mock cookies property with invalid token
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "invalid-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -80,10 +103,16 @@ describe("POST /api/admin/blog/create", () => {
   it("should return 401 when session cookie is missing", async () => {
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: "Test" }),
+    }) as any;
+
+    // Mock cookies property with no session token
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => undefined,
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -98,9 +127,16 @@ describe("POST /api/admin/blog/create", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
       },
       body: "invalid json {",
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -121,11 +157,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(invalidData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -148,11 +189,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(invalidData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -174,11 +220,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(invalidData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -189,9 +240,9 @@ describe("POST /api/admin/blog/create", () => {
   });
 
   it("should return 409 when slug is already in use", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error('Slug "test-slug" is already in use');
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(
+      new Error('Slug "test-slug" is already in use'),
+    );
 
     const validData = {
       title: "Test Post",
@@ -204,11 +255,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(validData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -219,9 +275,9 @@ describe("POST /api/admin/blog/create", () => {
   });
 
   it("should return 500 when Convex mutation fails", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Database connection failed");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(
+      new Error("Database connection failed"),
+    );
 
     const validData = {
       title: "Test Post",
@@ -234,11 +290,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(validData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -270,11 +331,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dataWithOptionals),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -297,11 +363,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(invalidData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -326,11 +397,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(invalidData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
@@ -352,11 +428,16 @@ describe("POST /api/admin/blog/create", () => {
 
     const request = new Request("http://localhost:3000/api/admin/blog/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: "session=valid-session-token",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(minimalData),
+    }) as any;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
     });
 
     const response = await POST(request as any);
