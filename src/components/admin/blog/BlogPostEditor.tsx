@@ -10,17 +10,26 @@
  * - Image upload via drag-drop or button
  */
 
-import { ImagePlus, Loader2 } from "lucide-react";
+import { ExternalLink, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import Image from "next/image";
 import {
   type ChangeEvent,
   type DragEvent,
   useId,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { BlogContent } from "@/components/blog/BlogContent";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -43,8 +52,25 @@ export function BlogPostEditor({
   const [showPreview, setShowPreview] = useState(true);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [deletingImageUrl, setDeletingImageUrl] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * Extract all Vercel Blob Storage image URLs from markdown content
+   */
+  const uploadedImages = useMemo(() => {
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    const matches = [...content.matchAll(imageRegex)];
+
+    // Filter for Vercel Blob Storage URLs only
+    return matches
+      .map((match) => ({
+        alt: match[1],
+        url: match[2],
+      }))
+      .filter((img) => img.url.includes("vercel-storage.com"));
+  }, [content]);
 
   // Character and word count
   const charCount = content.length;
@@ -154,6 +180,52 @@ export function BlogPostEditor({
     // Reset input so same file can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  /**
+   * Delete image from Vercel Blob Storage and remove from markdown
+   */
+  const handleDeleteImage = async (imageUrl: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this image? This will remove it from Vercel Blob Storage and your post content.",
+      )
+    ) {
+      return;
+    }
+
+    setDeletingImageUrl(imageUrl);
+    setUploadError(null);
+
+    try {
+      // Delete from Vercel Blob Storage
+      const response = await fetch("/api/admin/blog/delete-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: imageUrl }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete image");
+      }
+
+      // Remove from markdown content
+      const imageRegex = new RegExp(
+        `!\\[([^\\]]*)\\]\\(${imageUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)`,
+        "g",
+      );
+      const newContent = content.replace(imageRegex, "");
+
+      onContentChange(newContent);
+    } catch (error) {
+      console.error("Delete failed:", error);
+      setUploadError(
+        error instanceof Error ? error.message : "Failed to delete image",
+      );
+    } finally {
+      setDeletingImageUrl(null);
     }
   };
 
@@ -303,6 +375,71 @@ const example = 'Hello World';
             <code>- list</code> · <code>```code block```</code>
           </p>
         </div>
+      )}
+
+      {/* Uploaded Images Gallery */}
+      {uploadedImages.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Uploaded Images</CardTitle>
+            <CardDescription>
+              Images uploaded to Vercel Blob Storage for this post. Delete
+              unused images to free up space.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {uploadedImages.map((image) => (
+                <div
+                  key={image.url}
+                  className="relative group border rounded-lg p-2 bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <div className="aspect-video relative bg-background rounded overflow-hidden mb-2">
+                    <Image
+                      src={image.url}
+                      alt={image.alt || "Uploaded image"}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    {image.alt && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {image.alt}
+                      </p>
+                    )}
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleDeleteImage(image.url)}
+                        disabled={deletingImageUrl === image.url}
+                      >
+                        {deletingImageUrl === image.url ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                        <span className="ml-1 text-xs">Delete</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(image.url, "_blank")}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
