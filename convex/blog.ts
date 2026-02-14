@@ -232,6 +232,91 @@ export const getTags = query({
 });
 
 // ============================================================================
+// T010: AI CONTEXT QUERIES
+// ============================================================================
+
+/**
+ * Get all unique tag names from all blog posts
+ *
+ * Returns array of all unique tag names used across all posts.
+ * Used to provide context to AI for suggesting relevant tags.
+ */
+export const getAllTags = query({
+  args: {},
+  handler: async (ctx) => {
+    const posts = await ctx.db.query("blogPosts").collect();
+
+    // Collect all unique tags from all posts
+    const allTags = new Set<string>();
+    for (const post of posts) {
+      for (const tag of post.tags) {
+        allTags.add(tag);
+      }
+    }
+
+    // Convert to array and return
+    return Array.from(allTags);
+  },
+});
+
+/**
+ * Get all categories with IDs and names
+ *
+ * Returns array of all categories with their IDs and names.
+ * Used to provide context to AI for suggesting relevant categories.
+ */
+export const getAllCategories = query({
+  args: {},
+  handler: async (ctx) => {
+    const categories = await ctx.db.query("blogCategories").collect();
+
+    // Map to simple id/name objects
+    return categories.map((cat) => ({
+      id: cat._id,
+      name: cat.name,
+    }));
+  },
+});
+
+/**
+ * Get recent published posts for style analysis
+ *
+ * Returns the last N published posts ordered by publishedAt (most recent first).
+ * Used to provide context to AI for analyzing writing style and tone.
+ *
+ * @param limit - Number of recent posts to return (default: 5)
+ */
+export const getRecentPosts = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { limit = 5 } = args;
+
+    // Validate limit is positive
+    if (limit <= 0) {
+      throw new Error("Limit must be greater than 0");
+    }
+
+    // Get all published posts
+    const posts = await ctx.db
+      .query("blogPosts")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .collect();
+
+    // Sort by publishedAt descending (most recent first)
+    const sorted = posts.sort((a, b) => {
+      const aTime = a.publishedAt || 0;
+      const bTime = b.publishedAt || 0;
+      return bTime - aTime;
+    });
+
+    // Return only the requested number of posts
+    return sorted.slice(0, limit);
+  },
+});
+
+// ============================================================================
 // T007: MUTATION FUNCTIONS
 // ============================================================================
 
@@ -791,6 +876,347 @@ export const updatePostCounts = mutation({
     }
   },
 });
+
+// ============================================================================
+// T008: AI SUGGESTION MUTATIONS
+// ============================================================================
+
+/**
+ * Save AI suggestions to a blog post
+ *
+ * Saves AI-generated metadata suggestions to the post's aiSuggestions field.
+ * Updates lastAnalyzedContent and lastAnalyzedTitle for change detection.
+ * All suggestion fields are optional and can be partially updated.
+ *
+ * @param postId - Blog post ID
+ * @param suggestions - AI-generated suggestions object (partial)
+ * @param currentContent - Current post content (for change detection)
+ * @param currentTitle - Current post title (for change detection)
+ */
+export const saveSuggestions = mutation({
+  args: {
+    postId: v.id("blogPosts"),
+    suggestions: v.object({
+      excerpt: v.optional(
+        v.object({
+          value: v.string(),
+          state: v.union(
+            v.literal("pending"),
+            v.literal("approved"),
+            v.literal("rejected"),
+          ),
+        }),
+      ),
+      tags: v.optional(
+        v.object({
+          value: v.array(v.string()),
+          state: v.union(
+            v.literal("pending"),
+            v.literal("approved"),
+            v.literal("rejected"),
+          ),
+          rejectedTags: v.array(v.string()),
+        }),
+      ),
+      category: v.optional(
+        v.object({
+          value: v.string(),
+          state: v.union(
+            v.literal("pending"),
+            v.literal("approved"),
+            v.literal("rejected"),
+          ),
+        }),
+      ),
+      seoMetadata: v.optional(
+        v.object({
+          metaTitle: v.optional(
+            v.object({
+              value: v.string(),
+              state: v.union(
+                v.literal("pending"),
+                v.literal("approved"),
+                v.literal("rejected"),
+              ),
+            }),
+          ),
+          metaDescription: v.optional(
+            v.object({
+              value: v.string(),
+              state: v.union(
+                v.literal("pending"),
+                v.literal("approved"),
+                v.literal("rejected"),
+              ),
+            }),
+          ),
+          keywords: v.optional(
+            v.object({
+              value: v.array(v.string()),
+              state: v.union(
+                v.literal("pending"),
+                v.literal("approved"),
+                v.literal("rejected"),
+              ),
+            }),
+          ),
+        }),
+      ),
+      analysis: v.optional(
+        v.object({
+          tone: v.string(),
+          readability: v.string(),
+        }),
+      ),
+    }),
+    currentContent: v.string(),
+    currentTitle: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    // Merge with existing suggestions (if any)
+    const existingSuggestions = post.aiSuggestions || {};
+    const updatedSuggestions = {
+      ...existingSuggestions,
+      ...args.suggestions,
+    };
+
+    // If seoMetadata is being updated, merge nested fields
+    if (args.suggestions.seoMetadata) {
+      updatedSuggestions.seoMetadata = {
+        ...existingSuggestions.seoMetadata,
+        ...args.suggestions.seoMetadata,
+      };
+    }
+
+    await ctx.db.patch(args.postId, {
+      aiSuggestions: updatedSuggestions,
+      lastAnalyzedContent: args.currentContent,
+      lastAnalyzedTitle: args.currentTitle,
+      updatedAt: Date.now(),
+    });
+
+    return args.postId;
+  },
+});
+
+/**
+ * Approve an AI suggestion
+ *
+ * Changes the state of a specific suggestion field from any state to "approved".
+ * Supports both top-level fields (excerpt, tags, category) and nested fields
+ * (seoMetadata.metaTitle, seoMetadata.metaDescription, seoMetadata.keywords).
+ *
+ * @param postId - Blog post ID
+ * @param field - Field path (e.g., "excerpt" or "seoMetadata.metaTitle")
+ */
+export const approveSuggestion = mutation({
+  args: {
+    postId: v.id("blogPosts"),
+    field: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    if (!post.aiSuggestions) {
+      throw new Error("No AI suggestions found for this post");
+    }
+
+    const suggestions = { ...post.aiSuggestions };
+    const fieldPath = args.field.split(".");
+
+    // Handle nested fields (seoMetadata.metaTitle, etc.)
+    if (fieldPath.length === 2 && fieldPath[0] === "seoMetadata") {
+      const seoField = fieldPath[1] as
+        | "metaTitle"
+        | "metaDescription"
+        | "keywords";
+
+      if (!suggestions.seoMetadata || !suggestions.seoMetadata[seoField]) {
+        throw new Error(`No suggestion found for field: ${args.field}`);
+      }
+
+      suggestions.seoMetadata = {
+        ...suggestions.seoMetadata,
+        [seoField]: {
+          ...suggestions.seoMetadata[seoField],
+          state: "approved" as const,
+        },
+      };
+    } else {
+      // Handle top-level fields
+      const field = args.field as "excerpt" | "tags" | "category";
+
+      if (!suggestions[field]) {
+        throw new Error(`No suggestion found for field: ${args.field}`);
+      }
+
+      suggestions[field] = {
+        ...suggestions[field],
+        state: "approved" as const,
+      } as any;
+    }
+
+    await ctx.db.patch(args.postId, {
+      aiSuggestions: suggestions,
+      updatedAt: Date.now(),
+    });
+
+    return args.postId;
+  },
+});
+
+/**
+ * Reject an AI suggestion
+ *
+ * Changes the state of a specific suggestion field from any state to "rejected".
+ * For tags suggestions, adds the rejected tag values to the rejectedTags array
+ * to prevent them from being suggested again.
+ *
+ * @param postId - Blog post ID
+ * @param field - Field path (e.g., "excerpt" or "seoMetadata.metaTitle")
+ */
+export const rejectSuggestion = mutation({
+  args: {
+    postId: v.id("blogPosts"),
+    field: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    if (!post.aiSuggestions) {
+      throw new Error("No AI suggestions found for this post");
+    }
+
+    const suggestions = { ...post.aiSuggestions };
+    const fieldPath = args.field.split(".");
+
+    // Handle nested fields (seoMetadata.metaTitle, etc.)
+    if (fieldPath.length === 2 && fieldPath[0] === "seoMetadata") {
+      const seoField = fieldPath[1] as
+        | "metaTitle"
+        | "metaDescription"
+        | "keywords";
+
+      if (!suggestions.seoMetadata || !suggestions.seoMetadata[seoField]) {
+        throw new Error(`No suggestion found for field: ${args.field}`);
+      }
+
+      suggestions.seoMetadata = {
+        ...suggestions.seoMetadata,
+        [seoField]: {
+          ...suggestions.seoMetadata[seoField],
+          state: "rejected" as const,
+        },
+      };
+    } else {
+      // Handle top-level fields
+      const field = args.field as "excerpt" | "tags" | "category";
+
+      if (!suggestions[field]) {
+        throw new Error(`No suggestion found for field: ${args.field}`);
+      }
+
+      // Special handling for tags: add to rejectedTags
+      if (field === "tags" && suggestions.tags) {
+        const existingRejected = suggestions.tags.rejectedTags || [];
+        const newRejected = suggestions.tags.value || [];
+        const updatedRejectedTags = [...existingRejected, ...newRejected];
+
+        suggestions.tags = {
+          ...suggestions.tags,
+          state: "rejected" as const,
+          rejectedTags: updatedRejectedTags,
+        };
+      } else {
+        suggestions[field] = {
+          ...suggestions[field],
+          state: "rejected" as const,
+        } as any;
+      }
+    }
+
+    await ctx.db.patch(args.postId, {
+      aiSuggestions: suggestions,
+      updatedAt: Date.now(),
+    });
+
+    return args.postId;
+  },
+});
+
+/**
+ * Clear an AI suggestion
+ *
+ * Completely removes a suggestion field from the post's aiSuggestions object.
+ * Supports both top-level fields and nested seoMetadata fields.
+ *
+ * @param postId - Blog post ID
+ * @param field - Field path to clear (e.g., "excerpt" or "seoMetadata.metaTitle")
+ */
+export const clearSuggestion = mutation({
+  args: {
+    postId: v.id("blogPosts"),
+    field: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    if (!post.aiSuggestions) {
+      throw new Error("No AI suggestions found for this post");
+    }
+
+    const suggestions = { ...post.aiSuggestions };
+    const fieldPath = args.field.split(".");
+
+    // Handle nested fields (seoMetadata.metaTitle, etc.)
+    if (fieldPath.length === 2 && fieldPath[0] === "seoMetadata") {
+      const seoField = fieldPath[1] as
+        | "metaTitle"
+        | "metaDescription"
+        | "keywords";
+
+      if (suggestions.seoMetadata) {
+        const updatedSeoMetadata = { ...suggestions.seoMetadata };
+        delete updatedSeoMetadata[seoField];
+
+        suggestions.seoMetadata = updatedSeoMetadata;
+      }
+    } else {
+      // Handle top-level fields
+      const field = args.field as "excerpt" | "tags" | "category" | "analysis";
+      delete suggestions[field];
+    }
+
+    await ctx.db.patch(args.postId, {
+      aiSuggestions: suggestions,
+      updatedAt: Date.now(),
+    });
+
+    return args.postId;
+  },
+});
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 
 /**
  * Generate URL-safe slug from text
