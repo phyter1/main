@@ -18,18 +18,12 @@ interface BlogContentProps {
 
 /**
  * Component for rendering markdown images with error handling
+ * Uses Next.js Image for all images (works with unoptimized: true config)
  */
 function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
   const [hasError, setHasError] = useState(false);
 
-  if (!src) {
-    console.warn("MarkdownImage: No src provided");
-    return null;
-  }
-
-  // Check if URL is from an allowed domain for Next.js Image
-  const allowedDomains = ["vercel-storage.com", "unsplash.com"];
-  const isAllowedDomain = allowedDomains.some((domain) => src.includes(domain));
+  if (!src) return null;
 
   if (hasError) {
     return (
@@ -41,38 +35,16 @@ function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
     );
   }
 
-  // Use Next.js Image for allowed domains (optimization enabled)
-  if (isAllowedDomain) {
-    return (
-      <div className="relative w-full my-6">
-        <Image
-          src={src}
-          alt={alt || ""}
-          width={800}
-          height={600}
-          className="rounded-lg shadow-md w-full h-auto"
-          loading="lazy"
-          onError={() => {
-            console.error("Image failed to load:", src);
-            setHasError(true);
-          }}
-        />
-      </div>
-    );
-  }
-
-  // Fall back to regular img tag for external URLs
   return (
     <div className="relative w-full my-6">
-      <img
+      <Image
         src={src}
         alt={alt || ""}
+        width={800}
+        height={600}
         className="rounded-lg shadow-md w-full h-auto"
         loading="lazy"
-        onError={() => {
-          console.error("Image failed to load:", src);
-          setHasError(true);
-        }}
+        onError={() => setHasError(true)}
       />
     </div>
   );
