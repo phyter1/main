@@ -5,7 +5,11 @@ import { z } from "zod";
  * These can be reused across both client and server code
  */
 
-export const AgentTypeSchema = z.enum(["chat", "fit-assessment"]);
+export const AgentTypeSchema = z.enum([
+  "chat",
+  "fit-assessment",
+  "blog-metadata",
+]);
 export type AgentType = z.infer<typeof AgentTypeSchema>;
 
 export const TestCriterionSchema = z.object({

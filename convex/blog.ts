@@ -19,6 +19,9 @@ import { mutation, query } from "./_generated/server";
  * Supports filtering by status, category, and pagination.
  * Returns posts ordered by publishedAt (desc) for published posts,
  * or updatedAt (desc) for drafts.
+ *
+ * T015: Filters published posts to show only approved/manual metadata.
+ * Draft/archived posts retain all data for admin views.
  */
 export const listPosts = query({
   args: {
@@ -60,8 +63,14 @@ export const listPosts = query({
     // Apply pagination
     const paginatedPosts = posts.slice(offset, offset + limit);
 
+    // T015: Filter published posts to hide pending AI suggestions
+    const filteredPosts =
+      status === "published"
+        ? paginatedPosts.map((post) => filterPublishedMetadata(post))
+        : paginatedPosts;
+
     return {
-      posts: paginatedPosts,
+      posts: filteredPosts,
       total: posts.length,
       hasMore: offset + limit < posts.length,
     };
@@ -73,6 +82,9 @@ export const listPosts = query({
  *
  * Returns the full post data or null if not found.
  * Does NOT increment view count - use incrementViewCount separately.
+ *
+ * T015: For published posts, filters metadata to show only approved/manual fields.
+ * For draft/archived posts, returns all data including pending AI suggestions (for admin editing).
  */
 export const getPostBySlug = query({
   args: {
@@ -84,7 +96,17 @@ export const getPostBySlug = query({
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .first();
 
-    return post || null;
+    if (!post) {
+      return null;
+    }
+
+    // T015: Filter published posts to hide pending AI suggestions from public
+    // Draft/archived posts retain all data for admin editing
+    if (post.status === "published") {
+      return filterPublishedMetadata(post);
+    }
+
+    return post;
   },
 });
 
@@ -109,6 +131,8 @@ export const getPostById = query({
  *
  * Returns all published posts marked as featured,
  * ordered by publishedAt (most recent first).
+ *
+ * T015: Filters posts to show only approved/manual metadata.
  */
 export const getFeaturedPosts = query({
   args: {},
@@ -121,11 +145,14 @@ export const getFeaturedPosts = query({
       .collect();
 
     // Sort by publishedAt descending
-    return posts.sort((a, b) => {
+    const sorted = posts.sort((a, b) => {
       const aTime = a.publishedAt || 0;
       const bTime = b.publishedAt || 0;
       return bTime - aTime;
     });
+
+    // T015: Filter to hide pending AI suggestions from public
+    return sorted.map((post) => filterPublishedMetadata(post));
   },
 });
 
@@ -134,6 +161,8 @@ export const getFeaturedPosts = query({
  *
  * Searches post titles using Convex's search index.
  * Only searches published posts by default.
+ *
+ * T015: Filters published posts to show only approved/manual metadata.
  */
 export const searchPosts = query({
   args: {
@@ -156,6 +185,11 @@ export const searchPosts = query({
       )
       .collect();
 
+    // T015: Filter published posts to hide pending AI suggestions
+    if (status === "published") {
+      return results.map((post) => filterPublishedMetadata(post));
+    }
+
     return results;
   },
 });
@@ -165,6 +199,8 @@ export const searchPosts = query({
  *
  * Returns all posts that include the specified tag.
  * Only returns published posts by default.
+ *
+ * T015: Filters published posts to show only approved/manual metadata.
  */
 export const getPostsByTag = query({
   args: {
@@ -195,6 +231,9 @@ export const getPostsByTag = query({
         const bTime = b.publishedAt || 0;
         return bTime - aTime;
       });
+
+      // T015: Filter to hide pending AI suggestions from public
+      return postsWithTag.map((post) => filterPublishedMetadata(post));
     }
 
     return postsWithTag;
@@ -1217,6 +1256,82 @@ export const clearSuggestion = mutation({
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Filter post metadata to show only approved/manual fields
+ *
+ * T015: Publishing filter for AI suggestions
+ * - Only approved or manually-entered fields are visible to readers
+ * - Pending suggestions remain in DB for future editing but are hidden from public
+ * - Rejected suggestions are also hidden from public
+ *
+ * @param post - Blog post with potential AI suggestions
+ * @returns Post with only approved/manual metadata fields
+ */
+function filterPublishedMetadata(post: any): any {
+  // If no AI suggestions, return post as-is
+  if (!post.aiSuggestions) {
+    return post;
+  }
+
+  // Create a filtered copy of the post
+  const filtered = { ...post };
+
+  // Filter excerpt - use approved AI suggestion or fall back to manual
+  if (post.aiSuggestions.excerpt) {
+    filtered.excerpt =
+      post.aiSuggestions.excerpt.state === "approved"
+        ? post.aiSuggestions.excerpt.value
+        : post.excerpt;
+  }
+
+  // Filter tags - use approved AI suggestion or fall back to manual
+  if (post.aiSuggestions.tags) {
+    filtered.tags =
+      post.aiSuggestions.tags.state === "approved"
+        ? post.aiSuggestions.tags.value
+        : post.tags;
+  }
+
+  // Filter category - use approved AI suggestion or fall back to manual
+  if (post.aiSuggestions.category) {
+    filtered.categoryId =
+      post.aiSuggestions.category.state === "approved"
+        ? post.aiSuggestions.category.value
+        : post.categoryId;
+  }
+
+  // Filter SEO metadata - check each field individually
+  if (post.aiSuggestions.seoMetadata) {
+    filtered.seoMetadata = { ...post.seoMetadata };
+
+    // metaTitle
+    if (post.aiSuggestions.seoMetadata.metaTitle) {
+      filtered.seoMetadata.metaTitle =
+        post.aiSuggestions.seoMetadata.metaTitle.state === "approved"
+          ? post.aiSuggestions.seoMetadata.metaTitle.value
+          : post.seoMetadata.metaTitle;
+    }
+
+    // metaDescription
+    if (post.aiSuggestions.seoMetadata.metaDescription) {
+      filtered.seoMetadata.metaDescription =
+        post.aiSuggestions.seoMetadata.metaDescription.state === "approved"
+          ? post.aiSuggestions.seoMetadata.metaDescription.value
+          : post.seoMetadata.metaDescription;
+    }
+
+    // keywords
+    if (post.aiSuggestions.seoMetadata.keywords) {
+      filtered.seoMetadata.keywords =
+        post.aiSuggestions.seoMetadata.keywords.state === "approved"
+          ? post.aiSuggestions.seoMetadata.keywords.value
+          : post.seoMetadata.keywords;
+    }
+  }
+
+  return filtered;
+}
 
 /**
  * Generate URL-safe slug from text

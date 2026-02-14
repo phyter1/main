@@ -968,6 +968,478 @@ describe("T008: AI Suggestion Mutations Logic", () => {
   });
 });
 
+describe("T015: Publishing Filter for AI Suggestions", () => {
+  describe("publishing metadata filtering", () => {
+    it("should filter out pending excerpt suggestion", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI-generated excerpt",
+            state: "pending" as const,
+          },
+        },
+      };
+
+      // Only use the manual excerpt, not the pending AI suggestion
+      const publishedExcerpt =
+        !post.aiSuggestions?.excerpt ||
+        post.aiSuggestions.excerpt.state !== "approved"
+          ? post.excerpt
+          : post.aiSuggestions.excerpt.value;
+
+      expect(publishedExcerpt).toBe("Manual excerpt");
+    });
+
+    it("should use approved excerpt suggestion", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI-generated excerpt",
+            state: "approved" as const,
+          },
+        },
+      };
+
+      // Use approved AI suggestion
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      expect(publishedExcerpt).toBe("AI-generated excerpt");
+    });
+
+    it("should filter out pending tags suggestions", () => {
+      const post = {
+        tags: ["manual-tag-1", "manual-tag-2"],
+        aiSuggestions: {
+          tags: {
+            value: ["ai-tag-1", "ai-tag-2"],
+            state: "pending" as const,
+            rejectedTags: [],
+          },
+        },
+      };
+
+      // Only use manual tags when AI suggestions are pending
+      const publishedTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publishedTags).toEqual(["manual-tag-1", "manual-tag-2"]);
+      expect(publishedTags).not.toContain("ai-tag-1");
+    });
+
+    it("should use approved tags suggestions", () => {
+      const post = {
+        tags: ["manual-tag"],
+        aiSuggestions: {
+          tags: {
+            value: ["ai-tag-1", "ai-tag-2"],
+            state: "approved" as const,
+            rejectedTags: [],
+          },
+        },
+      };
+
+      // Use approved AI suggestion
+      const publishedTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publishedTags).toEqual(["ai-tag-1", "ai-tag-2"]);
+    });
+
+    it("should filter out pending category suggestion", () => {
+      const post = {
+        categoryId: "manual-cat-id",
+        aiSuggestions: {
+          category: {
+            value: "ai-category-id",
+            state: "pending" as const,
+          },
+        },
+      };
+
+      // Only use manual category when AI suggestion is pending
+      const publishedCategory =
+        post.aiSuggestions?.category?.state === "approved"
+          ? post.aiSuggestions.category.value
+          : post.categoryId;
+
+      expect(publishedCategory).toBe("manual-cat-id");
+    });
+
+    it("should filter out pending SEO metadata suggestions", () => {
+      const post = {
+        seoMetadata: {
+          metaTitle: "Manual Title",
+          metaDescription: "Manual Description",
+          keywords: ["manual-kw"],
+        },
+        aiSuggestions: {
+          seoMetadata: {
+            metaTitle: {
+              value: "AI Title",
+              state: "pending" as const,
+            },
+            metaDescription: {
+              value: "AI Description",
+              state: "pending" as const,
+            },
+            keywords: {
+              value: ["ai-kw"],
+              state: "pending" as const,
+            },
+          },
+        },
+      };
+
+      // Filter pending SEO suggestions
+      const publishedSeoMetadata = {
+        metaTitle:
+          post.aiSuggestions?.seoMetadata?.metaTitle?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.metaTitle.value
+            : post.seoMetadata.metaTitle,
+        metaDescription:
+          post.aiSuggestions?.seoMetadata?.metaDescription?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.metaDescription.value
+            : post.seoMetadata.metaDescription,
+        keywords:
+          post.aiSuggestions?.seoMetadata?.keywords?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.keywords.value
+            : post.seoMetadata.keywords,
+      };
+
+      expect(publishedSeoMetadata.metaTitle).toBe("Manual Title");
+      expect(publishedSeoMetadata.metaDescription).toBe("Manual Description");
+      expect(publishedSeoMetadata.keywords).toEqual(["manual-kw"]);
+    });
+
+    it("should use approved SEO metadata suggestions", () => {
+      const post = {
+        seoMetadata: {
+          metaTitle: "Manual Title",
+          metaDescription: "Manual Description",
+          keywords: ["manual-kw"],
+        },
+        aiSuggestions: {
+          seoMetadata: {
+            metaTitle: {
+              value: "AI Title",
+              state: "approved" as const,
+            },
+            metaDescription: {
+              value: "AI Description",
+              state: "approved" as const,
+            },
+            keywords: {
+              value: ["ai-kw"],
+              state: "approved" as const,
+            },
+          },
+        },
+      };
+
+      // Use approved SEO suggestions
+      const publishedSeoMetadata = {
+        metaTitle:
+          post.aiSuggestions?.seoMetadata?.metaTitle?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.metaTitle.value
+            : post.seoMetadata.metaTitle,
+        metaDescription:
+          post.aiSuggestions?.seoMetadata?.metaDescription?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.metaDescription.value
+            : post.seoMetadata.metaDescription,
+        keywords:
+          post.aiSuggestions?.seoMetadata?.keywords?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.keywords.value
+            : post.seoMetadata.keywords,
+      };
+
+      expect(publishedSeoMetadata.metaTitle).toBe("AI Title");
+      expect(publishedSeoMetadata.metaDescription).toBe("AI Description");
+      expect(publishedSeoMetadata.keywords).toEqual(["ai-kw"]);
+    });
+
+    it("should filter out rejected suggestions", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "rejected" as const,
+          },
+          tags: {
+            value: ["ai-tag"],
+            state: "rejected" as const,
+            rejectedTags: ["ai-tag"],
+          },
+        },
+      };
+
+      // Don't use rejected suggestions
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      const publishedTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publishedExcerpt).toBe("Manual excerpt");
+      expect(publishedTags).toEqual(["manual-tag"]);
+    });
+
+    it("should handle posts with no AI suggestions", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        categoryId: "manual-cat",
+        seoMetadata: {
+          metaTitle: "Manual Title",
+          metaDescription: "Manual Description",
+          keywords: ["manual-kw"],
+        },
+        aiSuggestions: undefined,
+      };
+
+      // Use manual values when no AI suggestions
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      expect(publishedExcerpt).toBe("Manual excerpt");
+    });
+
+    it("should handle partial AI suggestions", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        categoryId: "manual-cat",
+        seoMetadata: {
+          metaTitle: "Manual Title",
+        },
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "approved" as const,
+          },
+          // No tags or category suggestions
+        },
+      };
+
+      // Use AI excerpt, manual tags and category
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      const publishedTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publishedExcerpt).toBe("AI excerpt");
+      expect(publishedTags).toEqual(["manual-tag"]);
+    });
+  });
+
+  describe("post editing workflow with pending suggestions", () => {
+    it("should preserve pending suggestions when editing published post", () => {
+      const publishedPost = {
+        status: "published" as const,
+        excerpt: "Manual excerpt",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as const,
+          },
+          tags: {
+            value: ["ai-tag"],
+            state: "pending" as const,
+            rejectedTags: [],
+          },
+        },
+      };
+
+      // When editing, pending suggestions should still be present in DB
+      expect(publishedPost.aiSuggestions.excerpt.state).toBe("pending");
+      expect(publishedPost.aiSuggestions.tags?.state).toBe("pending");
+
+      // But public view should only show manual excerpt
+      const publicExcerpt =
+        publishedPost.aiSuggestions?.excerpt?.state === "approved"
+          ? publishedPost.aiSuggestions.excerpt.value
+          : publishedPost.excerpt;
+
+      expect(publicExcerpt).toBe("Manual excerpt");
+    });
+
+    it("should allow approving pending suggestion after publish", () => {
+      const post = {
+        status: "published" as const,
+        excerpt: "Manual excerpt",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as "pending" | "approved" | "rejected",
+          },
+        },
+      };
+
+      // Approve the suggestion
+      if (post.aiSuggestions.excerpt) {
+        post.aiSuggestions.excerpt.state = "approved";
+      }
+
+      // Now the AI excerpt should be used
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      expect(publishedExcerpt).toBe("AI excerpt");
+    });
+
+    it("should update published metadata when approving suggestion", () => {
+      const post = {
+        status: "published" as const,
+        excerpt: "Manual excerpt",
+        seoMetadata: {
+          metaTitle: "Manual Title",
+        },
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as "pending" | "approved" | "rejected",
+          },
+          seoMetadata: {
+            metaTitle: {
+              value: "AI Title",
+              state: "pending" as "pending" | "approved" | "rejected",
+            },
+          },
+        },
+      };
+
+      // Before approval - manual values
+      let publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      let publishedMetaTitle =
+        post.aiSuggestions?.seoMetadata?.metaTitle?.state === "approved"
+          ? post.aiSuggestions.seoMetadata.metaTitle.value
+          : post.seoMetadata.metaTitle;
+
+      expect(publishedExcerpt).toBe("Manual excerpt");
+      expect(publishedMetaTitle).toBe("Manual Title");
+
+      // Approve suggestions
+      post.aiSuggestions.excerpt.state = "approved";
+      post.aiSuggestions.seoMetadata!.metaTitle!.state = "approved";
+
+      // After approval - AI values
+      publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      publishedMetaTitle =
+        post.aiSuggestions?.seoMetadata?.metaTitle?.state === "approved"
+          ? post.aiSuggestions.seoMetadata.metaTitle.value
+          : post.seoMetadata.metaTitle;
+
+      expect(publishedExcerpt).toBe("AI excerpt");
+      expect(publishedMetaTitle).toBe("AI Title");
+    });
+  });
+
+  describe("AI suggestions persistence in database", () => {
+    it("should retain all AI suggestions in database including pending", () => {
+      const postInDB = {
+        _id: "post-123",
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as const,
+          },
+          tags: {
+            value: ["ai-tag-1", "ai-tag-2"],
+            state: "pending" as const,
+            rejectedTags: ["rejected-tag"],
+          },
+          category: {
+            value: "ai-category",
+            state: "approved" as const,
+          },
+        },
+      };
+
+      // All suggestions should be in DB
+      expect(postInDB.aiSuggestions.excerpt).toBeDefined();
+      expect(postInDB.aiSuggestions.tags).toBeDefined();
+      expect(postInDB.aiSuggestions.category).toBeDefined();
+
+      // Including pending ones
+      expect(postInDB.aiSuggestions.excerpt.state).toBe("pending");
+      expect(postInDB.aiSuggestions.tags?.state).toBe("pending");
+
+      // And rejected tags array
+      expect(postInDB.aiSuggestions.tags?.rejectedTags).toEqual([
+        "rejected-tag",
+      ]);
+    });
+
+    it("should maintain separate manual and AI suggestion values", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag-1", "manual-tag-2"],
+        categoryId: "manual-cat-id",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as const,
+          },
+          tags: {
+            value: ["ai-tag-1", "ai-tag-2", "ai-tag-3"],
+            state: "pending" as const,
+            rejectedTags: [],
+          },
+          category: {
+            value: "ai-cat-id",
+            state: "pending" as const,
+          },
+        },
+      };
+
+      // Manual values unchanged
+      expect(post.excerpt).toBe("Manual excerpt");
+      expect(post.tags).toEqual(["manual-tag-1", "manual-tag-2"]);
+      expect(post.categoryId).toBe("manual-cat-id");
+
+      // AI suggestions stored separately
+      expect(post.aiSuggestions.excerpt.value).toBe("AI excerpt");
+      expect(post.aiSuggestions.tags?.value).toEqual([
+        "ai-tag-1",
+        "ai-tag-2",
+        "ai-tag-3",
+      ]);
+      expect(post.aiSuggestions.category?.value).toBe("ai-cat-id");
+    });
+  });
+});
+
 describe("Blog Function Integration Contract", () => {
   it("should have all required query functions defined", () => {
     const requiredQueries = [

@@ -15,7 +15,11 @@ export default defineSchema({
 
   // Prompt versions table
   promptVersions: defineTable({
-    agentType: v.union(v.literal("chat"), v.literal("fit-assessment")),
+    agentType: v.union(
+      v.literal("chat"),
+      v.literal("fit-assessment"),
+      v.literal("blog-metadata"),
+    ),
     prompt: v.string(),
     description: v.string(),
     author: v.string(),
