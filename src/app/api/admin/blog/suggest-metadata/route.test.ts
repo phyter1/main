@@ -20,12 +20,6 @@ vi.mock("@/lib/ai-config", () => ({
   },
 }));
 
-// Mock prompt versioning
-const mockGetActiveVersion = vi.fn();
-vi.mock("@/lib/prompt-versioning", () => ({
-  getActiveVersion: mockGetActiveVersion,
-}));
-
 // Mock Convex client
 const mockConvexQuery = vi.fn();
 const MockConvexHttpClient = vi.fn(function (this: {
@@ -49,10 +43,6 @@ describe("T007: POST /api/admin/blog/suggest-metadata", () => {
     vi.clearAllMocks();
     clearRateLimits(); // Clear rate limit state between tests
     // Set default mock return values
-    mockGetActiveVersion.mockResolvedValue({
-      prompt:
-        "Mock blog metadata prompt with {existingTags}, {existingCategories}, {recentPosts}",
-    });
     mockConvexQuery.mockResolvedValue([]);
   });
 
@@ -412,8 +402,8 @@ describe("T007: POST /api/admin/blog/suggest-metadata", () => {
 
       await POST(request);
 
-      // getActiveVersion should be called
-      expect(mockGetActiveVersion).toHaveBeenCalledWith("blog-metadata");
+      // AI should be called to generate suggestions
+      expect(mockGenerateObject).toHaveBeenCalled();
     });
 
     it("should return structured AI suggestions", async () => {
@@ -691,29 +681,6 @@ describe("T007: POST /api/admin/blog/suggest-metadata", () => {
 
       const data = await response.json();
       expect(data.error).toContain("Invalid JSON");
-    });
-
-    it("should handle missing active prompt version", async () => {
-      mockGetActiveVersion.mockResolvedValueOnce(null);
-      mockConvexQuery.mockResolvedValue([]);
-
-      const request = new Request(
-        "http://localhost/api/admin/blog/suggest-metadata",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: "Content here.",
-            title: "Title",
-          }),
-        },
-      );
-
-      const response = await POST(request);
-      expect(response.status).toBe(500);
-
-      const data = await response.json();
-      expect(data.error).toBeDefined();
     });
   });
 });
