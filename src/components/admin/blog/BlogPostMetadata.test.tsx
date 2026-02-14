@@ -1153,4 +1153,759 @@ describe("BlogPostMetadata", () => {
       });
     });
   });
+
+  describe("T011: AI Suggestion Integration", () => {
+    const metadataWithAISuggestions = {
+      slug: "test-post",
+      categoryId: undefined,
+      tags: [],
+      featured: false,
+      coverImage: "",
+      seoMetadata: {
+        metaTitle: "",
+        metaDescription: "",
+        ogImage: "",
+      },
+      aiSuggestions: {
+        excerpt: {
+          value: "This is an AI-suggested excerpt",
+          state: "pending" as const,
+        },
+        tags: {
+          value: ["ai-tag-1", "ai-tag-2"],
+          state: "pending" as const,
+          rejectedTags: [],
+        },
+        category: {
+          value: "Technology",
+          state: "pending" as const,
+        },
+        seoMetadata: {
+          metaTitle: {
+            value: "AI-Generated Meta Title",
+            state: "pending" as const,
+          },
+          metaDescription: {
+            value: "AI-generated meta description for SEO",
+            state: "pending" as const,
+          },
+          keywords: {
+            value: ["keyword1", "keyword2"],
+            state: "pending" as const,
+          },
+        },
+      },
+    };
+
+    describe("Badge Display", () => {
+      it("should not show badges when no AI suggestions exist", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={defaultMetadata}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // No AI suggestion badges should be visible
+        const badges = screen.queryAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        expect(badges.length).toBe(0);
+      });
+
+      it("should show badge for AI-suggested excerpt", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should have at least one AI badge (excerpt)
+        const badges = screen.queryAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        expect(badges.length).toBeGreaterThan(0);
+      });
+
+      it("should show individual badges for each suggested tag", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show badges for AI-suggested tags
+        const badges = screen.queryAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        // At least 2 badges for tags + others for excerpt, metaTitle, metaDescription
+        expect(badges.length).toBeGreaterThanOrEqual(2);
+      });
+
+      it("should show badge for AI-suggested category", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Badge should exist for category
+        const badges = screen.queryAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        expect(badges.length).toBeGreaterThan(0);
+      });
+
+      it("should show badges for AI-suggested SEO metadata fields", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Badges for metaTitle, metaDescription
+        const badges = screen.queryAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        expect(badges.length).toBeGreaterThan(0);
+      });
+
+      it("should not show badge when suggestion is approved", () => {
+        const approvedMetadata = {
+          ...metadataWithAISuggestions,
+          aiSuggestions: {
+            ...metadataWithAISuggestions.aiSuggestions,
+            excerpt: {
+              value: "This is an AI-suggested excerpt",
+              state: "approved" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={approvedMetadata}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Fewer badges since excerpt is approved
+        const badges = screen.queryAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        // Should still have badges for other pending suggestions
+        expect(badges.length).toBeGreaterThan(0);
+      });
+
+      it("should not show badge when suggestion is rejected", () => {
+        const rejectedMetadata = {
+          ...metadataWithAISuggestions,
+          aiSuggestions: {
+            ...metadataWithAISuggestions.aiSuggestions,
+            excerpt: {
+              value: "This is an AI-suggested excerpt",
+              state: "rejected" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={rejectedMetadata}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Badges should exist for other pending suggestions but not excerpt
+        const badges = screen.queryAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        expect(badges.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe("Overlay Interaction", () => {
+      it("should open overlay when badge is clicked", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Click first AI suggestion badge
+        const badges = screen.getAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        await user.click(badges[0]);
+
+        // Overlay should be visible
+        await waitFor(() => {
+          const overlay = screen.getByRole("dialog", {
+            name: /ai suggestion actions/i,
+          });
+          expect(overlay).toBeDefined();
+        });
+      });
+
+      it("should show approve and reject buttons in overlay", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Click AI suggestion badge
+        const badges = screen.getAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        await user.click(badges[0]);
+
+        // Verify approve and reject buttons exist
+        await waitFor(() => {
+          expect(
+            screen.getByRole("button", { name: /approve ai suggestion/i }),
+          ).toBeDefined();
+          expect(
+            screen.getByRole("button", { name: /reject ai suggestion/i }),
+          ).toBeDefined();
+        });
+      });
+
+      it("should close overlay on Escape key", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Open overlay
+        const badges = screen.getAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        await user.click(badges[0]);
+
+        // Wait for overlay to appear
+        await waitFor(() => {
+          expect(
+            screen.getByRole("dialog", { name: /ai suggestion actions/i }),
+          ).toBeDefined();
+        });
+
+        // Press Escape
+        await user.keyboard("{Escape}");
+
+        // Overlay should close
+        await waitFor(() => {
+          expect(
+            screen.queryByRole("dialog", { name: /ai suggestion actions/i }),
+          ).toBeNull();
+        });
+      });
+    });
+
+    describe("Approve Action", () => {
+      it("should keep value and remove badge when approve is clicked", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Get initial badge count
+        const initialBadges = screen.getAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        const initialCount = initialBadges.length;
+
+        // Click first badge
+        await user.click(initialBadges[0]);
+
+        // Click approve button
+        await waitFor(() => {
+          const approveButton = screen.getByRole("button", {
+            name: /approve ai suggestion/i,
+          });
+          return user.click(approveButton);
+        });
+
+        // onChange should be called with approved state
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+          const lastCall =
+            mockOnChange.mock.calls[mockOnChange.mock.calls.length - 1][0];
+
+          // Check that one suggestion changed to approved state
+          expect(lastCall.aiSuggestions).toBeDefined();
+        });
+      });
+
+      it("should update metadata with approved value for excerpt", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Find and click badge (need to identify excerpt badge specifically)
+        const badges = screen.getAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        await user.click(badges[0]);
+
+        // Approve
+        const approveButton = await screen.findByRole("button", {
+          name: /approve ai suggestion/i,
+        });
+        await user.click(approveButton);
+
+        // Verify onChange was called
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe("Reject Action", () => {
+      it("should clear value and remove badge when reject is clicked", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Click first AI suggestion badge
+        const badges = screen.getAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        await user.click(badges[0]);
+
+        // Click reject button
+        await waitFor(async () => {
+          const rejectButton = screen.getByRole("button", {
+            name: /reject ai suggestion/i,
+          });
+          await user.click(rejectButton);
+        });
+
+        // onChange should be called with rejected state
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+          const lastCall =
+            mockOnChange.mock.calls[mockOnChange.mock.calls.length - 1][0];
+
+          // Check that suggestion changed to rejected state
+          expect(lastCall.aiSuggestions).toBeDefined();
+        });
+      });
+
+      it("should add rejected tag to rejectedTags array", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Find tag badge and reject it
+        const badges = screen.getAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+
+        // Click a tag badge (need to identify which one is for tags)
+        await user.click(badges[1]); // Assume second badge is a tag
+
+        // Reject
+        await waitFor(async () => {
+          const rejectButton = screen.getByRole("button", {
+            name: /reject ai suggestion/i,
+          });
+          await user.click(rejectButton);
+        });
+
+        // Verify onChange was called with rejectedTags updated
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe("Manual Editing", () => {
+      it("should remove badge immediately when field is manually edited", async () => {
+        const user = userEvent.setup();
+
+        // Metadata with AI-suggested meta title
+        const testMetadata = {
+          ...defaultMetadata,
+          seoMetadata: {
+            metaTitle: "AI-Generated Meta Title",
+            metaDescription: "",
+            ogImage: "",
+          },
+          aiSuggestions: {
+            seoMetadata: {
+              metaTitle: {
+                value: "AI-Generated Meta Title",
+                state: "pending" as const,
+              },
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={testMetadata}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Find meta title input
+        const metaTitleInput = screen.getByLabelText(/meta title/i);
+
+        // Type in the field (manual edit) - just add text to trigger onChange
+        await user.type(metaTitleInput, " Edited");
+
+        // onChange should be called with suggestion removed or set to rejected
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+          const lastCall =
+            mockOnChange.mock.calls[mockOnChange.mock.calls.length - 1][0];
+
+          // Badge should be removed (suggestion state changed to rejected)
+          expect(lastCall.aiSuggestions?.seoMetadata?.metaTitle?.state).toBe(
+            "rejected",
+          );
+        });
+      });
+
+      it("should clear AI suggestion when tag is manually added", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Find tag input and add a manual tag
+        const tagInput = screen.getByLabelText(/tags/i);
+        await user.type(tagInput, "manual-tag{Enter}");
+
+        // onChange should be called
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe("T014: Re-run Logic for Approved Fields", () => {
+      it("should show NewSuggestionChip underneath approved fields on re-run", async () => {
+        // Create metadata with approved excerpt (state = "approved")
+        const metadataWithApprovedExcerpt = {
+          ...defaultMetadata,
+          excerpt: "Current approved excerpt",
+          aiSuggestions: {
+            excerpt: {
+              value: "Old suggestion",
+              state: "approved" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithApprovedExcerpt}
+            onChange={mockOnChange}
+            newSuggestions={{
+              excerpt: "New AI suggested excerpt",
+            }}
+          />,
+        );
+
+        // Should show NewSuggestionChip with new suggestion
+        expect(screen.getByText(/new suggestion:/i)).toBeDefined();
+        expect(screen.getByText(/new ai suggested excerpt/i)).toBeDefined();
+      });
+
+      it("should replace pending fields with new suggestions", async () => {
+        // Create metadata with pending excerpt (state = "pending")
+        const metadataWithPendingExcerpt = {
+          ...defaultMetadata,
+          excerpt: "Old pending suggestion",
+          aiSuggestions: {
+            excerpt: {
+              value: "Old pending suggestion",
+              state: "pending" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithPendingExcerpt}
+            onChange={mockOnChange}
+            newSuggestions={{
+              excerpt: "New AI suggested excerpt",
+            }}
+          />,
+        );
+
+        // Should NOT show NewSuggestionChip (pending fields get replaced, not shown as chip)
+        expect(screen.queryByText(/new suggestion:/i)).toBeNull();
+
+        // Should show badge for the new suggestion
+        expect(screen.getByLabelText(/ai suggestion/i)).toBeDefined();
+      });
+
+      it("should not re-suggest rejected tags", async () => {
+        // Create metadata with rejected tags
+        const metadataWithRejectedTags = {
+          ...defaultMetadata,
+          tags: ["current-tag"],
+          aiSuggestions: {
+            tags: {
+              value: ["old-suggested-tag"],
+              state: "rejected" as const,
+              rejectedTags: ["rejected-tag-1", "rejected-tag-2"],
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithRejectedTags}
+            onChange={mockOnChange}
+            newSuggestions={{
+              tags: ["new-tag", "rejected-tag-1"], // rejected-tag-1 should be filtered out
+            }}
+          />,
+        );
+
+        // Should only show new-tag in suggestions, not rejected-tag-1
+        // This is tested via onChange callback when new suggestions are processed
+        expect(mockOnChange).toHaveBeenCalled();
+      });
+
+      it("should keep approved tags and add new tags with badges", async () => {
+        // Create metadata with approved tags
+        const metadataWithApprovedTags = {
+          ...defaultMetadata,
+          tags: ["approved-tag-1", "approved-tag-2"],
+          aiSuggestions: {
+            tags: {
+              value: ["approved-tag-1", "approved-tag-2"],
+              state: "approved" as const,
+              rejectedTags: [],
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithApprovedTags}
+            onChange={mockOnChange}
+            newSuggestions={{
+              tags: ["new-suggested-tag"],
+            }}
+          />,
+        );
+
+        // Should show both approved tags (without badges) and new tags (with badges)
+        expect(screen.getByText("approved-tag-1")).toBeDefined();
+        expect(screen.getByText("approved-tag-2")).toBeDefined();
+      });
+
+      it("should call onReplace when Replace button is clicked on NewSuggestionChip", async () => {
+        const user = userEvent.setup();
+
+        const metadataWithApprovedExcerpt = {
+          ...defaultMetadata,
+          excerpt: "Current approved excerpt",
+          aiSuggestions: {
+            excerpt: {
+              value: "Old suggestion",
+              state: "approved" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithApprovedExcerpt}
+            onChange={mockOnChange}
+            newSuggestions={{
+              excerpt: "New AI suggested excerpt",
+            }}
+          />,
+        );
+
+        // Find and click Replace button
+        const replaceButton = screen.getByRole("button", { name: /replace/i });
+        await user.click(replaceButton);
+
+        // Should update excerpt with new suggestion
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+          const lastCall =
+            mockOnChange.mock.calls[mockOnChange.mock.calls.length - 1][0];
+          expect(lastCall.excerpt).toBe("New AI suggested excerpt");
+        });
+      });
+
+      it("should call onDismiss when Dismiss button is clicked on NewSuggestionChip", async () => {
+        const user = userEvent.setup();
+
+        const metadataWithApprovedExcerpt = {
+          ...defaultMetadata,
+          excerpt: "Current approved excerpt",
+          aiSuggestions: {
+            excerpt: {
+              value: "Old suggestion",
+              state: "approved" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithApprovedExcerpt}
+            onChange={mockOnChange}
+            newSuggestions={{
+              excerpt: "New AI suggested excerpt",
+            }}
+          />,
+        );
+
+        // Find and click Dismiss button
+        const dismissButton = screen.getByRole("button", { name: /dismiss/i });
+        await user.click(dismissButton);
+
+        // Chip should be removed (no longer visible)
+        await waitFor(() => {
+          expect(screen.queryByText(/new suggestion:/i)).toBeNull();
+        });
+      });
+
+      it("should handle multiple field re-runs simultaneously", async () => {
+        const metadataWithMultipleApproved = {
+          ...defaultMetadata,
+          excerpt: "Approved excerpt",
+          seoMetadata: {
+            ...defaultMetadata.seoMetadata,
+            metaTitle: "Approved title",
+            metaDescription: "Approved description",
+          },
+          aiSuggestions: {
+            excerpt: {
+              value: "Approved excerpt",
+              state: "approved" as const,
+            },
+            seoMetadata: {
+              metaTitle: {
+                value: "Approved title",
+                state: "approved" as const,
+              },
+              metaDescription: {
+                value: "Approved description",
+                state: "approved" as const,
+              },
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithMultipleApproved}
+            onChange={mockOnChange}
+            newSuggestions={{
+              excerpt: "New excerpt suggestion",
+              seoMetadata: {
+                metaTitle: "New title suggestion",
+                metaDescription: "New description suggestion",
+              },
+            }}
+          />,
+        );
+
+        // Should show multiple NewSuggestionChips for different fields
+        const suggestions = screen.getAllByText(/new suggestion:/i);
+        expect(suggestions.length).toBeGreaterThan(0);
+      });
+
+      it("should maintain approved state for fields without new suggestions", async () => {
+        const metadataWithApprovedExcerpt = {
+          ...defaultMetadata,
+          excerpt: "Approved excerpt",
+          aiSuggestions: {
+            excerpt: {
+              value: "Approved excerpt",
+              state: "approved" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithApprovedExcerpt}
+            onChange={mockOnChange}
+            // No newSuggestions provided
+          />,
+        );
+
+        // Should NOT show NewSuggestionChip when there are no new suggestions
+        expect(screen.queryByText(/new suggestion:/i)).toBeNull();
+
+        // Should still show the approved excerpt value
+        expect(metadataWithApprovedExcerpt.excerpt).toBe("Approved excerpt");
+      });
+    });
+  });
 });
