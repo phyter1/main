@@ -14,7 +14,6 @@ import { generateObject } from "ai";
 import { ConvexHttpClient } from "convex/browser";
 import { z } from "zod";
 import { AI_RATE_LIMITS, createOpenAIClient } from "@/lib/ai-config";
-import { getActiveVersion } from "@/lib/prompt-versioning";
 import { api } from "../../../../../../convex/_generated/api";
 
 /**
@@ -266,22 +265,25 @@ export async function POST(request: Request): Promise<Response> {
       .map((cat: { name: string }) => cat.name)
       .join(", ");
 
-    // Load active prompt version for blog-metadata
-    const activePrompt = await getActiveVersion("blog-metadata");
-    if (!activePrompt?.prompt) {
-      throw new Error(
-        "No active blog-metadata prompt found. Please configure prompt in admin workbench.",
-      );
-    }
+    // System prompt for metadata generation
+    const systemPrompt = `You are an expert content strategist analyzing blog posts to generate SEO-optimized metadata.
 
-    // Replace placeholders in prompt
-    const systemPrompt = activePrompt.prompt
-      .replace("{existingTags}", existingTagNames || "No existing tags")
-      .replace(
-        "{existingCategories}",
-        existingCategoryNames || "No existing categories",
-      )
-      .replace("{recentPosts}", ""); // Future: Add recent posts context
+Existing Tags: ${existingTagNames || "No existing tags"}
+Existing Categories: ${existingCategoryNames || "No existing categories"}
+
+For the given blog post, generate:
+1. Excerpt (150-200 characters, engaging summary that captures the main idea)
+2. Tags (3-5 tags, prefer existing tags when relevant, only create new tags if truly necessary)
+3. Category (choose from existing categories or suggest new if truly unique)
+4. SEO Metadata:
+   - metaTitle (50-60 characters, keyword-optimized for search engines)
+   - metaDescription (150-160 characters, compelling description for search results)
+   - keywords (5-8 relevant keywords for SEO)
+5. Analysis:
+   - tone (e.g., Professional, Casual, Technical, Conversational, Tutorial)
+   - readability (e.g., Beginner-friendly, Intermediate, Advanced, Expert)
+
+Be concise, specific, and SEO-conscious. Prefer existing tags and categories when they fit.`;
 
     // Create OpenAI client
     const openaiClient = createOpenAIClient();
