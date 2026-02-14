@@ -119,7 +119,10 @@ export function BlogContent({ content, className = "" }: BlogContentProps) {
             />
           ),
           img: ({ node, src, alt, ...props }) => (
-            <MarkdownImage src={src} alt={alt} />
+            <MarkdownImage
+              src={typeof src === "string" ? src : undefined}
+              alt={typeof alt === "string" ? alt : undefined}
+            />
           ),
           code: ({ node, className, children, ...props }: any) => {
             // Handle inline code vs code blocks
