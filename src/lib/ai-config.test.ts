@@ -3,11 +3,11 @@
  * Validates environment variable handling, rate limiting constants, and configuration exports
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  aiConfig,
-  AI_RATE_LIMITS,
   AI_MODEL,
+  AI_RATE_LIMITS,
+  aiConfig,
   createOpenAIClient,
 } from "./ai-config";
 

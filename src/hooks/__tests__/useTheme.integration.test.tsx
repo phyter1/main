@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 

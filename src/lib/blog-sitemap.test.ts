@@ -5,7 +5,7 @@
  * Validates URL generation, date formatting, and sitemap entry structure.
  */
 
-import { beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { BlogCategory, BlogPost, BlogTag } from "@/types/blog";
 import {
   generateBlogSitemapEntries,
