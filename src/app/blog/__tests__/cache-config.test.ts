@@ -24,24 +24,22 @@ function extractRevalidateValue(content: string): number | null {
 }
 
 describe("Blog Page Revalidate Exports", () => {
-  describe("Blog Listing Page", () => {
-    it("should export revalidate = 60 from blog listing page", () => {
+  describe("Blog Listing Page (Client Component)", () => {
+    it("should NOT export revalidate (client component with real-time data)", () => {
       const content = readPageFile("../page.tsx");
       const revalidate = extractRevalidateValue(content);
 
-      // Verify revalidate export exists
-      expect(revalidate).not.toBeNull();
-
-      // Verify revalidate value is 60 seconds (1 minute)
-      expect(revalidate).toBe(60);
+      // Client components cannot use revalidate - uses Convex real-time queries
+      expect(revalidate).toBeNull();
+      expect(content).toContain('"use client"');
     });
 
-    it("should use numeric revalidate value (not string)", () => {
+    it("should use Convex real-time queries instead of ISR", () => {
       const content = readPageFile("../page.tsx");
 
-      // Ensure it's not exported as a string
-      expect(content).not.toContain('export const revalidate = "60"');
-      expect(content).toContain("export const revalidate = 60");
+      // Should use useQuery for real-time updates
+      expect(content).toContain("useQuery");
+      expect(content).toContain("convex/react");
     });
   });
 
@@ -66,24 +64,22 @@ describe("Blog Page Revalidate Exports", () => {
     });
   });
 
-  describe("Category Archive Page", () => {
-    it("should export revalidate = 60 from category page", () => {
+  describe("Category Archive Page (Client Component)", () => {
+    it("should NOT export revalidate (client component with real-time data)", () => {
       const content = readPageFile("../category/[slug]/page.tsx");
       const revalidate = extractRevalidateValue(content);
 
-      // Verify revalidate export exists
-      expect(revalidate).not.toBeNull();
-
-      // Verify revalidate value is 60 seconds (1 minute)
-      expect(revalidate).toBe(60);
+      // Client components cannot use revalidate - uses Convex real-time queries
+      expect(revalidate).toBeNull();
+      expect(content).toContain('"use client"');
     });
 
-    it("should use numeric revalidate value (not string)", () => {
+    it("should use Convex real-time queries instead of ISR", () => {
       const content = readPageFile("../category/[slug]/page.tsx");
 
-      // Ensure it's not exported as a string
-      expect(content).not.toContain('export const revalidate = "60"');
-      expect(content).toContain("export const revalidate = 60");
+      // Should use useQuery for real-time updates
+      expect(content).toContain("useQuery");
+      expect(content).toContain("convex/react");
     });
   });
 
@@ -109,44 +105,35 @@ describe("Blog Page Revalidate Exports", () => {
   });
 
   describe("Revalidate Strategy Consistency", () => {
-    it("should have consistent revalidate for listing and archive pages", () => {
-      const listingContent = readPageFile("../page.tsx");
-      const categoryContent = readPageFile("../category/[slug]/page.tsx");
+    it("should have consistent revalidate for server-rendered archive pages", () => {
       const tagContent = readPageFile("../tag/[slug]/page.tsx");
-
-      const listingRevalidate = extractRevalidateValue(listingContent);
-      const categoryRevalidate = extractRevalidateValue(categoryContent);
       const tagRevalidate = extractRevalidateValue(tagContent);
 
-      // All listing/archive pages should have same revalidate
-      expect(listingRevalidate).toBe(60);
-      expect(categoryRevalidate).toBe(60);
+      // Tag page (server component) should have 60s revalidate
       expect(tagRevalidate).toBe(60);
     });
 
     it("should use longer revalidate for individual posts", () => {
-      const listingContent = readPageFile("../page.tsx");
       const postContent = readPageFile("../[slug]/page.tsx");
+      const tagContent = readPageFile("../tag/[slug]/page.tsx");
 
-      const listingRevalidate = extractRevalidateValue(listingContent);
       const postRevalidate = extractRevalidateValue(postContent);
+      const tagRevalidate = extractRevalidateValue(tagContent);
 
-      // Post page should have longer TTL than listing
+      // Post page should have longer TTL than archive pages
       expect(postRevalidate).not.toBeNull();
-      expect(listingRevalidate).not.toBeNull();
-      expect(postRevalidate!).toBeGreaterThan(listingRevalidate!);
+      expect(tagRevalidate).not.toBeNull();
+      expect(postRevalidate!).toBeGreaterThan(tagRevalidate!);
       expect(postRevalidate).toBe(3600); // 1 hour
     });
 
-    it("should use positive revalidate values", () => {
-      const contents = [
-        readPageFile("../page.tsx"),
+    it("should use positive revalidate values on server components", () => {
+      const serverComponents = [
         readPageFile("../[slug]/page.tsx"),
-        readPageFile("../category/[slug]/page.tsx"),
         readPageFile("../tag/[slug]/page.tsx"),
       ];
 
-      for (const content of contents) {
+      for (const content of serverComponents) {
         const revalidate = extractRevalidateValue(content);
         expect(revalidate).not.toBeNull();
         expect(revalidate!).toBeGreaterThan(0);

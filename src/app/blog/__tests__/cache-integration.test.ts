@@ -24,18 +24,16 @@ function extractRevalidateValue(content: string): number | null {
 }
 
 describe("Blog Caching Integration", () => {
-  describe("All Blog Routes Have Revalidate", () => {
-    it("should have revalidate export on all blog page routes", () => {
-      // Read all blog pages
-      const pages = [
-        readFile("../page.tsx"), // listing
-        readFile("../[slug]/page.tsx"), // post
-        readFile("../category/[slug]/page.tsx"), // category
-        readFile("../tag/[slug]/page.tsx"), // tag
+  describe("Server-Rendered Routes Have Revalidate", () => {
+    it("should have revalidate export on server component routes", () => {
+      // Only server components can use revalidate
+      const serverPages = [
+        readFile("../[slug]/page.tsx"), // post (server component)
+        readFile("../tag/[slug]/page.tsx"), // tag (server component)
       ];
 
-      // Verify all have revalidate export
-      for (const content of pages) {
+      // Verify server components have revalidate export
+      for (const content of serverPages) {
         const revalidate = extractRevalidateValue(content);
         expect(revalidate).not.toBeNull();
         expect(revalidate).toBeGreaterThan(0);
@@ -43,14 +41,12 @@ describe("Blog Caching Integration", () => {
     });
 
     it("should have integer revalidate values (no decimals)", () => {
-      const pages = [
-        readFile("../page.tsx"),
+      const serverPages = [
         readFile("../[slug]/page.tsx"),
-        readFile("../category/[slug]/page.tsx"),
         readFile("../tag/[slug]/page.tsx"),
       ];
 
-      for (const content of pages) {
+      for (const content of serverPages) {
         const revalidate = extractRevalidateValue(content);
         expect(revalidate).not.toBeNull();
         expect(Number.isInteger(revalidate)).toBe(true);
@@ -66,12 +62,12 @@ describe("Blog Caching Integration", () => {
       // Check if config has cache headers defined
       expect(configContent).toContain("headers");
 
-      // Get page revalidate value
-      const listingContent = readFile("../page.tsx");
-      const listingRevalidate = extractRevalidateValue(listingContent);
+      // Get server component revalidate values
+      const tagContent = readFile("../tag/[slug]/page.tsx");
+      const tagRevalidate = extractRevalidateValue(tagContent);
 
-      expect(listingRevalidate).not.toBeNull();
-      expect(listingRevalidate).toBe(60);
+      expect(tagRevalidate).not.toBeNull();
+      expect(tagRevalidate).toBe(60);
     });
 
     it("should provide stale-while-revalidate buffer for better UX", () => {
@@ -84,24 +80,18 @@ describe("Blog Caching Integration", () => {
     });
 
     it("should balance content freshness with performance", () => {
-      const listingContent = readFile("../page.tsx");
       const postContent = readFile("../[slug]/page.tsx");
-      const categoryContent = readFile("../category/[slug]/page.tsx");
       const tagContent = readFile("../tag/[slug]/page.tsx");
 
-      const listingRevalidate = extractRevalidateValue(listingContent);
       const postRevalidate = extractRevalidateValue(postContent);
-      const categoryRevalidate = extractRevalidateValue(categoryContent);
       const tagRevalidate = extractRevalidateValue(tagContent);
 
-      // Listing and archive pages: shorter TTL for freshness
-      expect(listingRevalidate).toBe(60);
-      expect(categoryRevalidate).toBe(60);
+      // Archive pages: shorter TTL for freshness
       expect(tagRevalidate).toBe(60);
 
       // Blog posts: longer TTL for performance (content rarely changes)
       expect(postRevalidate).toBe(3600);
-      expect(postRevalidate!).toBeGreaterThan(listingRevalidate!);
+      expect(postRevalidate!).toBeGreaterThan(tagRevalidate!);
     });
   });
 
@@ -140,22 +130,32 @@ describe("Blog Caching Integration", () => {
   });
 
   describe("Revalidate Values Match Requirements", () => {
-    it("should match T034 acceptance criteria exactly", () => {
-      const listingContent = readFile("../page.tsx");
+    it("should match T034 acceptance criteria for server components", () => {
       const postContent = readFile("../[slug]/page.tsx");
-      const categoryContent = readFile("../category/[slug]/page.tsx");
       const tagContent = readFile("../tag/[slug]/page.tsx");
 
-      const listingRevalidate = extractRevalidateValue(listingContent);
       const postRevalidate = extractRevalidateValue(postContent);
-      const categoryRevalidate = extractRevalidateValue(categoryContent);
       const tagRevalidate = extractRevalidateValue(tagContent);
 
-      // Verify exact values from acceptance criteria
-      expect(listingRevalidate).toBe(60); // 1 minute
+      // Verify exact values from acceptance criteria (server components only)
       expect(postRevalidate).toBe(3600); // 1 hour
-      expect(categoryRevalidate).toBe(60); // 1 minute
       expect(tagRevalidate).toBe(60); // 1 minute
+    });
+
+    it("should verify client components use Convex real-time", () => {
+      const listingContent = readFile("../page.tsx");
+      const categoryContent = readFile("../category/[slug]/page.tsx");
+
+      const listingRevalidate = extractRevalidateValue(listingContent);
+      const categoryRevalidate = extractRevalidateValue(categoryContent);
+
+      // Client components should NOT have revalidate exports
+      expect(listingRevalidate).toBeNull();
+      expect(categoryRevalidate).toBeNull();
+
+      // Should use Convex real-time queries instead
+      expect(listingContent).toContain("useQuery");
+      expect(categoryContent).toContain("useQuery");
     });
   });
 });
