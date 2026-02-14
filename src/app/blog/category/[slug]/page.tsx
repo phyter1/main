@@ -9,14 +9,10 @@
  * - BlogSidebar with categories, tags, and recent posts
  * - Pagination with 20 posts per page
  * - Dynamic metadata with category name
- * - generateStaticParams for all categories
- * - ISR with 60-second revalidation
+ * - Real-time updates via Convex queries
  */
 
 "use client";
-
-// ISR revalidation: 60 seconds for category archive pages
-export const revalidate = 60;
 
 import { useQuery } from "convex/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
