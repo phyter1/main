@@ -3013,6 +3013,150 @@ bun dev
 - Consider IP allowlisting for admin routes
 - Enable monitoring and alerting for failed logins
 
+## Blog Content Management
+
+### Embedded Image Support
+
+The blog editor supports comprehensive embedded image functionality in markdown content, implemented in issue #42.
+
+#### Features
+
+**Viewer (BlogContent Component)**
+- Images rendered using Next.js Image component for optimization
+- Lazy loading enabled automatically
+- Responsive image sizing (width: 800px, height: 600px defaults)
+- Error handling with graceful fallback UI
+- Support for external URLs via remote patterns
+- Vercel Blob Storage and Unsplash image hosting
+
+**Editor (BlogPostEditor Component)**
+- Drag-and-drop image upload to textarea
+- "Insert Image" button in toolbar
+- Automatic markdown syntax insertion at cursor position
+- Upload progress indicator
+- File validation (type and size)
+- Error messages for failed uploads
+
+**Image Requirements:**
+- Accepted formats: PNG, JPEG, GIF, WebP
+- Maximum file size: 5MB
+- Uploaded to Vercel Blob Storage
+- HTTPS URLs required
+
+#### Using Image Upload in Blog Editor
+
+1. **Via Drag-Drop:**
+   - Drag an image file onto the content textarea
+   - Image uploads automatically to Vercel Blob Storage
+   - Markdown syntax inserted at cursor: `![Image description](url)`
+
+2. **Via Insert Button:**
+   - Click "Insert Image" button in toolbar
+   - Select image file from file picker
+   - Same upload and insertion process
+
+3. **Manual Markdown:**
+   - Type image markdown directly: `![Alt text](image-url)`
+   - Works with any HTTPS image URL
+   - Alt text is optional but recommended for accessibility
+
+#### Configuration
+
+**Remote Patterns (next.config.ts):**
+```typescript
+images: {
+  unoptimized: true,
+  remotePatterns: [
+    {
+      protocol: "https",
+      hostname: "*.vercel-storage.com",
+    },
+    {
+      protocol: "https",
+      hostname: "images.unsplash.com",
+    },
+  ],
+}
+```
+
+Add additional trusted domains here to support more image sources.
+
+#### Error Handling
+
+**Failed Image Loads:**
+- Display fallback UI with error icon
+- Show "Failed to load image" message
+- Display alt text if provided
+- Styled with muted background and border
+
+**Upload Errors:**
+- File type validation (client-side)
+- File size validation (max 5MB)
+- Upload API errors shown in alert
+- Clear error messages for user action
+
+#### Testing
+
+**Test Coverage:**
+- 52 tests in `BlogContent.test.tsx` (39 existing + 13 new)
+- Tests Next.js Image rendering
+- Tests error fallback UI
+- Tests drag-drop upload functionality
+- Tests markdown integration
+- All tests passing in CI/CD
+
+**Running Image Tests:**
+```bash
+bun test src/components/blog/BlogContent.test.tsx
+```
+
+#### Implementation Files
+
+**Modified Files:**
+- `src/components/blog/BlogContent.tsx` - Image rendering with Next.js Image
+- `src/components/admin/blog/BlogPostEditor.tsx` - Upload UI and handlers
+- `next.config.ts` - Remote patterns configuration
+- `src/components/blog/BlogContent.test.tsx` - Comprehensive test coverage
+
+**Existing Infrastructure (Reused):**
+- `src/lib/upload-service.ts` - Vercel Blob upload functions
+- `src/app/api/admin/blog/upload/route.ts` - Upload API endpoint
+- `src/components/admin/blog/ImageUploader.tsx` - Upload component (for cover images)
+
+#### Best Practices
+
+**When Adding Images to Blog Posts:**
+1. Always provide descriptive alt text for accessibility
+2. Use appropriate image formats (WebP for photos, PNG for graphics)
+3. Optimize images before upload (compress if > 1MB)
+4. Use descriptive filenames (not "IMG_1234.jpg")
+5. Test images in both light and dark mode
+6. Verify images render correctly in preview mode
+
+**Markdown Syntax:**
+```markdown
+# Blog Post Title
+
+Introductory paragraph.
+
+![Descriptive alt text](https://example.com/image.jpg)
+
+Caption or explanation of the image.
+
+## Next Section
+
+More content...
+```
+
+#### Security Considerations
+
+- File type validation prevents non-image uploads
+- File size limits prevent DoS attacks
+- HTTPS-only URLs required
+- Server-side validation in upload API
+- Rate limiting on upload endpoint (10 uploads/minute)
+- Vercel Blob Storage handles CDN and access control
+
 ### Future Enhancements
 
 **Planned Features:**
