@@ -5,8 +5,6 @@ import AboutPage from "./page";
 // Mock next/image
 vi.mock("next/image", () => ({
   __esModule: true,
-  // biome-ignore lint/a11y/useAltText: Test mock component
-  // biome-ignore lint/performance/noImgElement: Test mock uses img for simplicity
   default: (props: any) => <img {...props} />,
 }));
 

@@ -73,7 +73,6 @@ vi.mock("./ImageUploader", () => {
         <div data-testid="image-uploader">
           <label htmlFor="cover-image">Cover Image</label>
           {initialImageUrl && (
-            // biome-ignore lint/performance/noImgElement: test mock component
             <img
               src={initialImageUrl}
               alt="Cover preview"

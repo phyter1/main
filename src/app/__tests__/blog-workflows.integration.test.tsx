@@ -85,7 +85,6 @@ vi.mock("@/lib/blog-utils", () => ({
 // Mock Next.js Image
 vi.mock("next/image", () => ({
   default: ({ alt, src, ...props }: any) => (
-    // biome-ignore lint/performance/noImgElement: Test mock uses img for simplicity
     <img alt={alt} src={src} {...props} />
   ),
 }));
