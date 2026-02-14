@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ShareButtons } from "./ShareButtons";
 
 describe("ShareButtons", () => {
@@ -30,7 +30,7 @@ describe("ShareButtons", () => {
       configurable: true,
       writable: true,
       value: {
-        writeText: mock(() => Promise.resolve()),
+        writeText: vi.fn(() => Promise.resolve()),
       },
     });
   });
@@ -41,7 +41,7 @@ describe("ShareButtons", () => {
       configurable: true,
       value: originalLocation,
     });
-    mock.restore();
+
     cleanup();
   });
 
@@ -133,7 +133,7 @@ describe("ShareButtons", () => {
 
     it("should open Twitter in new window when clicked", async () => {
       const user = userEvent.setup();
-      const mockOpen = mock(() => null);
+      const mockOpen = vi.fn(() => null);
       window.open = mockOpen;
 
       const { container } = render(
@@ -179,7 +179,7 @@ describe("ShareButtons", () => {
 
     it("should open LinkedIn in new window when clicked", async () => {
       const user = userEvent.setup();
-      const mockOpen = mock(() => null);
+      const mockOpen = vi.fn(() => null);
       window.open = mockOpen;
 
       const { container } = render(
@@ -201,7 +201,7 @@ describe("ShareButtons", () => {
   describe("Copy Link", () => {
     it("should copy post URL to clipboard", async () => {
       const user = userEvent.setup();
-      const mockWriteText = mock(() => Promise.resolve());
+      const mockWriteText = vi.fn(() => Promise.resolve());
       navigator.clipboard.writeText = mockWriteText;
 
       const { container } = render(
@@ -258,7 +258,7 @@ describe("ShareButtons", () => {
 
     it("should handle clipboard API errors gracefully", async () => {
       const user = userEvent.setup();
-      const mockWriteText = mock(() =>
+      const mockWriteText = vi.fn(() =>
         Promise.reject(new Error("Clipboard not available")),
       );
       navigator.clipboard.writeText = mockWriteText;
@@ -285,7 +285,7 @@ describe("ShareButtons", () => {
 
     it("should use custom base URL for copying", async () => {
       const user = userEvent.setup();
-      const mockWriteText = mock(() => Promise.resolve());
+      const mockWriteText = vi.fn(() => Promise.resolve());
       navigator.clipboard.writeText = mockWriteText;
 
       const customUrl = "https://phytertek.com";
@@ -349,7 +349,7 @@ describe("ShareButtons", () => {
 
     it("should open email client when clicked", async () => {
       const user = userEvent.setup();
-      const mockAssign = mock(() => {});
+      const mockAssign = vi.fn(() => {});
       Object.defineProperty(window.location, "assign", {
         configurable: true,
         value: mockAssign,

@@ -11,13 +11,13 @@
  * - Date formatting consistency
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BlogPost } from "@/types/blog";
 import { BlogHeader } from "./BlogHeader";
 
 // Mock Next.js Image component for testing
-mock.module("next/image", () => ({
+vi.mock("next/image", () => ({
   default: ({ alt, src, ...props }: any) => (
     <img alt={alt} src={src} {...props} />
   ),
@@ -40,8 +40,8 @@ describe("BlogHeader", () => {
       content: "# React 19\n\nThis is a comprehensive guide...",
       status: "published",
       author: "Ryan Lowe",
-      publishedAt: new Date("2024-01-15").getTime(),
-      updatedAt: new Date("2024-01-20").getTime(),
+      publishedAt: new Date("2024-01-15T12:00:00Z").getTime(),
+      updatedAt: new Date("2024-01-20T12:00:00Z").getTime(),
       coverImage: "https://example.com/react-19-cover.jpg",
       category: "Technology",
       tags: ["React", "JavaScript", "Web Development"],
@@ -55,8 +55,8 @@ describe("BlogHeader", () => {
         keywords: ["react", "javascript", "web development"],
         canonicalUrl: "https://example.com/blog/getting-started-with-react-19",
         author: "Ryan Lowe",
-        publishedTime: new Date("2024-01-15").toISOString(),
-        modifiedTime: new Date("2024-01-20").toISOString(),
+        publishedTime: new Date("2024-01-15T12:00:00Z").toISOString(),
+        modifiedTime: new Date("2024-01-20T12:00:00Z").toISOString(),
       },
     };
   });
@@ -152,7 +152,7 @@ describe("BlogHeader", () => {
       // Test March date
       const marchPost = {
         ...mockPost,
-        publishedAt: new Date("2024-03-20").getTime(),
+        publishedAt: new Date("2024-03-20T12:00:00Z").getTime(),
       };
 
       const { unmount: unmountMarch } = render(<BlogHeader post={marchPost} />);
@@ -162,7 +162,7 @@ describe("BlogHeader", () => {
       // Test December date
       const decPost = {
         ...mockPost,
-        publishedAt: new Date("2024-12-05").getTime(),
+        publishedAt: new Date("2024-12-05T12:00:00Z").getTime(),
       };
 
       const { unmount: unmountDec } = render(<BlogHeader post={decPost} />);
@@ -173,7 +173,7 @@ describe("BlogHeader", () => {
     it("should handle timestamp numbers correctly", () => {
       const timestampPost = {
         ...mockPost,
-        publishedAt: 1705276800000, // Jan 15, 2024 in milliseconds
+        publishedAt: new Date("2024-01-15T12:00:00Z").getTime(), // Jan 15, 2024 at noon UTC
       };
 
       render(<BlogHeader post={timestampPost} />);

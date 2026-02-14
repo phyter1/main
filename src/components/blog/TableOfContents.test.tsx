@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/dom";
 import { TableOfContents } from "./TableOfContents";
 
@@ -9,10 +9,10 @@ class MockIntersectionObserver {
     public callback: IntersectionObserverCallback,
     public options?: IntersectionObserverInit,
   ) {}
-  observe = mock(() => {});
-  unobserve = mock(() => {});
-  disconnect = mock(() => {});
-  takeRecords = mock(() => []);
+  observe = vi.fn(() => {});
+  unobserve = vi.fn(() => {});
+  disconnect = vi.fn(() => {});
+  takeRecords = vi.fn(() => []);
   root = null;
   rootMargin = "";
   thresholds = [];

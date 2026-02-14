@@ -1,10 +1,10 @@
-import { describe, expect, it, mock } from "bun:test";
 import { render } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import type { BlogPost } from "@/types/blog";
 import { BlogCard } from "./BlogCard";
 
 // Mock framer-motion to avoid animation issues in tests
-mock.module("framer-motion", () => ({
+vi.mock("framer-motion", () => ({
   motion: {
     article: ({ children, ...props }: any) => (
       <article {...props}>{children}</article>
@@ -14,12 +14,12 @@ mock.module("framer-motion", () => ({
 }));
 
 // Mock useReducedMotion hook
-mock.module("@/hooks/useReducedMotion", () => ({
+vi.mock("@/hooks/useReducedMotion", () => ({
   useReducedMotion: () => false,
 }));
 
 // Mock Next.js Link
-mock.module("next/link", () => ({
+vi.mock("next/link", () => ({
   default: ({ children, href, ...props }: any) => (
     <a href={href} {...props}>
       {children}
@@ -28,14 +28,14 @@ mock.module("next/link", () => ({
 }));
 
 // Mock Next.js Image
-mock.module("next/image", () => ({
+vi.mock("next/image", () => ({
   default: ({ alt, src, ...props }: any) => (
     <img alt={alt} src={src} {...props} />
   ),
 }));
 
 // Mock blog utility functions
-mock.module("@/lib/blog-utils", () => ({
+vi.mock("@/lib/blog-utils", () => ({
   formatDate: (_timestamp: number) => "Jan 15, 2024",
 }));
 
