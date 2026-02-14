@@ -1,9 +1,9 @@
-import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import AboutPage from "./page";
 
 // Mock next/image
-mock.module("next/image", () => ({
+vi.mock("next/image", () => ({
   __esModule: true,
   // biome-ignore lint/suspicious/noExplicitAny: Test mock requires flexible typing
   // biome-ignore lint/a11y/useAltText: Test mock component
@@ -12,12 +12,12 @@ mock.module("next/image", () => ({
 }));
 
 // Mock timeline data
-mock.module("@/data/timeline", () => ({
+vi.mock("@/data/timeline", () => ({
   getSortedTimeline: () => [],
 }));
 
 // Mock SkillsMatrix component
-mock.module("@/components/sections/SkillsMatrix", () => ({
+vi.mock("@/components/sections/SkillsMatrix", () => ({
   SkillsMatrix: () => (
     <div data-testid="skills-matrix">
       <h3>Strong</h3>

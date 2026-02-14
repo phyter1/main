@@ -5,7 +5,7 @@
  * static site pages with dynamic blog content.
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock data
 const mockPostsData = {
@@ -57,15 +57,19 @@ const mockTagsData = [
   },
 ];
 
-// Mock Convex preloadQuery - simplified approach
-const mockPreloadQuery = mock(async () => mockPostsData);
+// Mock Convex HTTP client query method
+const mockQuery = vi.fn();
 
-mock.module("convex/nextjs", () => ({
-  preloadQuery: mockPreloadQuery,
+class MockConvexHttpClient {
+  query = mockQuery;
+}
+
+vi.mock("convex/browser", () => ({
+  ConvexHttpClient: MockConvexHttpClient,
 }));
 
 // Mock the Convex API functions directly in the sitemap module
-mock.module("../../convex/_generated/api", () => ({
+vi.mock("../../convex/_generated/api", () => ({
   api: {
     blog: {
       listPosts: "blog.listPosts",
@@ -77,13 +81,13 @@ mock.module("../../convex/_generated/api", () => ({
 
 describe("sitemap", () => {
   beforeEach(() => {
-    mockPreloadQuery.mockClear();
+    mockQuery.mockClear();
   });
 
   it("should return MetadataRoute.Sitemap type", async () => {
     // Setup mock to return proper data for each call
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return mockPostsData;
       if (callCount === 2) return mockCategoriesData;
@@ -100,7 +104,7 @@ describe("sitemap", () => {
 
   it("should include static site pages", async () => {
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return mockPostsData;
       if (callCount === 2) return mockCategoriesData;
@@ -124,7 +128,7 @@ describe("sitemap", () => {
 
   it("should include blog listing page", async () => {
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return mockPostsData;
       if (callCount === 2) return mockCategoriesData;
@@ -145,7 +149,7 @@ describe("sitemap", () => {
 
   it("should include blog posts", async () => {
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return mockPostsData;
       if (callCount === 2) return mockCategoriesData;
@@ -166,7 +170,7 @@ describe("sitemap", () => {
 
   it("should include category pages", async () => {
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return mockPostsData;
       if (callCount === 2) return mockCategoriesData;
@@ -187,7 +191,7 @@ describe("sitemap", () => {
 
   it("should include tag pages", async () => {
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return mockPostsData;
       if (callCount === 2) return mockCategoriesData;
@@ -208,7 +212,7 @@ describe("sitemap", () => {
 
   it("should have valid sitemap structure for all entries", async () => {
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return mockPostsData;
       if (callCount === 2) return mockCategoriesData;
@@ -249,7 +253,7 @@ describe("sitemap", () => {
   it("should handle empty blog content gracefully", async () => {
     // Mock empty responses
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return { posts: [], total: 0, hasMore: false };
       if (callCount === 2) return [];
@@ -271,7 +275,7 @@ describe("sitemap", () => {
 
   it("should use correct priorities for different page types", async () => {
     let callCount = 0;
-    mockPreloadQuery.mockImplementation(async () => {
+    mockQuery.mockImplementation(async () => {
       callCount++;
       if (callCount === 1) return mockPostsData;
       if (callCount === 2) return mockCategoriesData;
