@@ -3,7 +3,7 @@
  * POST endpoint for AI-powered conversational resume updates
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Mock AI SDK generateObject for testing
@@ -28,19 +28,19 @@ const mockGenerateObjectResult = {
   },
 };
 
-const mockGenerateObject = mock(() =>
+const mockGenerateObject = vi.fn(() =>
   Promise.resolve(mockGenerateObjectResult),
 );
 
-mock.module("ai", () => ({
+vi.mock("ai", () => ({
   generateObject: mockGenerateObject,
 }));
 
 /**
  * Mock AI config
  */
-mock.module("@/lib/ai-config", () => ({
-  createOpenAIClient: mock(() => "mock-openai-client"),
+vi.mock("@/lib/ai-config", () => ({
+  createOpenAIClient: vi.fn(() => "mock-openai-client"),
   AI_RATE_LIMITS: {
     MAX_REQUESTS_PER_MINUTE: 5,
     MAX_TOKENS_PER_REQUEST: 4096,
@@ -79,7 +79,7 @@ const mockResume = {
   principles: [],
 };
 
-mock.module("@/data/resume", () => ({
+vi.mock("@/data/resume", () => ({
   resume: mockResume,
 }));
 

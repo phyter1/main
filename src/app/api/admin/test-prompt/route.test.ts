@@ -3,11 +3,11 @@
  * Validates POST endpoint for running test suites against AI prompts
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TestCase, TestResult } from "@/lib/test-runner";
 
 // Mock runTestSuite from test-runner
-const mockRunTestSuite = mock(() =>
+const mockRunTestSuite = vi.fn(() =>
   Promise.resolve([
     {
       testCaseId: "test-1",
@@ -33,13 +33,13 @@ const mockRunTestSuite = mock(() =>
   ] as TestResult[]),
 );
 
-mock.module("@/lib/test-runner", () => ({
+vi.mock("@/lib/test-runner", () => ({
   runTestSuite: mockRunTestSuite,
 }));
 
 // Mock AI config for rate limiting
-mock.module("@/lib/ai-config", () => ({
-  createOpenAIClient: mock(() => "mock-openai-client"),
+vi.mock("@/lib/ai-config", () => ({
+  createOpenAIClient: vi.fn(() => "mock-openai-client"),
   AI_RATE_LIMITS: {
     MAX_REQUESTS_PER_MINUTE: 5,
     MAX_TOKENS_PER_REQUEST: 4096,

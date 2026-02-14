@@ -3,17 +3,17 @@
  * Validates POST endpoint with prompt deployment and rate limiting
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock prompt versioning module
-const mockRollbackVersion = mock(
+const mockRollbackVersion = vi.fn(
   async (_agentType: string, _versionId: string) => {
     // Success case by default
     return Promise.resolve();
   },
 );
 
-mock.module("@/lib/prompt-versioning", () => ({
+vi.mock("@/lib/prompt-versioning", () => ({
   rollbackVersion: mockRollbackVersion,
 }));
 

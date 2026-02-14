@@ -3,27 +3,23 @@
  * Tests prompt version history listing API endpoint
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PromptVersion } from "@/lib/prompt-versioning";
 
 // Mock listVersions function from prompt-versioning library
-const mockListVersions = mock(
+const mockListVersions = vi.fn(
   async (_agentType: string): Promise<PromptVersion[]> => [],
 );
 
 // Mock prompt-versioning module
-mock.module("@/lib/prompt-versioning", () => ({
+vi.mock("@/lib/prompt-versioning", () => ({
   listVersions: mockListVersions,
 }));
 
 describe("GET /api/admin/prompt-history", () => {
-  beforeEach(() => {
-    mock.restore();
-  });
+  beforeEach(() => {});
 
-  afterEach(() => {
-    mock.restore();
-  });
+  afterEach(() => {});
 
   it("should return versions for chat agent type", async () => {
     // Arrange - Mock versions data
