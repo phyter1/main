@@ -17,6 +17,39 @@ interface BlogContentProps {
 }
 
 /**
+ * Component for rendering markdown images with error handling
+ */
+function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!src) return null;
+
+  if (hasError) {
+    return (
+      <div className="relative w-full my-6 flex flex-col items-center justify-center p-8 bg-muted rounded-lg border border-border">
+        <ImageOff className="h-12 w-12 text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">Failed to load image</p>
+        {alt && <p className="text-xs text-muted-foreground mt-1">{alt}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full my-6">
+      <Image
+        src={src}
+        alt={alt || ""}
+        width={800}
+        height={600}
+        className="rounded-lg shadow-md w-full h-auto"
+        loading="lazy"
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+}
+
+/**
  * BlogContent component renders MDX/Markdown content with comprehensive GFM support.
  *
  * Features:
@@ -31,39 +64,6 @@ interface BlogContentProps {
  * @param className - Optional additional CSS classes
  */
 export function BlogContent({ content, className = "" }: BlogContentProps) {
-  /**
-   * Component for rendering markdown images with error handling
-   */
-  const MarkdownImage = ({ src, alt }: { src?: string; alt?: string }) => {
-    const [hasError, setHasError] = useState(false);
-
-    if (!src) return null;
-
-    if (hasError) {
-      return (
-        <div className="relative w-full my-6 flex flex-col items-center justify-center p-8 bg-muted rounded-lg border border-border">
-          <ImageOff className="h-12 w-12 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">Failed to load image</p>
-          {alt && <p className="text-xs text-muted-foreground mt-1">{alt}</p>}
-        </div>
-      );
-    }
-
-    return (
-      <div className="relative w-full my-6">
-        <Image
-          src={src}
-          alt={alt || ""}
-          width={800}
-          height={600}
-          className="rounded-lg shadow-md w-full h-auto"
-          loading="lazy"
-          onError={() => setHasError(true)}
-        />
-      </div>
-    );
-  };
-
   return (
     <article
       className={`prose prose-neutral dark:prose-invert max-w-none ${className}`}
