@@ -1,6 +1,6 @@
-import { describe, it, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 
 describe("T021: CLAUDE.md AI Agent Workbench Documentation", () => {
   let claudeContent: string;
@@ -278,13 +278,13 @@ describe("T021: CLAUDE.md AI Agent Workbench Documentation", () => {
     it("should include TypeScript code examples", () => {
       const tsCodeBlocks = claudeContent.match(/```typescript/g);
       expect(tsCodeBlocks).toBeTruthy();
-      expect(tsCodeBlocks!.length).toBeGreaterThan(10);
+      expect(tsCodeBlocks?.length).toBeGreaterThan(10);
     });
 
     it("should include bash code examples", () => {
       const bashCodeBlocks = claudeContent.match(/```bash/g);
       expect(bashCodeBlocks).toBeTruthy();
-      expect(bashCodeBlocks!.length).toBeGreaterThan(3);
+      expect(bashCodeBlocks?.length).toBeGreaterThan(3);
     });
 
     it("should include interface definitions", () => {

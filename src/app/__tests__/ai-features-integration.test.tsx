@@ -7,26 +7,26 @@
  * 4. Projects page with context expansion
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Setup environment for API tests
 process.env.ANTHROPIC_API_KEY = "sk-ant-test-key-for-integration-testing";
 
 // Mock Next.js router
-const mockPush = mock(() => Promise.resolve(true));
+const mockPush = vi.fn(() => Promise.resolve(true));
 const mockRouter = {
   push: mockPush,
-  replace: mock(() => Promise.resolve(true)),
-  prefetch: mock(() => Promise.resolve()),
-  back: mock(() => {}),
+  replace: vi.fn(() => Promise.resolve(true)),
+  prefetch: vi.fn(() => Promise.resolve()),
+  back: vi.fn(() => {}),
   pathname: "/",
   query: {},
   asPath: "/",
 };
 
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => mockRouter,
   usePathname: () => mockRouter.pathname,
   useSearchParams: () => new URLSearchParams(),
@@ -72,7 +72,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
       });
 
       // Mock fetch with proper streaming response
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(mockStream, {
             status: 200,
@@ -135,7 +135,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
 
     it("should handle chat API errors gracefully", async () => {
       // Mock API error response
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
             status: 429,
@@ -163,7 +163,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
 
     it("should handle network failures in chat", async () => {
       // Mock network failure
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.reject(new Error("Network error")),
       ) as typeof global.fetch;
 
@@ -188,7 +188,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
   describe("Fit Assessment Feature Integration", () => {
     it("should complete full fit assessment flow: paste job description and get assessment", async () => {
       // Mock fit assessment API response
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -272,7 +272,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
 
     it("should handle validation errors for invalid job descriptions", async () => {
       // Mock validation error response
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -317,7 +317,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
 
     it("should handle API failures in fit assessment", async () => {
       // Mock API failure
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ error: "Internal server error" }), {
             status: 500,
@@ -455,7 +455,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
         },
       });
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(mockChatStream, {
             status: 200,
@@ -482,7 +482,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
       unmountChat();
 
       // Step 3: Navigate to fit assessment page
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -546,7 +546,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
   describe("Error Scenarios and Edge Cases", () => {
     it("should handle rate limiting across all API endpoints", async () => {
       // Mock rate limit response
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -618,7 +618,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
       unmount();
 
       // Test invalid fit assessment input
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ error: "Job description required" }), {
             status: 400,
@@ -646,8 +646,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
       // Verify fetch was called or error appeared
       await waitFor(
         () => {
-          // biome-ignore lint/suspicious/noExplicitAny: Mock type checking for test
-          const fetchCalled = (global.fetch as any).mock?.calls?.length > 0;
+          const fetchCalled = (global.fetch as any).mock?.calls?.length > 0; // biome-ignore lint/suspicious/noExplicitAny: Mock type checking for test
           const errorElement = screen.queryByRole("alert");
           expect(fetchCalled || errorElement !== null).toBe(true);
         },
@@ -657,7 +656,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
 
     it("should handle network timeouts gracefully", async () => {
       // Mock timeout error
-      global.fetch = mock(
+      global.fetch = vi.fn(
         () =>
           new Promise((_, reject) => {
             setTimeout(() => reject(new Error("Request timeout")), 100);
@@ -685,7 +684,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
 
     it("should handle malformed API responses", async () => {
       // Mock malformed response
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response("Invalid JSON{", {
             status: 200,
@@ -728,7 +727,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
 
     it("AC2: Mocks API responses appropriately", async () => {
       // Verify fetch mocking works for chat API
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ success: true }), {
             status: 200,
@@ -741,7 +740,7 @@ describe("T017: Full User Journey E2E Integration Test", () => {
       expect(global.fetch).toHaveBeenCalled();
 
       // Verify fetch mocking works for fit assessment API
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ fitLevel: "strong" }), {
             status: 200,
