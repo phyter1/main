@@ -14,8 +14,11 @@
  * - Loading and empty states
  *
  * Note: Uses client-side rendering for interactive features.
- * ISR configuration handled at route segment level.
+ * ISR configuration: 60 seconds (1 minute) for listing pages.
  */
+
+// ISR revalidation: 60 seconds for listing pages
+export const revalidate = 60;
 
 import { useQuery } from "convex/react";
 import type { Variants } from "framer-motion";

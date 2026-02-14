@@ -12,33 +12,33 @@
  * - generateStaticParams for all tags
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { Metadata } from "next";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BlogPost, BlogTag } from "@/types/blog";
 
 // Mock BlogCard component
-const mockBlogCard = mock(({ post }: { post: BlogPost }) => (
+const mockBlogCard = vi.fn(({ post }: { post: BlogPost }) => (
   <article data-testid={`blog-card-${post.slug}`}>
     <h3>{post.title}</h3>
   </article>
 ));
 
-mock.module("@/components/blog/BlogCard", () => ({
+vi.mock("@/components/blog/BlogCard", () => ({
   BlogCard: mockBlogCard,
 }));
 
 // Mock BlogSidebar component
-const mockBlogSidebar = mock(() => (
+const mockBlogSidebar = vi.fn(() => (
   <aside data-testid="blog-sidebar">Sidebar</aside>
 ));
 
-mock.module("@/components/blog/BlogSidebar", () => ({
+vi.mock("@/components/blog/BlogSidebar", () => ({
   BlogSidebar: mockBlogSidebar,
 }));
 
 // Mock UI components
-mock.module("@/components/ui/badge", () => ({
+vi.mock("@/components/ui/badge", () => ({
   Badge: ({ children, ...props }: any) => (
     <span data-badge {...props}>
       {children}
@@ -46,7 +46,7 @@ mock.module("@/components/ui/badge", () => ({
   ),
 }));
 
-mock.module("@/components/ui/card", () => ({
+vi.mock("@/components/ui/card", () => ({
   Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   CardContent: ({ children, ...props }: any) => (
     <div {...props}>{children}</div>
@@ -104,8 +104,8 @@ const createMockPost = (id: string, title: string, slug: string): BlogPost => ({
 // Mock Convex client
 let mockConvexQuery: ReturnType<typeof mock>;
 
-mock.module("convex/browser", () => ({
-  ConvexHttpClient: mock(function ConvexHttpClient() {
+vi.mock("convex/browser", () => ({
+  ConvexHttpClient: vi.fn(function ConvexHttpClient() {
     return {
       query: mockConvexQuery,
     };
@@ -120,13 +120,13 @@ const mockApi = {
   },
 };
 
-mock.module("../../../../../convex/_generated/api", () => ({
+vi.mock("../../../../../convex/_generated/api", () => ({
   api: mockApi,
 }));
 
 describe("Tag Archive Page (T030)", () => {
   beforeEach(() => {
-    mockConvexQuery = mock(async (queryName: string, _args?: any) => {
+    mockConvexQuery = vi.fn(async (queryName: string, _args?: any) => {
       if (queryName === mockApi.blog.getTags) {
         return mockTags;
       }
@@ -142,7 +142,6 @@ describe("Tag Archive Page (T030)", () => {
 
   afterEach(() => {
     cleanup();
-    mock.restore();
   });
 
   describe("Server Component Rendering", () => {
@@ -222,7 +221,7 @@ describe("Tag Archive Page (T030)", () => {
     });
 
     it("should display empty state when no posts", async () => {
-      mockConvexQuery = mock(async (queryName: string) => {
+      mockConvexQuery = vi.fn(async (queryName: string) => {
         if (queryName === mockApi.blog.getTags) {
           return mockTags;
         }
@@ -248,7 +247,7 @@ describe("Tag Archive Page (T030)", () => {
         createMockPost(`post${i}`, `Post ${i + 1}`, `post-${i + 1}`),
       );
 
-      mockConvexQuery = mock(async (queryName: string) => {
+      mockConvexQuery = vi.fn(async (queryName: string) => {
         if (queryName === mockApi.blog.getTags) {
           return mockTags;
         }
@@ -273,7 +272,7 @@ describe("Tag Archive Page (T030)", () => {
         createMockPost(`post${i}`, `Post ${i + 1}`, `post-${i + 1}`),
       );
 
-      mockConvexQuery = mock(async (queryName: string) => {
+      mockConvexQuery = vi.fn(async (queryName: string) => {
         if (queryName === mockApi.blog.getTags) {
           return mockTags;
         }
@@ -299,7 +298,7 @@ describe("Tag Archive Page (T030)", () => {
         createMockPost(`post${i}`, `Post ${i + 1}`, `post-${i + 1}`),
       );
 
-      mockConvexQuery = mock(async (queryName: string) => {
+      mockConvexQuery = vi.fn(async (queryName: string) => {
         if (queryName === mockApi.blog.getTags) {
           return mockTags;
         }
@@ -383,7 +382,7 @@ describe("Tag Archive Page (T030)", () => {
     });
 
     it("should handle empty tags list", async () => {
-      mockConvexQuery = mock(async () => []);
+      mockConvexQuery = vi.fn(async () => []);
 
       const { generateStaticParams } = await import("./page");
       const params = await generateStaticParams();

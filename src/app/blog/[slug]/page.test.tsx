@@ -11,9 +11,10 @@
  * - Related posts functionality
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, waitFor } from "@testing-library/react";
+import { useMutation, usePreloadedQuery, useQuery } from "convex/react";
 import type { Metadata } from "next";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BlogPostPage, {
   generateMetadata,
   generateStaticParams,
@@ -21,26 +22,22 @@ import BlogPostPage, {
 } from "./page";
 
 // Mock Next.js navigation
-mock.module("next/navigation", () => ({
-  notFound: mock(() => {
+vi.mock("next/navigation", () => ({
+  notFound: vi.fn(() => {
     throw new Error("Not Found");
   }),
 }));
 
 // Mock Convex React hooks
-const mockUseQuery = mock(() => null);
-const mockUsePreloadedQuery = mock(() => null);
-const mockUseMutation = mock(() => mock(() => Promise.resolve()));
-
-mock.module("convex/react", () => ({
-  useQuery: mockUseQuery,
-  usePreloadedQuery: mockUsePreloadedQuery,
-  useMutation: mockUseMutation,
-  useConvexAuth: mock(() => ({ isAuthenticated: false, isLoading: false })),
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => null),
+  usePreloadedQuery: vi.fn(() => null),
+  useMutation: vi.fn(() => vi.fn(() => Promise.resolve())),
+  useConvexAuth: vi.fn(() => ({ isAuthenticated: false, isLoading: false })),
 }));
 
 // Mock API module
-mock.module("../../../../convex/_generated/api", () => ({
+vi.mock("../../../../convex/_generated/api", () => ({
   api: {
     blog: {
       getPostBySlug: "blog:getPostBySlug",
@@ -51,24 +48,29 @@ mock.module("../../../../convex/_generated/api", () => ({
   },
 }));
 
-// Mock Convex server for metadata generation
-const _mockConvexFromCookie = mock(() => ({
-  query: mock(() => Promise.resolve(null)),
-  mutation: mock(() => Promise.resolve()),
+// Mock Convex client for server-side functions (generateMetadata, generateStaticParams)
+let mockConvexQuery: any = null;
+
+vi.mock("convex/browser", () => ({
+  ConvexHttpClient: vi.fn(function ConvexHttpClient() {
+    return {
+      query: mockConvexQuery,
+    };
+  }),
 }));
 
 // Mock for metadata/static params generation
 let mockPreloadQueryData: any = null;
 
-mock.module("convex/nextjs", () => ({
-  preloadQuery: mock(async (_query: any, _args: any) => {
+vi.mock("convex/nextjs", () => ({
+  preloadQuery: vi.fn(async (_query: any, _args: any) => {
     // Return a preloaded query object that can be used by usePreloadedQuery
     return mockPreloadQueryData;
   }),
 }));
 
 // Mock blog components
-mock.module("@/components/blog/BlogHeader", () => ({
+vi.mock("@/components/blog/BlogHeader", () => ({
   BlogHeader: ({ post }: { post: any }) => (
     <div data-testid="blog-header">
       <h1>{post?.title || ""}</h1>
@@ -77,13 +79,13 @@ mock.module("@/components/blog/BlogHeader", () => ({
   ),
 }));
 
-mock.module("@/components/blog/BlogContent", () => ({
+vi.mock("@/components/blog/BlogContent", () => ({
   BlogContent: ({ content }: { content: string }) => (
     <div data-testid="blog-content">{content || ""}</div>
   ),
 }));
 
-mock.module("@/components/blog/ShareButtons", () => ({
+vi.mock("@/components/blog/ShareButtons", () => ({
   ShareButtons: ({ title, slug }: { title: string; slug: string }) => (
     <div data-testid="share-buttons">
       {title || ""} - {slug || ""}
@@ -91,13 +93,13 @@ mock.module("@/components/blog/ShareButtons", () => ({
   ),
 }));
 
-mock.module("@/components/blog/TableOfContents", () => ({
+vi.mock("@/components/blog/TableOfContents", () => ({
   TableOfContents: ({ headings }: { headings: any[] }) => (
     <div data-testid="table-of-contents">{headings?.length || 0} headings</div>
   ),
 }));
 
-mock.module("@/components/blog/BlogCard", () => ({
+vi.mock("@/components/blog/BlogCard", () => ({
   BlogCard: ({ post }: { post: any }) => (
     <div data-testid="blog-card">
       <h3>{post?.title || ""}</h3>
@@ -106,13 +108,13 @@ mock.module("@/components/blog/BlogCard", () => ({
 }));
 
 // Mock blog utilities
-mock.module("@/lib/blog-utils", () => ({
-  formatDate: mock((_timestamp: number) => "Jan 01, 2024"),
+vi.mock("@/lib/blog-utils", () => ({
+  formatDate: vi.fn((_timestamp: number) => "Jan 01, 2024"),
 }));
 
 // Mock blog metadata utilities
-mock.module("@/lib/blog-metadata", () => ({
-  generateBlogMetadata: mock((post: any) => ({
+vi.mock("@/lib/blog-metadata", () => ({
+  generateBlogMetadata: vi.fn((post: any) => ({
     title: post.seoMetadata?.metaTitle || post.title,
     description: post.seoMetadata?.metaDescription || post.excerpt,
     openGraph: {
@@ -136,7 +138,7 @@ mock.module("@/lib/blog-metadata", () => ({
       canonical: `https://phytertek.com/blog/${post.slug}`,
     },
   })),
-  generateArticleStructuredData: mock((post: any) => {
+  generateArticleStructuredData: vi.fn((post: any) => {
     const publishedDate = post.publishedAt
       ? new Date(post.publishedAt).toISOString()
       : new Date().toISOString();
@@ -212,7 +214,7 @@ describe("BlogPostPage (T028)", () => {
   // Helper to setup mocks for rendering tests
   const setupRenderMocks = (post: any, relatedPosts: any[] = []) => {
     mockPreloadQueryData = post;
-    mockUsePreloadedQuery.mockImplementation((preloaded) => {
+    vi.mocked(usePreloadedQuery).mockImplementation((preloaded) => {
       // If preloaded is undefined/null, return undefined to simulate no preloaded data
       if (!preloaded || preloaded === null || preloaded === undefined) {
         return undefined;
@@ -220,7 +222,7 @@ describe("BlogPostPage (T028)", () => {
       // Otherwise return the post data (which could be null)
       return post;
     });
-    mockUseQuery.mockImplementation((query: any, args: any) => {
+    vi.mocked(useQuery).mockImplementation((query: any, args: any) => {
       if (args === "skip") {
         return "skip";
       }
@@ -235,15 +237,35 @@ describe("BlogPostPage (T028)", () => {
     });
   };
 
+  // Helper to setup mocks for server-side functions (generateMetadata, generateStaticParams)
+  const setupServerMocks = (post: any = null, categories: any[] = []) => {
+    mockConvexQuery = vi.fn(async (queryName: string, _args?: any) => {
+      // Mock getPostBySlug
+      if (queryName === "blog:getPostBySlug") {
+        return post;
+      }
+      // Mock getCategories
+      if (queryName === "blog:getCategories") {
+        return categories;
+      }
+      // Mock listPosts
+      if (queryName === "blog:listPosts") {
+        return mockPreloadQueryData; // Will be set per test
+      }
+      return null;
+    });
+  };
+
   beforeEach(() => {
     cleanup();
-    mock.restore();
+
     mockPreloadQueryData = null;
+    // Initialize ConvexHttpClient mock with default behavior
+    setupServerMocks();
   });
 
   afterEach(() => {
     cleanup();
-    mock.restore();
   });
 
   describe("Page Rendering", () => {
@@ -392,8 +414,8 @@ describe("BlogPostPage (T028)", () => {
 
   describe("View Count Increment", () => {
     it("should call incrementViewCount mutation on page load", async () => {
-      const mockIncrementViewCount = mock(() => Promise.resolve(43));
-      mockUseMutation.mockImplementation(() => mockIncrementViewCount);
+      const mockIncrementViewCount = vi.fn(() => Promise.resolve(43));
+      vi.mocked(useMutation).mockImplementation(() => mockIncrementViewCount);
       setupRenderMocks(mockBlogPost);
 
       const page = await BlogPostPage({
@@ -409,8 +431,8 @@ describe("BlogPostPage (T028)", () => {
     });
 
     it("should not increment view count if post not found", async () => {
-      const mockIncrementViewCount = mock(() => Promise.resolve());
-      mockUseMutation.mockImplementation(() => mockIncrementViewCount);
+      const mockIncrementViewCount = vi.fn(() => Promise.resolve());
+      vi.mocked(useMutation).mockImplementation(() => mockIncrementViewCount);
       setupRenderMocks(null);
 
       const page = await BlogPostPage({
@@ -426,7 +448,15 @@ describe("BlogPostPage (T028)", () => {
 
   describe("Dynamic Metadata Generation", () => {
     it("should generate metadata with post title and description", async () => {
-      mockPreloadQueryData = mockBlogPost;
+      // Setup mock for raw Convex data
+      const rawPost = {
+        ...mockBlogPost,
+        categoryId: "cat-1",
+      };
+      const categories = [
+        { _id: "cat-1", name: "Technology", slug: "technology" },
+      ];
+      setupServerMocks(rawPost, categories);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "getting-started-with-react" }),
@@ -441,7 +471,14 @@ describe("BlogPostPage (T028)", () => {
     });
 
     it("should generate OpenGraph tags", async () => {
-      mockPreloadQueryData = mockBlogPost;
+      const rawPost = {
+        ...mockBlogPost,
+        categoryId: "cat-1",
+      };
+      const categories = [
+        { _id: "cat-1", name: "Technology", slug: "technology" },
+      ];
+      setupServerMocks(rawPost, categories);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "getting-started-with-react" }),
@@ -461,7 +498,14 @@ describe("BlogPostPage (T028)", () => {
     });
 
     it("should generate Twitter Card tags", async () => {
-      mockPreloadQueryData = mockBlogPost;
+      const rawPost = {
+        ...mockBlogPost,
+        categoryId: "cat-1",
+      };
+      const categories = [
+        { _id: "cat-1", name: "Technology", slug: "technology" },
+      ];
+      setupServerMocks(rawPost, categories);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "getting-started-with-react" }),
@@ -483,10 +527,13 @@ describe("BlogPostPage (T028)", () => {
     it("should fallback to default metadata if SEO metadata missing", async () => {
       const postWithoutSEO = {
         ...mockBlogPost,
+        categoryId: "cat-1",
         seoMetadata: {},
       };
-
-      mockPreloadQueryData = postWithoutSEO;
+      const categories = [
+        { _id: "cat-1", name: "Technology", slug: "technology" },
+      ];
+      setupServerMocks(postWithoutSEO, categories);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "getting-started-with-react" }),
@@ -500,7 +547,7 @@ describe("BlogPostPage (T028)", () => {
     });
 
     it("should return default metadata when post not found", async () => {
-      mockPreloadQueryData = null;
+      setupServerMocks(null, []);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "non-existent" }),
@@ -511,7 +558,14 @@ describe("BlogPostPage (T028)", () => {
 
     // T032: Enhanced metadata tests
     it("should include canonical URL", async () => {
-      mockPreloadQueryData = mockBlogPost;
+      const rawPost = {
+        ...mockBlogPost,
+        categoryId: "cat-1",
+      };
+      const categories = [
+        { _id: "cat-1", name: "Technology", slug: "technology" },
+      ];
+      setupServerMocks(rawPost, categories);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "getting-started-with-react" }),
@@ -524,7 +578,14 @@ describe("BlogPostPage (T028)", () => {
     });
 
     it("should include keywords from seoMetadata", async () => {
-      mockPreloadQueryData = mockBlogPost;
+      const rawPost = {
+        ...mockBlogPost,
+        categoryId: "cat-1",
+      };
+      const categories = [
+        { _id: "cat-1", name: "Technology", slug: "technology" },
+      ];
+      setupServerMocks(rawPost, categories);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "getting-started-with-react" }),
@@ -540,7 +601,14 @@ describe("BlogPostPage (T028)", () => {
     });
 
     it("should include article publishedTime and modifiedTime", async () => {
-      mockPreloadQueryData = mockBlogPost;
+      const rawPost = {
+        ...mockBlogPost,
+        categoryId: "cat-1",
+      };
+      const categories = [
+        { _id: "cat-1", name: "Technology", slug: "technology" },
+      ];
+      setupServerMocks(rawPost, categories);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "getting-started-with-react" }),
@@ -559,14 +627,17 @@ describe("BlogPostPage (T028)", () => {
     it("should handle missing OG image gracefully", async () => {
       const postWithoutImage = {
         ...mockBlogPost,
+        categoryId: "cat-1",
         coverImage: undefined,
         seoMetadata: {
           ...mockBlogPost.seoMetadata,
           ogImage: undefined,
         },
       };
-
-      mockPreloadQueryData = postWithoutImage;
+      const categories = [
+        { _id: "cat-1", name: "Technology", slug: "technology" },
+      ];
+      setupServerMocks(postWithoutImage, categories);
 
       const metadata = (await generateMetadata({
         params: Promise.resolve({ slug: "getting-started-with-react" }),
@@ -585,7 +656,9 @@ describe("BlogPostPage (T028)", () => {
         { slug: "post-3" },
       ];
 
+      // Set up mock to return posts data for listPosts query
       mockPreloadQueryData = { posts: publishedPosts };
+      setupServerMocks();
 
       const params = await generateStaticParams();
 
@@ -601,7 +674,9 @@ describe("BlogPostPage (T028)", () => {
         { slug: "published-2", status: "published" },
       ];
 
+      // Set up mock to return posts data for listPosts query
       mockPreloadQueryData = { posts: publishedPosts };
+      setupServerMocks();
 
       const params = await generateStaticParams();
 
@@ -612,7 +687,9 @@ describe("BlogPostPage (T028)", () => {
     });
 
     it("should handle empty post list", async () => {
+      // Set up mock to return empty posts array
       mockPreloadQueryData = { posts: [] };
+      setupServerMocks();
 
       const params = await generateStaticParams();
 

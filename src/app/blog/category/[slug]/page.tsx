@@ -15,6 +15,9 @@
 
 "use client";
 
+// ISR revalidation: 60 seconds for category archive pages
+export const revalidate = 60;
+
 import { useQuery } from "convex/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { notFound } from "next/navigation";
