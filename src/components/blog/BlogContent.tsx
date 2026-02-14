@@ -22,7 +22,15 @@ interface BlogContentProps {
 function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
   const [hasError, setHasError] = useState(false);
 
-  if (!src) return null;
+  if (!src) {
+    console.warn("MarkdownImage: No src provided");
+    return null;
+  }
+
+  // Log for debugging linked images
+  if (process.env.NODE_ENV === "development") {
+    console.log("MarkdownImage rendering:", { src, alt });
+  }
 
   if (hasError) {
     return (
@@ -30,6 +38,9 @@ function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
         <ImageOff className="h-12 w-12 text-muted-foreground mb-2" />
         <p className="text-sm text-muted-foreground">Failed to load image</p>
         {alt && <p className="text-xs text-muted-foreground mt-1">{alt}</p>}
+        <p className="text-xs text-muted-foreground mt-1 font-mono break-all">
+          {src}
+        </p>
       </div>
     );
   }
@@ -43,7 +54,10 @@ function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
         height={600}
         className="rounded-lg shadow-md w-full h-auto"
         loading="lazy"
-        onError={() => setHasError(true)}
+        onError={() => {
+          console.error("Image failed to load:", src);
+          setHasError(true);
+        }}
       />
     </div>
   );
