@@ -31,8 +31,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { calculateReadingTime } from "@/lib/blog-utils";
-import type { SEOMetadata } from "@/types/blog";
+import { calculateReadingTime, hashContent } from "@/lib/blog-utils";
+import type { AIMetadataSuggestions, SEOMetadata } from "@/types/blog";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 
@@ -83,6 +83,18 @@ export default function EditBlogPostPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  // T012: AI metadata suggestion state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [lastAnalyzedContentHash, setLastAnalyzedContentHash] = useState<
+    string | null
+  >(null);
+  const [lastAnalyzedTitleHash, setLastAnalyzedTitleHash] = useState<
+    string | null
+  >(null);
+  const [newSuggestions, setNewSuggestions] =
+    useState<AIMetadataSuggestions | null>(null);
+
   /**
    * Initialize form data from loaded post
    */
@@ -116,11 +128,58 @@ export default function EditBlogPostPage() {
     featured: boolean;
     coverImage?: string;
     seoMetadata: SEOMetadata;
+    excerpt?: string;
+    aiSuggestions?: any;
   }) => {
     setFormData((prev) => ({
       ...prev,
       ...metadata,
     }));
+  };
+
+  /**
+   * T012: Handle AI metadata suggestion request
+   */
+  const handleSuggestMetadata = async () => {
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      const response = await fetch("/api/admin/blog/suggest-metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: formData.content,
+          title: formData.title,
+          excerpt: formData.excerpt,
+          postId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to generate suggestions: ${response.statusText}`,
+        );
+      }
+
+      const suggestions = await response.json();
+
+      // Update hashes
+      setLastAnalyzedContentHash(await hashContent(formData.content));
+      setLastAnalyzedTitleHash(await hashContent(formData.title));
+
+      // Pass suggestions to metadata component
+      setNewSuggestions(suggestions);
+    } catch (error) {
+      console.error("AI metadata suggestion error:", error);
+      setAnalysisError(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate suggestions",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   /**
@@ -159,6 +218,12 @@ export default function EditBlogPostPage() {
     setIsSaving(true);
     try {
       await savePostData();
+
+      // Trigger AI metadata suggestions if content has changed
+      if (formData.title || formData.content) {
+        await handleSuggestMetadata();
+      }
+
       // Stay on page after saving (allow continued editing)
     } catch (error) {
       console.error("Failed to save post:", error);
@@ -175,6 +240,11 @@ export default function EditBlogPostPage() {
     try {
       // Save changes first
       await savePostData();
+
+      // Trigger AI metadata suggestions if content has changed
+      if (formData.title || formData.content) {
+        await handleSuggestMetadata();
+      }
 
       // Then publish
       await publishPost({ id: postId });
@@ -309,6 +379,11 @@ export default function EditBlogPostPage() {
             onContentChange={(content) =>
               setFormData((prev) => ({ ...prev, content }))
             }
+            onSuggestMetadata={handleSuggestMetadata}
+            lastAnalyzedContentHash={lastAnalyzedContentHash || undefined}
+            lastAnalyzedTitleHash={lastAnalyzedTitleHash || undefined}
+            isAnalyzing={isAnalyzing}
+            analysisError={analysisError || undefined}
           />
         </div>
 
@@ -322,9 +397,12 @@ export default function EditBlogPostPage() {
               tags: formData.tags,
               featured: formData.featured,
               coverImage: formData.coverImage,
+              excerpt: formData.excerpt,
               seoMetadata: formData.seoMetadata,
+              aiSuggestions: post?.aiSuggestions,
             }}
             onChange={handleMetadataChange}
+            newSuggestions={newSuggestions || undefined}
           />
         </div>
       </div>

@@ -11,11 +11,17 @@
  * - Slug field with auto-generation
  * - Featured post checkbox
  * - All fields properly controlled
+ *
+ * T011: AI Suggestion Integration
+ * - Displays AI suggestion badges for all metadata fields
+ * - Overlay with approve/reject actions
+ * - Manual editing removes suggestions
+ * - Individual tag suggestions with badges
  */
 
 import { useMutation, useQuery } from "convex/react";
 import { Plus, X } from "lucide-react";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,10 +43,13 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { generateSlug, validateSlug } from "@/lib/blog-utils";
-import type { SEOMetadata } from "@/types/blog";
+import type { AIMetadataSuggestions, SEOMetadata } from "@/types/blog";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { AISuggestionBadge } from "./AISuggestionBadge";
+import { AISuggestionOverlay } from "./AISuggestionOverlay";
 import { ImageUploader } from "./ImageUploader";
+import { NewSuggestionChip } from "./NewSuggestionChip";
 
 export interface BlogPostMetadataProps {
   title: string;
@@ -51,18 +60,37 @@ export interface BlogPostMetadataProps {
     featured: boolean;
     coverImage?: string;
     seoMetadata: SEOMetadata;
+    excerpt?: string;
+    aiSuggestions?: AIMetadataSuggestions;
   };
   onChange: (metadata: BlogPostMetadataProps["metadata"]) => void;
+  /**
+   * T014: New suggestions from re-run (for approved fields)
+   * When AI generates new suggestions for already-approved fields,
+   * they are shown as NewSuggestionChips instead of replacing the values
+   */
+  newSuggestions?: {
+    excerpt?: string;
+    tags?: string[];
+    category?: string;
+    seoMetadata?: {
+      metaTitle?: string;
+      metaDescription?: string;
+      keywords?: string[];
+    };
+  };
 }
 
 export function BlogPostMetadata({
   title,
   metadata,
   onChange,
+  newSuggestions,
 }: BlogPostMetadataProps) {
   // Generate unique IDs for form fields to avoid conflicts
   const slugId = useId();
   const categoryId = useId();
+  const excerptId = useId();
   const newCategoryNameId = useId();
   const newCategoryDescId = useId();
   const tagsId = useId();
@@ -87,6 +115,140 @@ export function BlogPostMetadata({
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [showSlugOverwriteWarning, setShowSlugOverwriteWarning] =
     useState(false);
+
+  // AI Suggestion overlay state (T011)
+  type OverlayField =
+    | "excerpt"
+    | "metaTitle"
+    | "metaDescription"
+    | "keywords"
+    | "category"
+    | { type: "tag"; value: string };
+  const [activeOverlay, setActiveOverlay] = useState<OverlayField | null>(null);
+
+  // T014: State for dismissed new suggestions (re-run logic)
+  const [dismissedNewSuggestions, setDismissedNewSuggestions] = useState<
+    Set<string>
+  >(new Set());
+
+  // T014: Filter rejected tags from new suggestions on mount/update
+  useEffect(() => {
+    if (!newSuggestions?.tags || !metadata.aiSuggestions?.tags?.rejectedTags) {
+      return;
+    }
+
+    const rejectedTags = metadata.aiSuggestions.tags.rejectedTags;
+    const filteredTags = newSuggestions.tags.filter(
+      (tag) => !rejectedTags.includes(tag),
+    );
+
+    // If any tags were filtered out, update metadata with filtered tags
+    if (filteredTags.length < newSuggestions.tags.length) {
+      onChange({
+        ...metadata,
+        aiSuggestions: {
+          ...metadata.aiSuggestions,
+          tags: {
+            value: filteredTags,
+            state: "pending",
+            rejectedTags: metadata.aiSuggestions.tags.rejectedTags,
+          },
+        },
+      });
+    }
+  }, [newSuggestions, metadata, onChange]);
+
+  // T014: Helper to check if field has an approved suggestion
+  const hasApprovedSuggestion = (
+    field:
+      | "excerpt"
+      | "metaTitle"
+      | "metaDescription"
+      | "keywords"
+      | "category"
+      | "tags",
+  ): boolean => {
+    if (!metadata.aiSuggestions) return false;
+
+    if (field === "excerpt") {
+      return metadata.aiSuggestions.excerpt?.state === "approved";
+    }
+    if (field === "tags") {
+      return metadata.aiSuggestions.tags?.state === "approved";
+    }
+    if (field === "category") {
+      return metadata.aiSuggestions.category?.state === "approved";
+    }
+    if (
+      field === "metaTitle" ||
+      field === "metaDescription" ||
+      field === "keywords"
+    ) {
+      return metadata.aiSuggestions.seoMetadata?.[field]?.state === "approved";
+    }
+    return false;
+  };
+
+  // T014: Helper to get new suggestion if not dismissed
+  const getNewSuggestion = (
+    field:
+      | "excerpt"
+      | "metaTitle"
+      | "metaDescription"
+      | "keywords"
+      | "category",
+  ): string | string[] | undefined => {
+    if (dismissedNewSuggestions.has(field)) return undefined;
+    if (!newSuggestions) return undefined;
+
+    if (field === "excerpt") return newSuggestions.excerpt;
+    if (field === "category") return newSuggestions.category;
+    if (field === "metaTitle") return newSuggestions.seoMetadata?.metaTitle;
+    if (field === "metaDescription")
+      return newSuggestions.seoMetadata?.metaDescription;
+    if (field === "keywords") return newSuggestions.seoMetadata?.keywords;
+
+    return undefined;
+  };
+
+  // T014: Handle replace action from NewSuggestionChip
+  const handleReplaceNewSuggestion = (
+    field:
+      | "excerpt"
+      | "metaTitle"
+      | "metaDescription"
+      | "keywords"
+      | "category",
+    value: string,
+  ) => {
+    if (field === "excerpt") {
+      onChange({ ...metadata, excerpt: value });
+    } else if (field === "category") {
+      // Find category ID by name
+      const category = categories.find((c) => c.name === value);
+      if (category) {
+        onChange({
+          ...metadata,
+          categoryId: category._id as Id<"blogCategories">,
+        });
+      }
+    } else if (field === "metaTitle" || field === "metaDescription") {
+      onChange({
+        ...metadata,
+        seoMetadata: {
+          ...metadata.seoMetadata,
+          [field]: value,
+        },
+      });
+    }
+    // Dismiss after replacing
+    setDismissedNewSuggestions((prev) => new Set(prev).add(field));
+  };
+
+  // T014: Handle dismiss action from NewSuggestionChip
+  const handleDismissNewSuggestion = (field: string) => {
+    setDismissedNewSuggestions((prev) => new Set(prev).add(field));
+  };
 
   // Auto-generate slug from title
   const handleGenerateSlug = () => {
@@ -215,13 +377,241 @@ export function BlogPostMetadata({
 
   // Update SEO metadata
   const handleSeoChange = (field: keyof SEOMetadata, value: string) => {
+    // Clear AI suggestion for this field when manually edited (T011)
+    const updatedSuggestions = metadata.aiSuggestions
+      ? { ...metadata.aiSuggestions }
+      : undefined;
+
+    if (updatedSuggestions?.seoMetadata) {
+      if (field === "metaTitle" && updatedSuggestions.seoMetadata.metaTitle) {
+        updatedSuggestions.seoMetadata = {
+          ...updatedSuggestions.seoMetadata,
+          metaTitle: {
+            ...updatedSuggestions.seoMetadata.metaTitle,
+            state: "rejected",
+          },
+        };
+      } else if (
+        field === "metaDescription" &&
+        updatedSuggestions.seoMetadata.metaDescription
+      ) {
+        updatedSuggestions.seoMetadata = {
+          ...updatedSuggestions.seoMetadata,
+          metaDescription: {
+            ...updatedSuggestions.seoMetadata.metaDescription,
+            state: "rejected",
+          },
+        };
+      } else if (
+        field === "keywords" &&
+        updatedSuggestions.seoMetadata.keywords
+      ) {
+        updatedSuggestions.seoMetadata = {
+          ...updatedSuggestions.seoMetadata,
+          keywords: {
+            ...updatedSuggestions.seoMetadata.keywords,
+            state: "rejected",
+          },
+        };
+      }
+    }
+
     onChange({
       ...metadata,
       seoMetadata: {
         ...metadata.seoMetadata,
         [field]: value,
       },
+      aiSuggestions: updatedSuggestions,
     });
+  };
+
+  // Update excerpt
+  const handleExcerptChange = (value: string) => {
+    // Clear AI suggestion for excerpt when manually edited (T011)
+    const updatedSuggestions = metadata.aiSuggestions
+      ? { ...metadata.aiSuggestions }
+      : undefined;
+
+    if (updatedSuggestions?.excerpt) {
+      updatedSuggestions.excerpt = {
+        ...updatedSuggestions.excerpt,
+        state: "rejected",
+      };
+    }
+
+    onChange({
+      ...metadata,
+      excerpt: value,
+      aiSuggestions: updatedSuggestions,
+    });
+  };
+
+  // AI Suggestion handlers (T011)
+  const handleApproveSuggestion = (field: OverlayField) => {
+    if (!metadata.aiSuggestions) return;
+
+    const updatedSuggestions = { ...metadata.aiSuggestions };
+
+    if (field === "excerpt" && updatedSuggestions.excerpt) {
+      updatedSuggestions.excerpt = {
+        ...updatedSuggestions.excerpt,
+        state: "approved",
+      };
+    } else if (field === "category" && updatedSuggestions.category) {
+      updatedSuggestions.category = {
+        ...updatedSuggestions.category,
+        state: "approved",
+      };
+    } else if (
+      field === "metaTitle" &&
+      updatedSuggestions.seoMetadata?.metaTitle
+    ) {
+      updatedSuggestions.seoMetadata = {
+        ...updatedSuggestions.seoMetadata,
+        metaTitle: {
+          ...updatedSuggestions.seoMetadata.metaTitle,
+          state: "approved",
+        },
+      };
+    } else if (
+      field === "metaDescription" &&
+      updatedSuggestions.seoMetadata?.metaDescription
+    ) {
+      updatedSuggestions.seoMetadata = {
+        ...updatedSuggestions.seoMetadata,
+        metaDescription: {
+          ...updatedSuggestions.seoMetadata.metaDescription,
+          state: "approved",
+        },
+      };
+    } else if (
+      field === "keywords" &&
+      updatedSuggestions.seoMetadata?.keywords
+    ) {
+      updatedSuggestions.seoMetadata = {
+        ...updatedSuggestions.seoMetadata,
+        keywords: {
+          ...updatedSuggestions.seoMetadata.keywords,
+          state: "approved",
+        },
+      };
+    } else if (
+      typeof field === "object" &&
+      field.type === "tag" &&
+      updatedSuggestions.tags
+    ) {
+      // For tags, mark as approved and filter out from value
+      updatedSuggestions.tags = {
+        ...updatedSuggestions.tags,
+        state: "approved",
+      };
+    }
+
+    onChange({
+      ...metadata,
+      aiSuggestions: updatedSuggestions,
+    });
+
+    setActiveOverlay(null);
+  };
+
+  const handleRejectSuggestion = (field: OverlayField) => {
+    if (!metadata.aiSuggestions) return;
+
+    const updatedSuggestions = { ...metadata.aiSuggestions };
+
+    if (field === "excerpt" && updatedSuggestions.excerpt) {
+      updatedSuggestions.excerpt = {
+        ...updatedSuggestions.excerpt,
+        state: "rejected",
+      };
+    } else if (field === "category" && updatedSuggestions.category) {
+      updatedSuggestions.category = {
+        ...updatedSuggestions.category,
+        state: "rejected",
+      };
+    } else if (
+      field === "metaTitle" &&
+      updatedSuggestions.seoMetadata?.metaTitle
+    ) {
+      updatedSuggestions.seoMetadata = {
+        ...updatedSuggestions.seoMetadata,
+        metaTitle: {
+          ...updatedSuggestions.seoMetadata.metaTitle,
+          state: "rejected",
+        },
+      };
+    } else if (
+      field === "metaDescription" &&
+      updatedSuggestions.seoMetadata?.metaDescription
+    ) {
+      updatedSuggestions.seoMetadata = {
+        ...updatedSuggestions.seoMetadata,
+        metaDescription: {
+          ...updatedSuggestions.seoMetadata.metaDescription,
+          state: "rejected",
+        },
+      };
+    } else if (
+      field === "keywords" &&
+      updatedSuggestions.seoMetadata?.keywords
+    ) {
+      updatedSuggestions.seoMetadata = {
+        ...updatedSuggestions.seoMetadata,
+        keywords: {
+          ...updatedSuggestions.seoMetadata.keywords,
+          state: "rejected",
+        },
+      };
+    } else if (
+      typeof field === "object" &&
+      field.type === "tag" &&
+      updatedSuggestions.tags
+    ) {
+      // For tags, add to rejectedTags and remove from suggestions
+      updatedSuggestions.tags = {
+        ...updatedSuggestions.tags,
+        rejectedTags: [...updatedSuggestions.tags.rejectedTags, field.value],
+        value: updatedSuggestions.tags.value.filter(
+          (tag) => tag !== field.value,
+        ),
+      };
+    }
+
+    onChange({
+      ...metadata,
+      aiSuggestions: updatedSuggestions,
+    });
+
+    setActiveOverlay(null);
+  };
+
+  // Helper to check if field has pending AI suggestion
+  const hasPendingSuggestion = (field: string): boolean => {
+    if (!metadata.aiSuggestions) return false;
+
+    switch (field) {
+      case "excerpt":
+        return metadata.aiSuggestions.excerpt?.state === "pending";
+      case "category":
+        return metadata.aiSuggestions.category?.state === "pending";
+      case "metaTitle":
+        return (
+          metadata.aiSuggestions.seoMetadata?.metaTitle?.state === "pending"
+        );
+      case "metaDescription":
+        return (
+          metadata.aiSuggestions.seoMetadata?.metaDescription?.state ===
+          "pending"
+        );
+      case "keywords":
+        return (
+          metadata.aiSuggestions.seoMetadata?.keywords?.state === "pending"
+        );
+      default:
+        return false;
+    }
   };
 
   // Calculate meta description character count
@@ -372,6 +762,43 @@ export function BlogPostMetadata({
         </DialogContent>
       </Dialog>
 
+      {/* Excerpt Field */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Label htmlFor={excerptId}>Excerpt</Label>
+          {hasPendingSuggestion("excerpt") && (
+            <AISuggestionBadge onClick={() => setActiveOverlay("excerpt")} />
+          )}
+        </div>
+        <div className="relative">
+          <Textarea
+            id={excerptId}
+            value={metadata.excerpt || ""}
+            onChange={(e) => handleExcerptChange(e.target.value)}
+            placeholder="Brief summary of the post..."
+            rows={3}
+            maxLength={200}
+          />
+          <AISuggestionOverlay
+            isOpen={activeOverlay === "excerpt"}
+            onApprove={() => handleApproveSuggestion("excerpt")}
+            onReject={() => handleRejectSuggestion("excerpt")}
+            onClose={() => setActiveOverlay(null)}
+          />
+        </div>
+        <p className="text-muted-foreground text-xs">
+          {metadata.excerpt?.length || 0} / 200 characters
+        </p>
+        {/* T014: Show NewSuggestionChip for approved fields with new suggestions */}
+        {hasApprovedSuggestion("excerpt") && getNewSuggestion("excerpt") && (
+          <NewSuggestionChip
+            value={getNewSuggestion("excerpt") as string}
+            onReplace={(value) => handleReplaceNewSuggestion("excerpt", value)}
+            onDismiss={() => handleDismissNewSuggestion("excerpt")}
+          />
+        )}
+      </div>
+
       {/* Tags Input with Autocomplete */}
       <div className="space-y-2">
         <Label htmlFor={tagsId}>Tags</Label>
@@ -379,19 +806,53 @@ export function BlogPostMetadata({
           {/* Current Tags */}
           {metadata.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {metadata.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="gap-1">
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="ml-1 hover:bg-muted rounded-full p-0.5"
-                    aria-label={`Remove ${tag} tag`}
+              {metadata.tags.map((tag) => {
+                // Check if this tag is an AI suggestion
+                const isAISuggested =
+                  metadata.aiSuggestions?.tags?.state === "pending" &&
+                  metadata.aiSuggestions.tags.value.includes(tag);
+
+                return (
+                  <div
+                    key={tag}
+                    className="relative inline-flex items-center gap-1"
                   >
-                    <X className="size-3" />
-                  </button>
-                </Badge>
-              ))}
+                    <Badge variant="secondary" className="gap-1">
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-1 hover:bg-muted rounded-full p-0.5"
+                        aria-label={`Remove ${tag} tag`}
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                    {isAISuggested && (
+                      <AISuggestionBadge
+                        onClick={() =>
+                          setActiveOverlay({ type: "tag", value: tag })
+                        }
+                      />
+                    )}
+                    <AISuggestionOverlay
+                      isOpen={
+                        typeof activeOverlay === "object" &&
+                        activeOverlay !== null &&
+                        activeOverlay.type === "tag" &&
+                        activeOverlay.value === tag
+                      }
+                      onApprove={() =>
+                        handleApproveSuggestion({ type: "tag", value: tag })
+                      }
+                      onReject={() =>
+                        handleRejectSuggestion({ type: "tag", value: tag })
+                      }
+                      onClose={() => setActiveOverlay(null)}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -505,38 +966,92 @@ export function BlogPostMetadata({
 
         {/* Meta Title */}
         <div className="space-y-2">
-          <Label htmlFor={metaTitleId}>Meta Title</Label>
-          <Input
-            id={metaTitleId}
-            value={metadata.seoMetadata.metaTitle || ""}
-            onChange={(e) => handleSeoChange("metaTitle", e.target.value)}
-            placeholder={title}
-            maxLength={60}
-          />
+          <div className="flex items-center gap-2">
+            <Label htmlFor={metaTitleId}>Meta Title</Label>
+            {hasPendingSuggestion("metaTitle") && (
+              <AISuggestionBadge
+                onClick={() => setActiveOverlay("metaTitle")}
+              />
+            )}
+          </div>
+          <div className="relative">
+            <Input
+              id={metaTitleId}
+              value={metadata.seoMetadata.metaTitle || ""}
+              onChange={(e) => handleSeoChange("metaTitle", e.target.value)}
+              placeholder={title}
+              maxLength={60}
+            />
+            <AISuggestionOverlay
+              isOpen={activeOverlay === "metaTitle"}
+              onApprove={() => handleApproveSuggestion("metaTitle")}
+              onReject={() => handleRejectSuggestion("metaTitle")}
+              onClose={() => setActiveOverlay(null)}
+            />
+          </div>
           <p className="text-muted-foreground text-xs">
             {metadata.seoMetadata.metaTitle?.length || 0} / 60 characters
             (recommended: 50-60)
           </p>
+          {/* T014: Show NewSuggestionChip for approved fields with new suggestions */}
+          {hasApprovedSuggestion("metaTitle") &&
+            getNewSuggestion("metaTitle") && (
+              <NewSuggestionChip
+                value={getNewSuggestion("metaTitle") as string}
+                onReplace={(value) =>
+                  handleReplaceNewSuggestion("metaTitle", value)
+                }
+                onDismiss={() => handleDismissNewSuggestion("metaTitle")}
+              />
+            )}
         </div>
 
         {/* Meta Description */}
         <div className="space-y-2">
-          <Label htmlFor={metaDescId}>Meta Description</Label>
-          <Textarea
-            id={metaDescId}
-            value={metadata.seoMetadata.metaDescription || ""}
-            onChange={(e) => handleSeoChange("metaDescription", e.target.value)}
-            placeholder="Brief description for search engines..."
-            rows={3}
-            maxLength={200}
-            className={isMetaDescTooLong ? "border-yellow-500" : ""}
-          />
+          <div className="flex items-center gap-2">
+            <Label htmlFor={metaDescId}>Meta Description</Label>
+            {hasPendingSuggestion("metaDescription") && (
+              <AISuggestionBadge
+                onClick={() => setActiveOverlay("metaDescription")}
+              />
+            )}
+          </div>
+          <div className="relative">
+            <Textarea
+              id={metaDescId}
+              value={metadata.seoMetadata.metaDescription || ""}
+              onChange={(e) =>
+                handleSeoChange("metaDescription", e.target.value)
+              }
+              placeholder="Brief description for search engines..."
+              rows={3}
+              maxLength={200}
+              className={isMetaDescTooLong ? "border-yellow-500" : ""}
+            />
+            <AISuggestionOverlay
+              isOpen={activeOverlay === "metaDescription"}
+              onApprove={() => handleApproveSuggestion("metaDescription")}
+              onReject={() => handleRejectSuggestion("metaDescription")}
+              onClose={() => setActiveOverlay(null)}
+            />
+          </div>
           <p
             className={`text-xs ${isMetaDescTooLong ? "text-yellow-600" : "text-muted-foreground"}`}
           >
             {metaDescLength} / 160 characters (recommended)
             {isMetaDescTooLong && " - Exceeds recommended length"}
           </p>
+          {/* T014: Show NewSuggestionChip for approved fields with new suggestions */}
+          {hasApprovedSuggestion("metaDescription") &&
+            getNewSuggestion("metaDescription") && (
+              <NewSuggestionChip
+                value={getNewSuggestion("metaDescription") as string}
+                onReplace={(value) =>
+                  handleReplaceNewSuggestion("metaDescription", value)
+                }
+                onDismiss={() => handleDismissNewSuggestion("metaDescription")}
+              />
+            )}
         </div>
 
         {/* OG Image */}

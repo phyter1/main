@@ -40,7 +40,8 @@
         "src/app/page.tsx",
         "src/components/ui/expandable-context.tsx",
         "src/components/sections/PrinciplesPreview.tsx",
-        "src/components/blog/BlogSearch.tsx"
+        "src/components/blog/BlogSearch.tsx",
+        "src/components/admin/blog/AISuggestionBadge.tsx"
       ],
       "linter": {
         "rules": {
