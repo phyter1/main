@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import {
   cleanup,
   fireEvent,
@@ -7,6 +6,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ImageUploader } from "./ImageUploader";
 
 describe("ImageUploader Component", () => {
@@ -14,11 +14,11 @@ describe("ImageUploader Component", () => {
   let mockOnError: ReturnType<typeof mock>;
 
   beforeEach(() => {
-    mockOnUploadComplete = mock(() => {});
-    mockOnError = mock(() => {});
+    mockOnUploadComplete = vi.fn(() => {});
+    mockOnError = vi.fn(() => {});
 
     // Mock fetch for upload API
-    global.fetch = mock(() =>
+    global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: () =>
@@ -29,13 +29,12 @@ describe("ImageUploader Component", () => {
     );
 
     // Mock URL.createObjectURL for preview
-    global.URL.createObjectURL = mock(() => "blob:mock-preview-url");
-    global.URL.revokeObjectURL = mock(() => {});
+    global.URL.createObjectURL = vi.fn(() => "blob:mock-preview-url");
+    global.URL.revokeObjectURL = vi.fn(() => {});
   });
 
   afterEach(() => {
     cleanup();
-    mock.restore();
   });
 
   describe("Core Rendering", () => {
@@ -403,7 +402,7 @@ describe("ImageUploader Component", () => {
       expect(dropzone).toBeTruthy();
 
       const dragOverEvent = new Event("dragover", { bubbles: true });
-      const preventDefaultSpy = mock(() => {});
+      const preventDefaultSpy = vi.fn(() => {});
       dragOverEvent.preventDefault = preventDefaultSpy;
 
       dropzone?.dispatchEvent(dragOverEvent);
@@ -476,7 +475,7 @@ describe("ImageUploader Component", () => {
 
   describe("Error Handling", () => {
     it("should handle upload API failure", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -508,7 +507,7 @@ describe("ImageUploader Component", () => {
     });
 
     it("should handle network errors", async () => {
-      global.fetch = mock(() => Promise.reject(new Error("Network error")));
+      global.fetch = vi.fn(() => Promise.reject(new Error("Network error")));
 
       render(
         <ImageUploader
@@ -534,7 +533,7 @@ describe("ImageUploader Component", () => {
     });
 
     it("should clear error state when new upload starts", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -570,10 +569,9 @@ describe("ImageUploader Component", () => {
 
       // Clean up and re-render to start fresh
       unmount();
-      mock.restore();
 
       // Second upload with fresh component (should not have error)
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () =>
