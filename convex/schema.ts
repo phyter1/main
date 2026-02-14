@@ -76,6 +76,85 @@ export default defineSchema({
       ogImage: v.optional(v.string()),
       keywords: v.optional(v.array(v.string())),
     }),
+    // AI-powered metadata suggestions (T001)
+    aiSuggestions: v.optional(
+      v.object({
+        excerpt: v.optional(
+          v.object({
+            value: v.string(),
+            state: v.union(
+              v.literal("pending"),
+              v.literal("approved"),
+              v.literal("rejected"),
+            ),
+          }),
+        ),
+        tags: v.optional(
+          v.object({
+            value: v.array(v.string()),
+            state: v.union(
+              v.literal("pending"),
+              v.literal("approved"),
+              v.literal("rejected"),
+            ),
+            rejectedTags: v.array(v.string()),
+          }),
+        ),
+        category: v.optional(
+          v.object({
+            value: v.string(),
+            state: v.union(
+              v.literal("pending"),
+              v.literal("approved"),
+              v.literal("rejected"),
+            ),
+          }),
+        ),
+        seoMetadata: v.optional(
+          v.object({
+            metaTitle: v.optional(
+              v.object({
+                value: v.string(),
+                state: v.union(
+                  v.literal("pending"),
+                  v.literal("approved"),
+                  v.literal("rejected"),
+                ),
+              }),
+            ),
+            metaDescription: v.optional(
+              v.object({
+                value: v.string(),
+                state: v.union(
+                  v.literal("pending"),
+                  v.literal("approved"),
+                  v.literal("rejected"),
+                ),
+              }),
+            ),
+            keywords: v.optional(
+              v.object({
+                value: v.array(v.string()),
+                state: v.union(
+                  v.literal("pending"),
+                  v.literal("approved"),
+                  v.literal("rejected"),
+                ),
+              }),
+            ),
+          }),
+        ),
+        analysis: v.optional(
+          v.object({
+            tone: v.string(),
+            readability: v.string(),
+          }),
+        ),
+      }),
+    ),
+    // Change detection for triggering AI analysis
+    lastAnalyzedContent: v.optional(v.string()),
+    lastAnalyzedTitle: v.optional(v.string()),
     publishedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
