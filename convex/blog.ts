@@ -1329,12 +1329,14 @@ function filterPublishedMetadata(post: Doc<"blogPosts">): Doc<"blogPosts"> {
   }
 
   // Filter category - use approved AI suggestion or fall back to manual
-  if (post.aiSuggestions.category) {
-    filtered.categoryId =
-      post.aiSuggestions.category.state === "approved"
-        ? post.aiSuggestions.category.value
-        : post.categoryId;
-  }
+  // TODO: Category suggestions store name (string), but categoryId needs ID
+  // Need to look up category ID from name when approved
+  // if (post.aiSuggestions.category) {
+  //   filtered.categoryId =
+  //     post.aiSuggestions.category.state === "approved"
+  //       ? post.aiSuggestions.category.value
+  //       : post.categoryId;
+  // }
 
   // Filter SEO metadata - check each field individually
   if (post.aiSuggestions.seoMetadata) {
