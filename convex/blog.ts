@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 /**
@@ -1092,17 +1093,34 @@ export const approveSuggestion = mutation({
         },
       };
     } else {
-      // Handle top-level fields
-      const field = args.field as "excerpt" | "tags" | "category";
-
-      if (!suggestions[field]) {
-        throw new Error(`No suggestion found for field: ${args.field}`);
+      // Handle top-level fields explicitly for type safety
+      if (args.field === "excerpt") {
+        if (!suggestions.excerpt) {
+          throw new Error(`No suggestion found for field: ${args.field}`);
+        }
+        suggestions.excerpt = {
+          ...suggestions.excerpt,
+          state: "approved" as const,
+        };
+      } else if (args.field === "tags") {
+        if (!suggestions.tags) {
+          throw new Error(`No suggestion found for field: ${args.field}`);
+        }
+        suggestions.tags = {
+          ...suggestions.tags,
+          state: "approved" as const,
+        };
+      } else if (args.field === "category") {
+        if (!suggestions.category) {
+          throw new Error(`No suggestion found for field: ${args.field}`);
+        }
+        suggestions.category = {
+          ...suggestions.category,
+          state: "approved" as const,
+        };
+      } else {
+        throw new Error(`Unknown field: ${args.field}`);
       }
-
-      suggestions[field] = {
-        ...suggestions[field],
-        state: "approved" as const,
-      } as any;
     }
 
     await ctx.db.patch(args.postId, {
@@ -1169,8 +1187,12 @@ export const rejectSuggestion = mutation({
         throw new Error(`No suggestion found for field: ${args.field}`);
       }
 
-      // Special handling for tags: add to rejectedTags
-      if (field === "tags" && suggestions.tags) {
+      // Handle top-level fields explicitly for type safety
+      if (args.field === "tags") {
+        if (!suggestions.tags) {
+          throw new Error(`No suggestion found for field: ${args.field}`);
+        }
+        // Special handling for tags: add to rejectedTags
         const existingRejected = suggestions.tags.rejectedTags || [];
         const newRejected = suggestions.tags.value || [];
         const updatedRejectedTags = [...existingRejected, ...newRejected];
@@ -1180,11 +1202,24 @@ export const rejectSuggestion = mutation({
           state: "rejected" as const,
           rejectedTags: updatedRejectedTags,
         };
-      } else {
-        suggestions[field] = {
-          ...suggestions[field],
+      } else if (args.field === "excerpt") {
+        if (!suggestions.excerpt) {
+          throw new Error(`No suggestion found for field: ${args.field}`);
+        }
+        suggestions.excerpt = {
+          ...suggestions.excerpt,
           state: "rejected" as const,
-        } as any;
+        };
+      } else if (args.field === "category") {
+        if (!suggestions.category) {
+          throw new Error(`No suggestion found for field: ${args.field}`);
+        }
+        suggestions.category = {
+          ...suggestions.category,
+          state: "rejected" as const,
+        };
+      } else {
+        throw new Error(`Unknown field: ${args.field}`);
       }
     }
 
@@ -1268,7 +1303,7 @@ export const clearSuggestion = mutation({
  * @param post - Blog post with potential AI suggestions
  * @returns Post with only approved/manual metadata fields
  */
-function filterPublishedMetadata(post: any): any {
+function filterPublishedMetadata(post: Doc<"blogPosts">): Doc<"blogPosts"> {
   // If no AI suggestions, return post as-is
   if (!post.aiSuggestions) {
     return post;
