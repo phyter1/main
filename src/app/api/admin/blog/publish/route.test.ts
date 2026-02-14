@@ -3,43 +3,37 @@
  * Tests POST /api/admin/blog/publish endpoint
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { verifySessionToken } from "@/lib/auth";
 
-// Mock session verification
-const mockVerifySessionToken = mock(() => true);
-mock.module("@/lib/auth", () => ({
-  verifySessionToken: mockVerifySessionToken,
+// Mock auth module
+vi.mock("@/lib/auth", () => ({
+  verifySessionToken: vi.fn(() => Promise.resolve(true)),
 }));
 
-// Mock Convex mutation
-const mockFetchMutation = mock(() => undefined);
-mock.module("convex/nextjs", () => ({
-  fetchMutation: mockFetchMutation,
+// Mock Convex fetchMutation
+vi.mock("convex/nextjs", () => ({
+  fetchMutation: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 // Mock Convex API
-mock.module("../../../../../../convex/_generated/api", () => ({
+vi.mock("../../../../../../convex/_generated/api", () => ({
   api: {
     blog: {
-      publishPost: "publishPost",
+      publishPost: "blog:publishPost",
     },
   },
 }));
 
+import { fetchMutation } from "convex/nextjs";
+// Import route after mocks are set up
+import { POST } from "./route";
+
 describe("POST /api/admin/blog/publish", () => {
-  // Import POST dynamically after mocks are set up
-  let POST: any;
-
-  beforeEach(async () => {
-    // Reset individual mocks instead of mock.restore() which destroys module mocks
-    mockVerifySessionToken.mockReset();
-    mockVerifySessionToken.mockImplementation(() => true);
-    mockFetchMutation.mockReset();
-    mockFetchMutation.mockImplementation(() => undefined);
-
-    // Dynamically import to get mocked version
-    const module = await import("./route");
-    POST = module.POST;
+  beforeEach(() => {
+    // Set default: auth succeeds
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(true));
+    vi.mocked(fetchMutation).mockResolvedValue(undefined);
   });
 
   it("should publish a post with valid ID and authentication", async () => {
@@ -51,39 +45,49 @@ describe("POST /api/admin/blog/publish", () => {
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(publishData),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.message).toBe("Post published successfully");
-    expect(mockFetchMutation).toHaveBeenCalledTimes(1);
+    expect(fetchMutation).toHaveBeenCalledTimes(1);
   });
 
   it("should return 401 when session is invalid", async () => {
-    mockVerifySessionToken.mockReturnValue(false);
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(false)); // Override for this test
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=invalid-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "test-id" }),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property with invalid token
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "invalid-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(401);
@@ -95,14 +99,20 @@ describe("POST /api/admin/blog/publish", () => {
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "test-id" }),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property with no session token
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => undefined,
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(401);
@@ -116,13 +126,20 @@ describe("POST /api/admin/blog/publish", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
         },
         body: "invalid json {",
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -134,15 +151,20 @@ describe("POST /api/admin/blog/publish", () => {
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -154,15 +176,20 @@ describe("POST /api/admin/blog/publish", () => {
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "" }),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -170,23 +197,26 @@ describe("POST /api/admin/blog/publish", () => {
   });
 
   it("should return 404 when post is not found", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Post not found");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(new Error("Post not found"));
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "nonexistent-id" }),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(404);
@@ -194,23 +224,28 @@ describe("POST /api/admin/blog/publish", () => {
   });
 
   it("should return 409 when post is already published", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Post is already published");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(
+      new Error("Post is already published"),
+    );
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "already-published-id" }),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(409);
@@ -218,23 +253,28 @@ describe("POST /api/admin/blog/publish", () => {
   });
 
   it("should return 409 when trying to publish archived post", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Cannot publish archived post. Restore it first.");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(
+      new Error("Cannot publish archived post. Restore it first."),
+    );
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "archived-post-id" }),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(409);
@@ -242,23 +282,28 @@ describe("POST /api/admin/blog/publish", () => {
   });
 
   it("should return 500 when Convex mutation fails", async () => {
-    mockFetchMutation.mockImplementation(() => {
-      throw new Error("Database connection failed");
-    });
+    vi.mocked(fetchMutation).mockRejectedValue(
+      new Error("Database connection failed"),
+    );
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "test-id" }),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(500);
@@ -274,15 +319,20 @@ describe("POST /api/admin/blog/publish", () => {
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invalidData),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -298,15 +348,20 @@ describe("POST /api/admin/blog/publish", () => {
       "http://localhost:3000/api/admin/blog/publish",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "session=valid-session-token",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validData),
       },
-    );
+    ) as any;
 
-    const response = await POST(request as any);
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
+
+    const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);

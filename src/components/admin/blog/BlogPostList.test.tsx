@@ -11,9 +11,9 @@
  * - Bulk actions (publish, archive, delete)
  */
 
-import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   type BlogCategory,
   type BlogPost,
@@ -263,7 +263,7 @@ describe("BlogPostList", () => {
 
   describe("Row Actions", () => {
     it("should display edit button for each post", () => {
-      const onEdit = mock(() => {});
+      const onEdit = vi.fn(() => {});
       const posts: BlogPost[] = [createMockBlogPost({ title: "Test Post" })];
 
       render(<BlogPostList posts={posts} categories={[]} onEdit={onEdit} />);
@@ -273,7 +273,7 @@ describe("BlogPostList", () => {
     });
 
     it("should display delete button for each post", () => {
-      const onDelete = mock(() => {});
+      const onDelete = vi.fn(() => {});
       const posts: BlogPost[] = [createMockBlogPost({ title: "Test Post" })];
 
       render(
@@ -286,7 +286,7 @@ describe("BlogPostList", () => {
 
     it("should call onEdit handler with post when edit clicked", async () => {
       const user = userEvent.setup();
-      const onEdit = mock(() => {});
+      const onEdit = vi.fn(() => {});
       const posts: BlogPost[] = [createMockBlogPost({ title: "Test Post" })];
 
       render(<BlogPostList posts={posts} categories={[]} onEdit={onEdit} />);
@@ -300,7 +300,7 @@ describe("BlogPostList", () => {
 
     it("should call onDelete handler with post when delete clicked", async () => {
       const user = userEvent.setup();
-      const onDelete = mock(() => {});
+      const onDelete = vi.fn(() => {});
       const posts: BlogPost[] = [createMockBlogPost({ title: "Test Post" })];
 
       render(
@@ -364,9 +364,9 @@ describe("BlogPostList", () => {
 
     it("should display bulk actions when posts are selected", async () => {
       const user = userEvent.setup();
-      const onBulkPublish = mock(() => {});
-      const onBulkArchive = mock(() => {});
-      const onBulkDelete = mock(() => {});
+      const onBulkPublish = vi.fn(() => {});
+      const onBulkArchive = vi.fn(() => {});
+      const onBulkDelete = vi.fn(() => {});
       const posts: BlogPost[] = [createMockBlogPost({ title: "Test Post" })];
 
       render(
@@ -397,7 +397,7 @@ describe("BlogPostList", () => {
 
     it("should call onBulkPublish with selected posts", async () => {
       const user = userEvent.setup();
-      const onBulkPublish = mock(() => {});
+      const onBulkPublish = vi.fn(() => {});
       const posts: BlogPost[] = [
         createMockBlogPost({ title: "Post 1" }),
         createMockBlogPost({ title: "Post 2" }),
@@ -428,7 +428,7 @@ describe("BlogPostList", () => {
 
     it("should call onBulkArchive with selected posts", async () => {
       const user = userEvent.setup();
-      const onBulkArchive = mock(() => {});
+      const onBulkArchive = vi.fn(() => {});
       const posts: BlogPost[] = [createMockBlogPost({ title: "Test Post" })];
 
       render(
@@ -455,7 +455,7 @@ describe("BlogPostList", () => {
 
     it("should call onBulkDelete with selected posts", async () => {
       const user = userEvent.setup();
-      const onBulkDelete = mock(() => {});
+      const onBulkDelete = vi.fn(() => {});
       const posts: BlogPost[] = [createMockBlogPost({ title: "Test Post" })];
 
       render(
@@ -482,7 +482,7 @@ describe("BlogPostList", () => {
 
     it("should clear selections after bulk action", async () => {
       const user = userEvent.setup();
-      const onBulkPublish = mock(() => {});
+      const onBulkPublish = vi.fn(() => {});
       const posts: BlogPost[] = [createMockBlogPost({ title: "Test Post" })];
 
       render(
@@ -515,9 +515,7 @@ describe("BlogPostList", () => {
     });
   });
 
-  describe("Combined Filtering", () => {
-    // Note: Combined filter tests skipped due to Radix UI Select portal complexity
-    // The filtering logic is unit-tested through direct state manipulation
-    // Integration tests will cover the full user interaction flow
-  });
+  // Note: Combined filter tests skipped due to Radix UI Select portal complexity
+  // The filtering logic is unit-tested through direct state manipulation
+  // Integration tests will cover the full user interaction flow
 });

@@ -3,7 +3,22 @@
  * Validates password hashing, token generation, and session management
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { convexTest } from "convex-test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { api } from "../../convex/_generated/api";
+import schema from "../../convex/schema";
+
+// Manually import convex modules for convex-test
+const modules = {
+  "../../convex/sessions.ts": () => import("../../convex/sessions"),
+  "../../convex/prompts.ts": () => import("../../convex/prompts"),
+  "../../convex/testCases.ts": () => import("../../convex/testCases"),
+  "../../convex/blog.ts": () => import("../../convex/blog"),
+  "../../convex/validators.ts": () => import("../../convex/validators"),
+  "../../convex/_generated/api.ts": () => import("../../convex/_generated/api"),
+  "../../convex/_generated/server.ts": () =>
+    import("../../convex/_generated/server"),
+};
 
 describe("T001: Authentication Utilities and Middleware", () => {
   const originalEnv = { ...process.env };
@@ -132,7 +147,8 @@ describe("T001: Authentication Utilities and Middleware", () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = "production";
 
-      delete require.cache[require.resolve("./auth")];
+      // Note: Module reloading works differently in Vitest
+      // This test may need adjustment based on how auth.ts reads NODE_ENV
       const { createSessionCookie } = await import("./auth");
 
       const cookie = createSessionCookie("test-token-123");
@@ -145,7 +161,8 @@ describe("T001: Authentication Utilities and Middleware", () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = "development";
 
-      delete require.cache[require.resolve("./auth")];
+      // Note: Module reloading works differently in Vitest
+      // This test may need adjustment based on how auth.ts reads NODE_ENV
       const { createSessionCookie } = await import("./auth");
 
       const cookie = createSessionCookie("test-token-123");
@@ -184,69 +201,104 @@ describe("T001: Authentication Utilities and Middleware", () => {
 
   describe("Session Token Storage", () => {
     it("should store session token with expiration", async () => {
-      const { storeSessionToken, verifySessionToken } = await import("./auth");
+      const t = convexTest(schema, modules);
 
       const token = "test-token-123";
-      storeSessionToken(token);
+      const expiresAt = Date.now() + 60000;
 
-      const isValid = await verifySessionToken(token);
-      expect(isValid).toBe(true);
+      await t.mutation(api.sessions.storeSession, { token, expiresAt });
+
+      const result = await t.query(api.sessions.verifySession, { token });
+      expect(result.valid).toBe(true);
     });
 
     it("should verify valid session token", async () => {
-      const { storeSessionToken, verifySessionToken } = await import("./auth");
+      const t = convexTest(schema, modules);
 
       const token = "valid-token-456";
-      storeSessionToken(token);
+      const expiresAt = Date.now() + 60000;
 
-      const isValid = await verifySessionToken(token);
-      expect(isValid).toBe(true);
+      await t.mutation(api.sessions.storeSession, { token, expiresAt });
+
+      const result = await t.query(api.sessions.verifySession, { token });
+      expect(result.valid).toBe(true);
     });
 
     it("should reject invalid session token", async () => {
-      const { verifySessionToken } = await import("./auth");
+      const t = convexTest(schema, modules);
 
-      const isValid = await verifySessionToken("invalid-token");
-      expect(isValid).toBe(false);
+      const result = await t.query(api.sessions.verifySession, {
+        token: "invalid-token",
+      });
+      expect(result.valid).toBe(false);
     });
 
     it("should reject expired session token", async () => {
-      const { storeSessionToken, verifySessionToken } = await import("./auth");
+      const t = convexTest(schema, modules);
 
       const token = "expired-token-789";
-      // Store with past expiration
-      storeSessionToken(token, Date.now() - 1000);
+      const expiresAt = Date.now() - 1000; // Past expiration
 
-      const isValid = await verifySessionToken(token);
-      expect(isValid).toBe(false);
+      await t.mutation(api.sessions.storeSession, { token, expiresAt });
+
+      const result = await t.query(api.sessions.verifySession, { token });
+      expect(result.valid).toBe(false);
     });
 
     it("should clean up expired tokens automatically", async () => {
-      const { storeSessionToken, verifySessionToken } = await import("./auth");
+      const t = convexTest(schema, modules);
 
       // Store multiple tokens with different expirations
-      storeSessionToken("valid-token", Date.now() + 60000);
-      storeSessionToken("expired-token-1", Date.now() - 1000);
-      storeSessionToken("expired-token-2", Date.now() - 2000);
+      await t.mutation(api.sessions.storeSession, {
+        token: "valid-token",
+        expiresAt: Date.now() + 60000,
+      });
+      await t.mutation(api.sessions.storeSession, {
+        token: "expired-token-1",
+        expiresAt: Date.now() - 1000,
+      });
+      await t.mutation(api.sessions.storeSession, {
+        token: "expired-token-2",
+        expiresAt: Date.now() - 2000,
+      });
+
+      // Cleanup expired sessions
+      await t.mutation(api.sessions.cleanupExpiredSessions, {});
 
       // Verify only valid token remains
-      expect(await verifySessionToken("valid-token")).toBe(true);
-      expect(await verifySessionToken("expired-token-1")).toBe(false);
-      expect(await verifySessionToken("expired-token-2")).toBe(false);
+      const validResult = await t.query(api.sessions.verifySession, {
+        token: "valid-token",
+      });
+      expect(validResult.valid).toBe(true);
+
+      const expired1Result = await t.query(api.sessions.verifySession, {
+        token: "expired-token-1",
+      });
+      expect(expired1Result.valid).toBe(false);
+
+      const expired2Result = await t.query(api.sessions.verifySession, {
+        token: "expired-token-2",
+      });
+      expect(expired2Result.valid).toBe(false);
     });
 
     it("should invalidate token on logout", async () => {
-      const { storeSessionToken, invalidateSessionToken, verifySessionToken } =
-        await import("./auth");
+      const t = convexTest(schema, modules);
 
       const token = "logout-token-123";
-      storeSessionToken(token);
+      const expiresAt = Date.now() + 60000;
 
-      expect(await verifySessionToken(token)).toBe(true);
+      await t.mutation(api.sessions.storeSession, { token, expiresAt });
 
-      invalidateSessionToken(token);
+      const beforeLogout = await t.query(api.sessions.verifySession, {
+        token,
+      });
+      expect(beforeLogout.valid).toBe(true);
 
-      expect(await verifySessionToken(token)).toBe(false);
+      await t.mutation(api.sessions.invalidateSession, { token });
+
+      const afterLogout = await t.query(api.sessions.verifySession, { token });
+      expect(afterLogout.valid).toBe(false);
     });
   });
 
@@ -255,19 +307,13 @@ describe("T001: Authentication Utilities and Middleware", () => {
       process.env.NODE_ENV = "production";
       delete process.env.ADMIN_PASSWORD;
 
-      delete require.cache[require.resolve("./auth")];
-
-      await expect(async () => {
-        const { validateAuthConfig } = await import("./auth");
-        validateAuthConfig();
-      }).toThrow();
+      const { validateAuthConfig } = await import("./auth");
+      expect(() => validateAuthConfig()).toThrow();
     });
 
     it("should allow missing ADMIN_PASSWORD in development", async () => {
       process.env.NODE_ENV = "development";
       delete process.env.ADMIN_PASSWORD;
-
-      delete require.cache[require.resolve("./auth")];
 
       const { validateAuthConfig } = await import("./auth");
       expect(() => validateAuthConfig()).not.toThrow();
@@ -276,16 +322,12 @@ describe("T001: Authentication Utilities and Middleware", () => {
     it("should reject placeholder ADMIN_PASSWORD value", async () => {
       process.env.ADMIN_PASSWORD = "your_password_here";
 
-      delete require.cache[require.resolve("./auth")];
-
       const { validateAuthConfig } = await import("./auth");
       expect(() => validateAuthConfig()).toThrow();
     });
 
     it("should accept valid ADMIN_PASSWORD", async () => {
       process.env.ADMIN_PASSWORD = "secure-password-123";
-
-      delete require.cache[require.resolve("./auth")];
 
       const { validateAuthConfig } = await import("./auth");
       expect(() => validateAuthConfig()).not.toThrow();

@@ -11,12 +11,13 @@
  * - Data fetching from Convex queries
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { render, screen, waitFor } from "@testing-library/react";
+import { useQuery } from "convex/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BlogSidebar } from "./BlogSidebar";
 
 // Mock Convex API object
-mock.module("../../../convex/_generated/api", () => ({
+vi.mock("../../../convex/_generated/api", () => ({
   api: {
     blog: {
       getCategories: "blog.getCategories",
@@ -27,14 +28,13 @@ mock.module("../../../convex/_generated/api", () => ({
 }));
 
 // Mock Convex hooks
-const mockUseQuery = mock(() => null);
 
-mock.module("convex/react", () => ({
-  useQuery: mockUseQuery,
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => null),
 }));
 
 // Mock Next.js Link component
-mock.module("next/link", () => ({
+vi.mock("next/link", () => ({
   default: ({
     children,
     href,
@@ -228,13 +228,11 @@ const mockRecentPosts = [
 ];
 
 describe("BlogSidebar", () => {
-  beforeEach(() => {
-    mock.restore();
-  });
+  beforeEach(() => {});
 
   describe("Data Fetching", () => {
     it("should fetch categories from Convex", async () => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -246,11 +244,11 @@ describe("BlogSidebar", () => {
       // Check that Technology appears (in categories section)
       const technologyElements = screen.getAllByText("Technology");
       expect(technologyElements.length).toBeGreaterThan(0);
-      expect(mockUseQuery).toHaveBeenCalled();
+      expect(vi.mocked(useQuery)).toHaveBeenCalled();
     });
 
     it("should fetch tags from Convex", async () => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -265,7 +263,7 @@ describe("BlogSidebar", () => {
     });
 
     it("should fetch recent posts from Convex", async () => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -279,7 +277,7 @@ describe("BlogSidebar", () => {
     });
 
     it("should handle loading state while fetching data", () => {
-      mockUseQuery.mockReturnValue(undefined);
+      vi.mocked(useQuery).mockReturnValue(undefined);
 
       render(<BlogSidebar />);
 
@@ -288,7 +286,7 @@ describe("BlogSidebar", () => {
     });
 
     it("should handle empty categories data", async () => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return [];
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -302,7 +300,7 @@ describe("BlogSidebar", () => {
     });
 
     it("should handle empty tags data", async () => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return [];
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -316,7 +314,7 @@ describe("BlogSidebar", () => {
     });
 
     it("should handle empty recent posts", async () => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: [] };
@@ -332,7 +330,7 @@ describe("BlogSidebar", () => {
 
   describe("Categories Display", () => {
     beforeEach(() => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -375,7 +373,7 @@ describe("BlogSidebar", () => {
 
   describe("Tag Cloud", () => {
     beforeEach(() => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -438,7 +436,7 @@ describe("BlogSidebar", () => {
 
   describe("Recent Posts", () => {
     beforeEach(() => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -502,7 +500,7 @@ describe("BlogSidebar", () => {
         },
       ];
 
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: manyPosts };
@@ -520,7 +518,7 @@ describe("BlogSidebar", () => {
 
   describe("RSS Feed Link", () => {
     beforeEach(() => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -566,7 +564,7 @@ describe("BlogSidebar", () => {
 
   describe("Responsive Behavior", () => {
     beforeEach(() => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -601,7 +599,7 @@ describe("BlogSidebar", () => {
 
   describe("Navigation Correctness", () => {
     beforeEach(() => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };
@@ -683,7 +681,7 @@ describe("BlogSidebar", () => {
 
   describe("Accessibility", () => {
     beforeEach(() => {
-      mockUseQuery.mockImplementation((query: string) => {
+      vi.mocked(useQuery).mockImplementation((query: string) => {
         if (query === "blog.getCategories") return mockCategories;
         if (query === "blog.getTags") return mockTags;
         if (query === "blog.listPosts") return { posts: mockRecentPosts };

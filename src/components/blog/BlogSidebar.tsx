@@ -17,7 +17,7 @@ import { useQuery } from "convex/react";
 import { Rss } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { api } from "../../../convex/_generated/api";
@@ -47,7 +47,7 @@ export function BlogSidebar() {
       {/* Categories Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Categories</CardTitle>
+          <h2 className="leading-none font-semibold text-lg">Categories</h2>
         </CardHeader>
         <CardContent>
           {!categories ? (
@@ -85,7 +85,7 @@ export function BlogSidebar() {
       {/* Tags Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Tags</CardTitle>
+          <h2 className="leading-none font-semibold text-lg">Tags</h2>
         </CardHeader>
         <CardContent>
           {!tags ? (
@@ -121,7 +121,7 @@ export function BlogSidebar() {
       {/* Recent Posts Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Recent Posts</CardTitle>
+          <h2 className="leading-none font-semibold text-lg">Recent Posts</h2>
         </CardHeader>
         <CardContent>
           {!recentPostsData ? (
@@ -181,7 +181,7 @@ export function BlogSidebar() {
       {/* RSS Feed Link */}
       <Card>
         <CardContent className="pt-6">
-          <Link
+          <a
             href="/blog/rss.xml"
             target="_blank"
             rel="noopener noreferrer"
@@ -195,7 +195,7 @@ export function BlogSidebar() {
           >
             <Rss className="h-4 w-4" />
             <span className="text-sm font-medium">Subscribe via RSS</span>
-          </Link>
+          </a>
         </CardContent>
       </Card>
     </aside>

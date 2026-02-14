@@ -12,34 +12,30 @@
  * - Loading states
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
+import { useQuery } from "convex/react";
+import { useSearchParams } from "next/navigation";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import BlogPage from "./page";
 
 // Mock Convex client
-const mockUseQuery = mock(() => undefined);
-
-mock.module("convex/react", () => ({
-  useQuery: mockUseQuery,
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => undefined),
 }));
 
 // Mock Next.js navigation
-const mockUseSearchParams = mock(() => ({
-  get: (_key: string) => null,
-}));
-
-const mockUseRouter = mock(() => ({
-  push: mock(() => {}),
-  replace: mock(() => {}),
-}));
-
-mock.module("next/navigation", () => ({
-  useSearchParams: mockUseSearchParams,
-  useRouter: mockUseRouter,
+vi.mock("next/navigation", () => ({
+  useSearchParams: vi.fn(() => ({
+    get: (_key: string) => null,
+  })),
+  useRouter: vi.fn(() => ({
+    push: vi.fn(() => {}),
+    replace: vi.fn(() => {}),
+  })),
 }));
 
 // Mock framer-motion for reduced motion tests
-mock.module("framer-motion", () => ({
+vi.mock("framer-motion", () => ({
   motion: {
     div: "div",
     article: "article",
@@ -47,22 +43,22 @@ mock.module("framer-motion", () => ({
 }));
 
 // Mock blog components
-mock.module("@/components/blog/BlogCard", () => ({
+vi.mock("@/components/blog/BlogCard", () => ({
   BlogCard: ({ post }: { post: { title: string } }) => (
     <div data-testid="blog-card">{post.title}</div>
   ),
 }));
 
-mock.module("@/components/blog/BlogSidebar", () => ({
+vi.mock("@/components/blog/BlogSidebar", () => ({
   BlogSidebar: () => <aside data-testid="blog-sidebar">Sidebar</aside>,
 }));
 
-mock.module("@/components/blog/BlogSearch", () => ({
+vi.mock("@/components/blog/BlogSearch", () => ({
   BlogSearch: () => <div data-testid="blog-search">Search</div>,
 }));
 
 // Mock Button component
-mock.module("@/components/ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({
     children,
     onClick,
@@ -79,7 +75,7 @@ mock.module("@/components/ui/button", () => ({
 }));
 
 // Mock Select component
-mock.module("@/components/ui/select", () => ({
+vi.mock("@/components/ui/select", () => ({
   Select: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
@@ -102,7 +98,7 @@ mock.module("@/components/ui/select", () => ({
 }));
 
 // Mock API
-mock.module("../../../convex/_generated/api", () => ({
+vi.mock("../../../convex/_generated/api", () => ({
   api: {
     blog: {
       listPosts: "listPosts",
@@ -191,10 +187,8 @@ const mockCategories = [
 
 describe("BlogPage", () => {
   beforeEach(() => {
-    mock.restore();
-
     // Default mock implementations
-    mockUseQuery.mockImplementation((queryName: string) => {
+    vi.mocked(useQuery).mockImplementation((queryName: string) => {
       if (queryName === "getFeaturedPosts") {
         return mockFeaturedPosts;
       }
@@ -211,7 +205,7 @@ describe("BlogPage", () => {
       return undefined;
     });
 
-    mockUseSearchParams.mockReturnValue({
+    vi.mocked(useSearchParams).mockReturnValue({
       get: (_key: string) => null,
     });
   });
@@ -261,7 +255,7 @@ describe("BlogPage", () => {
     });
 
     it("should not render featured section when no featured posts", async () => {
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "getFeaturedPosts") {
           return [];
         }
@@ -302,7 +296,7 @@ describe("BlogPage", () => {
     });
 
     it("should display loading state when posts are loading", async () => {
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "getFeaturedPosts") {
           return [];
         }
@@ -324,7 +318,7 @@ describe("BlogPage", () => {
     });
 
     it("should display empty state when no posts found", async () => {
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "getFeaturedPosts") {
           return [];
         }
@@ -352,7 +346,7 @@ describe("BlogPage", () => {
 
   describe("Pagination", () => {
     it("should render pagination controls when there are more posts", async () => {
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "getFeaturedPosts") {
           return [];
         }
@@ -379,7 +373,7 @@ describe("BlogPage", () => {
     });
 
     it("should not render Next button on last page", async () => {
-      mockUseQuery.mockImplementation((queryName: string) => {
+      vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "getFeaturedPosts") {
           return [];
         }
@@ -426,7 +420,7 @@ describe("BlogPage", () => {
     });
 
     it("should apply category filter from URL params", async () => {
-      mockUseSearchParams.mockReturnValue({
+      vi.mocked(useSearchParams).mockReturnValue({
         get: (_key: string) => (_key === "category" ? "technology" : null),
       });
 
@@ -434,7 +428,7 @@ describe("BlogPage", () => {
 
       await waitFor(() => {
         // Verify listPosts was called with category filter
-        expect(mockUseQuery).toHaveBeenCalled();
+        expect(vi.mocked(useQuery)).toHaveBeenCalled();
       });
     });
   });

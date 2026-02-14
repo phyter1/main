@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Resume } from "@/data/resume";
 import { ResumeUpdater } from "./ResumeUpdater";
 
@@ -72,7 +72,7 @@ describe("ResumeUpdater Component - T017", () => {
 
   beforeEach(() => {
     // Mock fetch API
-    fetchMock = mock(() =>
+    fetchMock = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: () =>
@@ -99,7 +99,6 @@ describe("ResumeUpdater Component - T017", () => {
 
   afterEach(() => {
     cleanup();
-    mock.restore();
   });
 
   describe("Core Functionality", () => {
@@ -156,7 +155,7 @@ describe("ResumeUpdater Component - T017", () => {
 
     it("should show loading state during API request", async () => {
       const user = userEvent.setup();
-      fetchMock = mock(
+      fetchMock = vi.fn(
         () =>
           new Promise((resolve) =>
             setTimeout(
@@ -351,7 +350,7 @@ describe("ResumeUpdater Component - T017", () => {
   describe("Error Handling", () => {
     it("should display error message on API failure", async () => {
       const user = userEvent.setup();
-      fetchMock = mock(() =>
+      fetchMock = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -382,7 +381,7 @@ describe("ResumeUpdater Component - T017", () => {
 
     it("should display error for network failure", async () => {
       const user = userEvent.setup();
-      fetchMock = mock(() => Promise.reject(new Error("Network error")));
+      fetchMock = vi.fn(() => Promise.reject(new Error("Network error")));
       global.fetch = fetchMock as unknown as typeof fetch;
 
       render(<ResumeUpdater initialResume={mockResume} />);

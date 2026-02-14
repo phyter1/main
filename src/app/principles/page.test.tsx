@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import PrinciplesPage from "./page";
 
 describe("T007: Principles Page Component", () => {
@@ -249,7 +249,7 @@ describe("T007: Principles Page Component", () => {
       const allText = document.body.textContent || "";
       const hugoMatches = allText.match(/Hugo/gi);
       expect(hugoMatches).toBeDefined();
-      expect(hugoMatches!.length).toBeGreaterThan(1);
+      expect(hugoMatches?.length).toBeGreaterThan(1);
     });
   });
 });

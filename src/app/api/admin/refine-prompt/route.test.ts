@@ -3,10 +3,10 @@
  * Tests AI-powered prompt refinement with versioning integration
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock AI SDK before imports
-const mockGenerateObject = mock(() => ({
+const mockGenerateObject = vi.fn(() => ({
   object: {
     proposedPrompt: "Mock refined prompt text",
     diffSummary: "Added clarity to instructions",
@@ -16,20 +16,20 @@ const mockGenerateObject = mock(() => ({
   },
 }));
 
-mock.module("ai", () => ({
+vi.mock("ai", () => ({
   generateObject: mockGenerateObject,
 }));
 
 // Mock AI config
-mock.module("@/lib/ai-config", () => ({
-  createOpenAIClient: mock(() => "mock-openai-client"),
+vi.mock("@/lib/ai-config", () => ({
+  createOpenAIClient: vi.fn(() => "mock-openai-client"),
   AI_RATE_LIMITS: {
     MAX_REQUESTS_PER_MINUTE: 5,
   },
 }));
 
 // Mock prompt versioning
-const mockGetActiveVersion = mock(() =>
+const mockGetActiveVersion = vi.fn(() =>
   Promise.resolve({
     id: "test-version-id",
     agentType: "chat",
@@ -42,7 +42,7 @@ const mockGetActiveVersion = mock(() =>
   }),
 );
 
-mock.module("@/lib/prompt-versioning", () => ({
+vi.mock("@/lib/prompt-versioning", () => ({
   getActiveVersion: mockGetActiveVersion,
 }));
 
@@ -54,7 +54,6 @@ let rateLimitMap: Map<string, { count: number; resetAt: number }>;
 
 describe("POST /api/admin/refine-prompt", () => {
   beforeEach(() => {
-    mock.restore();
     // Clear rate limit map between tests
     if (rateLimitMap) {
       rateLimitMap.clear();
@@ -62,7 +61,6 @@ describe("POST /api/admin/refine-prompt", () => {
   });
 
   afterEach(() => {
-    mock.restore();
     // Clear rate limit map after tests
     if (rateLimitMap) {
       rateLimitMap.clear();

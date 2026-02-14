@@ -3,12 +3,11 @@
  * Tests tab navigation and component integration
  */
 
-import { afterEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
-import AgentWorkbenchPage from "./page";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock all admin components
-mock.module("@/components/admin/PromptEditor", () => ({
+vi.mock("@/components/admin/PromptEditor", () => ({
   PromptEditor: ({ agentType }: { agentType: string }) => (
     <div data-testid={`prompt-editor-${agentType}`}>
       PromptEditor for {agentType}
@@ -16,13 +15,13 @@ mock.module("@/components/admin/PromptEditor", () => ({
   ),
 }));
 
-mock.module("@/components/admin/TestRunner", () => ({
+vi.mock("@/components/admin/TestRunner", () => ({
   default: ({ agentType }: { agentType: string }) => (
     <div data-testid="test-runner">TestRunner for {agentType}</div>
   ),
 }));
 
-mock.module("@/components/admin/ResumeUpdater", () => ({
+vi.mock("@/components/admin/ResumeUpdater", () => ({
   ResumeUpdater: () => <div data-testid="resume-updater">ResumeUpdater</div>,
 }));
 
@@ -49,8 +48,8 @@ const mockFitAssessmentPrompt = {
   isActive: true,
 };
 
-mock.module("@/lib/prompt-versioning", () => ({
-  getActiveVersion: mock(async (agentType: string) => {
+vi.mock("@/lib/prompt-versioning", () => ({
+  getActiveVersion: vi.fn(async (agentType: string) => {
     if (agentType === "chat") return mockChatPrompt;
     if (agentType === "fit-assessment") return mockFitAssessmentPrompt;
     return null;
@@ -77,12 +76,12 @@ const mockResume = {
   principles: [],
 };
 
-mock.module("@/data/resume", () => ({
+vi.mock("@/data/resume", () => ({
   resume: mockResume,
 }));
 
 // Mock Link component
-mock.module("next/link", () => ({
+vi.mock("next/link", () => ({
   default: ({
     href,
     children,
@@ -93,6 +92,14 @@ mock.module("next/link", () => ({
 }));
 
 describe("AgentWorkbenchPage", () => {
+  let AgentWorkbenchPage: any;
+
+  beforeEach(async () => {
+    // Dynamically import to get mocked version
+    const module = await import("./page");
+    AgentWorkbenchPage = module.default;
+  });
+
   afterEach(() => {
     // Cleanup after each test
     document.body.innerHTML = "";

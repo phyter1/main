@@ -45,9 +45,7 @@ const UpdatePostSchema = z.object({
  * Verify admin session from request cookies
  */
 async function verifyAdminSession(request: NextRequest): Promise<boolean> {
-  const cookies = request.headers.get("cookie") || "";
-  const sessionMatch = cookies.match(/session=([^;]+)/);
-  const sessionCookie = sessionMatch?.[1];
+  const sessionCookie = request.cookies.get("session")?.value;
   return !!(sessionCookie && (await verifySessionToken(sessionCookie)));
 }
 

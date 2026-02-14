@@ -41,7 +41,7 @@ describe("ShareButtons", () => {
       configurable: true,
       value: originalLocation,
     });
-    vi.restoreAllMocks();
+
     cleanup();
   });
 

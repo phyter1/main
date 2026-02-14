@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { compile } from "@mdx-js/mdx";
@@ -7,6 +6,7 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("T001: MDX Configuration", () => {
   let sampleMdxContent: string;

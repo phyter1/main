@@ -2,25 +2,23 @@
  * Unit tests for upload-service.ts Vercel Blob integration
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock @vercel/blob module before importing upload-service
-const mockPut = mock(() =>
-  Promise.resolve({
-    url: "https://test-blob.vercel-storage.com/test-image-abc123.png",
-    pathname: "test-image-abc123.png",
-    contentType: "image/png",
-    contentDisposition: "inline",
-  }),
-);
-
-const mockDel = mock(() => Promise.resolve());
-
-mock.module("@vercel/blob", () => ({
-  put: mockPut,
-  del: mockDel,
+// Note: mock functions must be defined inside the factory for Vitest hoisting
+vi.mock("@vercel/blob", () => ({
+  put: vi.fn(() =>
+    Promise.resolve({
+      url: "https://test-blob.vercel-storage.com/test-image-abc123.png",
+      pathname: "test-image-abc123.png",
+      contentType: "image/png",
+      contentDisposition: "inline",
+    }),
+  ),
+  del: vi.fn(() => Promise.resolve()),
 }));
 
+import { del as mockDel, put as mockPut } from "@vercel/blob";
 // Import after mocking
 import {
   deleteImage,
@@ -32,14 +30,12 @@ import {
 
 describe("uploadImage", () => {
   beforeEach(() => {
-    mockPut.mockClear();
+    vi.mocked(mockPut).mockClear();
     // Set environment variable for tests
     process.env.BLOB_READ_WRITE_TOKEN = "test_token";
   });
 
-  afterEach(() => {
-    mock.restore();
-  });
+  afterEach(() => {});
 
   it("should upload file to Vercel Blob and return URL", async () => {
     const file = new File(["test content"], "test.png", {
@@ -52,8 +48,8 @@ describe("uploadImage", () => {
     expect(url).toBe(
       "https://test-blob.vercel-storage.com/test-image-abc123.png",
     );
-    expect(mockPut).toHaveBeenCalledTimes(1);
-    expect(mockPut).toHaveBeenCalledWith(filename, file, {
+    expect(vi.mocked(mockPut)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(mockPut)).toHaveBeenCalledWith(filename, file, {
       access: "public",
       addRandomSuffix: true,
       contentType: "image/png",
@@ -95,7 +91,7 @@ describe("uploadImage", () => {
 
     await uploadImage(file, sanitized);
 
-    expect(mockPut).toHaveBeenCalledWith(
+    expect(vi.mocked(mockPut)).toHaveBeenCalledWith(
       "malicious.png", // Path traversal removed
       file,
       expect.any(Object),
@@ -109,17 +105,15 @@ describe("deleteImage", () => {
     process.env.BLOB_READ_WRITE_TOKEN = "test_token";
   });
 
-  afterEach(() => {
-    mock.restore();
-  });
+  afterEach(() => {});
 
   it("should delete image from Vercel Blob", async () => {
     const url = "https://test-blob.vercel-storage.com/test-image-abc123.png";
 
     await deleteImage(url);
 
-    expect(mockDel).toHaveBeenCalledTimes(1);
-    expect(mockDel).toHaveBeenCalledWith(url);
+    expect(vi.mocked(mockDel)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(mockDel)).toHaveBeenCalledWith(url);
   });
 
   it("should throw error if BLOB_READ_WRITE_TOKEN not configured", async () => {

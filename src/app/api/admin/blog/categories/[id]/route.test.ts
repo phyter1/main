@@ -3,24 +3,23 @@
  * Tests PATCH and DELETE /api/admin/blog/categories/[id]
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { NextRequest } from "next/server";
-import { DELETE, PATCH } from "./route";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock auth module
-const mockVerifySessionToken = mock(() => true);
-mock.module("@/lib/auth", () => ({
+const mockVerifySessionToken = vi.fn(() => Promise.resolve(true));
+vi.mock("@/lib/auth", () => ({
   verifySessionToken: mockVerifySessionToken,
 }));
 
 // Mock Convex fetchMutation
-const mockFetchMutation = mock(() => Promise.resolve());
-mock.module("convex/nextjs", () => ({
+const mockFetchMutation = vi.fn(() => Promise.resolve());
+vi.mock("convex/nextjs", () => ({
   fetchMutation: mockFetchMutation,
 }));
 
 // Mock Convex API
-mock.module("../../../../../../../convex/_generated/api", () => ({
+vi.mock("../../../../../../../convex/_generated/api", () => ({
   api: {
     blog: {
       updateCategory: "blog:updateCategory",
@@ -29,48 +28,45 @@ mock.module("../../../../../../../convex/_generated/api", () => ({
   },
 }));
 
-// Helper to create request with cookies
-function createRequestWithCookies(
-  url: string,
-  method: string,
-  body?: unknown,
-  cookieValue = "valid-session-token",
-): NextRequest {
-  const request = new Request(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    ...(body && { body: JSON.stringify(body) }),
-  }) as NextRequest;
-
-  Object.defineProperty(request, "cookies", {
-    value: {
-      get: () => ({ value: cookieValue }),
-    },
-    writable: true,
-  });
-
-  return request;
-}
+// Import route handlers
+let PATCH: any;
+let DELETE: any;
 
 describe("PATCH /api/admin/blog/categories/[id]", () => {
-  beforeEach(() => {
-    mock.restore();
-    mockVerifySessionToken.mockReturnValue(true);
-    mockFetchMutation.mockResolvedValue(undefined);
+  beforeEach(async () => {
+    mockVerifySessionToken.mockReset();
+    mockVerifySessionToken.mockImplementation(() => Promise.resolve(true));
+    mockFetchMutation.mockReset();
+    mockFetchMutation.mockImplementation(() => Promise.resolve());
+
+    // Dynamically import to get mocked version
+    const module = await import("./route");
+    PATCH = module.PATCH;
+    DELETE = module.DELETE;
   });
 
   it("should require authentication", async () => {
-    mockVerifySessionToken.mockReturnValue(false);
+    mockVerifySessionToken.mockReturnValue(Promise.resolve(false));
 
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/123",
-      "PATCH",
-      { name: "Updated" },
-      "invalid-token",
-    );
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Updated" }),
+      },
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "invalid-token" }),
+      },
+      writable: true,
+    });
 
     const response = await PATCH(request, {
-      params: { id: "123" },
+      params: Promise.resolve({ id: "123" }),
     });
     const data = await response.json();
 
@@ -79,17 +75,28 @@ describe("PATCH /api/admin/blog/categories/[id]", () => {
   });
 
   it("should update category with valid data", async () => {
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/category123",
-      "PATCH",
       {
-        name: "Updated Category",
-        description: "Updated description",
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Updated Category",
+          description: "Updated description",
+        }),
       },
-    );
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
 
     const response = await PATCH(request, {
-      params: { id: "category123" },
+      params: Promise.resolve({ id: "category123" }),
     });
     const data = await response.json();
 
@@ -99,32 +106,54 @@ describe("PATCH /api/admin/blog/categories/[id]", () => {
   });
 
   it("should allow partial updates", async () => {
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/category123",
-      "PATCH",
       {
-        name: "New Name Only",
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "New Name Only",
+        }),
       },
-    );
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
 
     const response = await PATCH(request, {
-      params: { id: "category123" },
+      params: Promise.resolve({ id: "category123" }),
     });
 
     expect(response.status).toBe(200);
   });
 
   it("should validate name if provided", async () => {
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/category123",
-      "PATCH",
       {
-        name: "", // Empty name should fail
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "", // Empty name should fail
+        }),
       },
-    );
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
 
     const response = await PATCH(request, {
-      params: { id: "category123" },
+      params: Promise.resolve({ id: "category123" }),
     });
 
     expect(response.status).toBe(400);
@@ -133,14 +162,25 @@ describe("PATCH /api/admin/blog/categories/[id]", () => {
   it("should handle category not found", async () => {
     mockFetchMutation.mockRejectedValue(new Error("Category not found"));
 
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/nonexistent",
-      "PATCH",
-      { name: "Updated" },
-    );
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Updated" }),
+      },
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
 
     const response = await PATCH(request, {
-      params: { id: "nonexistent" },
+      params: Promise.resolve({ id: "nonexistent" }),
     });
     const data = await response.json();
 
@@ -153,14 +193,25 @@ describe("PATCH /api/admin/blog/categories/[id]", () => {
       new Error('Category with slug "technology" already exists'),
     );
 
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/category123",
-      "PATCH",
-      { name: "Technology" },
-    );
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Technology" }),
+      },
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
 
     const response = await PATCH(request, {
-      params: { id: "category123" },
+      params: Promise.resolve({ id: "category123" }),
     });
     const data = await response.json();
 
@@ -170,24 +221,36 @@ describe("PATCH /api/admin/blog/categories/[id]", () => {
 });
 
 describe("DELETE /api/admin/blog/categories/[id]", () => {
-  beforeEach(() => {
-    mock.restore();
-    mockVerifySessionToken.mockReturnValue(true);
-    mockFetchMutation.mockResolvedValue(undefined);
+  beforeEach(async () => {
+    mockVerifySessionToken.mockReset();
+    mockVerifySessionToken.mockImplementation(() => Promise.resolve(true));
+    mockFetchMutation.mockReset();
+    mockFetchMutation.mockImplementation(() => Promise.resolve());
+
+    // Dynamically import already done in PATCH describe block
   });
 
   it("should require authentication", async () => {
-    mockVerifySessionToken.mockReturnValue(false);
+    mockVerifySessionToken.mockReturnValue(Promise.resolve(false));
 
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/123",
-      "DELETE",
-      undefined,
-      "invalid-token",
-    );
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      },
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "invalid-token" }),
+      },
+      writable: true,
+    });
 
     const response = await DELETE(request, {
-      params: { id: "123" },
+      params: Promise.resolve({ id: "123" }),
     });
     const data = await response.json();
 
@@ -196,13 +259,24 @@ describe("DELETE /api/admin/blog/categories/[id]", () => {
   });
 
   it("should delete category with valid ID", async () => {
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/category123",
-      "DELETE",
-    );
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      },
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
 
     const response = await DELETE(request, {
-      params: { id: "category123" },
+      params: Promise.resolve({ id: "category123" }),
     });
     const data = await response.json();
 
@@ -214,13 +288,24 @@ describe("DELETE /api/admin/blog/categories/[id]", () => {
   it("should handle category not found", async () => {
     mockFetchMutation.mockRejectedValue(new Error("Category not found"));
 
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/nonexistent",
-      "DELETE",
-    );
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      },
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
 
     const response = await DELETE(request, {
-      params: { id: "nonexistent" },
+      params: Promise.resolve({ id: "nonexistent" }),
     });
     const data = await response.json();
 
@@ -231,13 +316,24 @@ describe("DELETE /api/admin/blog/categories/[id]", () => {
   it("should handle Convex errors gracefully", async () => {
     mockFetchMutation.mockRejectedValue(new Error("Database error"));
 
-    const request = createRequestWithCookies(
+    const request = new Request(
       "http://localhost:3000/api/admin/blog/categories/category123",
-      "DELETE",
-    );
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      },
+    ) as NextRequest;
+
+    // Mock cookies property
+    Object.defineProperty(request, "cookies", {
+      value: {
+        get: () => ({ value: "valid-session-token" }),
+      },
+      writable: true,
+    });
 
     const response = await DELETE(request, {
-      params: { id: "category123" },
+      params: Promise.resolve({ id: "category123" }),
     });
 
     expect(response.status).toBe(500);

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { ChatMessage } from "./chat-message";
 
 describe("ChatMessage Component - T003", () => {
@@ -92,9 +92,13 @@ describe("ChatMessage Component - T003", () => {
         />,
       );
 
-      // Should contain formatted timestamp
-      const timeElement = screen.getByText(/12:00/);
+      // Should contain formatted timestamp (rendered in local timezone)
+      const timeElement = document.querySelector("time");
       expect(timeElement).toBeDefined();
+      expect(timeElement?.getAttribute("datetime")).toBe(
+        "2024-01-01T12:00:00.000Z",
+      );
+      expect(timeElement?.textContent).toBeTruthy();
     });
 
     it("should not display timestamp when not provided", () => {

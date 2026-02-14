@@ -6,7 +6,6 @@
  * Tests unauthorized access handling
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import {
   cleanup,
   fireEvent,
@@ -15,32 +14,36 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock Next.js router
-const mockRouterPush = mock(() => {});
-const mockRouterRefresh = mock(() => {});
+const mockRouterPush = vi.fn(() => {});
+const mockRouterRefresh = vi.fn(() => {});
 
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockRouterPush,
     refresh: mockRouterRefresh,
   }),
+  useSearchParams: () => ({
+    get: vi.fn(() => null),
+  }),
 }));
 
 // Mock authentication library
-const mockVerifyAdminPassword = mock(
+const mockVerifyAdminPassword = vi.fn(
   async (password: string) => password === "correct-password",
 );
-const mockGenerateSessionToken = mock(() => "mock-session-token");
-const mockStoreSessionToken = mock(() => {});
-const mockCreateSessionCookie = mock(
+const mockGenerateSessionToken = vi.fn(() => "mock-session-token");
+const mockStoreSessionToken = vi.fn(() => {});
+const mockCreateSessionCookie = vi.fn(
   () => "session=mock-session-token; Path=/; HttpOnly",
 );
-const mockVerifySessionToken = mock(
+const mockVerifySessionToken = vi.fn(
   (token: string) => token === "valid-session-token",
 );
 
-mock.module("@/lib/auth", () => ({
+vi.mock("@/lib/auth", () => ({
   verifyAdminPassword: mockVerifyAdminPassword,
   generateSessionToken: mockGenerateSessionToken,
   storeSessionToken: mockStoreSessionToken,
@@ -49,7 +52,7 @@ mock.module("@/lib/auth", () => ({
 }));
 
 // Mock prompt versioning
-const mockGetActiveVersion = mock(async (agentType: string) => {
+const mockGetActiveVersion = vi.fn(async (agentType: string) => {
   if (agentType === "chat") {
     return {
       id: "chat-v1",
@@ -65,9 +68,9 @@ const mockGetActiveVersion = mock(async (agentType: string) => {
   return null;
 });
 
-const mockRollbackVersion = mock(async () => {});
+const mockRollbackVersion = vi.fn(async () => {});
 
-mock.module("@/lib/prompt-versioning", () => ({
+vi.mock("@/lib/prompt-versioning", () => ({
   getActiveVersion: mockGetActiveVersion,
   rollbackVersion: mockRollbackVersion,
 }));
@@ -92,7 +95,7 @@ const mockResume = {
   principles: [],
 };
 
-mock.module("@/data/resume", () => ({
+vi.mock("@/data/resume", () => ({
   resume: mockResume,
 }));
 
@@ -117,7 +120,7 @@ describe("Admin Workflows Integration Tests", () => {
     mockRollbackVersion.mockClear();
 
     // Reset fetch mock
-    global.fetch = mock(() =>
+    global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ success: true }),
@@ -127,7 +130,6 @@ describe("Admin Workflows Integration Tests", () => {
 
   afterEach(() => {
     cleanup();
-    mock.restore();
   });
 
   describe("Login to Refinement to Deployment Workflow", () => {
@@ -140,7 +142,7 @@ describe("Admin Workflows Integration Tests", () => {
       window.location = { ...originalLocation, href: "" } as Location;
 
       // Step 1: Mock login API
-      global.fetch = mock((url: string) => {
+      global.fetch = vi.fn((url: string) => {
         if (url === "/api/admin/login") {
           return Promise.resolve({
             ok: true,
@@ -274,7 +276,7 @@ describe("Admin Workflows Integration Tests", () => {
       const user = userEvent.setup();
 
       // Mock API error
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -307,7 +309,7 @@ describe("Admin Workflows Integration Tests", () => {
       const user = userEvent.setup();
 
       // Mock update-resume API
-      global.fetch = mock((url: string) => {
+      global.fetch = vi.fn((url: string) => {
         if (url === "/api/admin/update-resume") {
           return Promise.resolve({
             ok: true,
@@ -375,7 +377,7 @@ describe("Admin Workflows Integration Tests", () => {
       const user = userEvent.setup();
 
       // Mock update-resume API
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () =>
@@ -419,7 +421,7 @@ describe("Admin Workflows Integration Tests", () => {
       const user = userEvent.setup();
 
       // Mock API error
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -449,7 +451,7 @@ describe("Admin Workflows Integration Tests", () => {
       const user = userEvent.setup();
 
       // Mock prompt history API
-      global.fetch = mock((url: string) => {
+      global.fetch = vi.fn((url: string) => {
         if (url.includes("/api/admin/prompt-history")) {
           // Need to handle both chat and fit-assessment calls for "all" filter
           if (url.includes("agentType=chat")) {
@@ -563,7 +565,7 @@ describe("Admin Workflows Integration Tests", () => {
       // This test verifies the dropdown is rendered and clickable
 
       // Mock prompt history API for different agent types
-      global.fetch = mock((url: string) => {
+      global.fetch = vi.fn((url: string) => {
         if (url.includes("agentType=chat")) {
           return Promise.resolve({
             ok: true,
@@ -639,7 +641,7 @@ describe("Admin Workflows Integration Tests", () => {
       let deployCalled = false;
 
       // Mock prompt history API
-      global.fetch = mock((url: string) => {
+      global.fetch = vi.fn((url: string) => {
         if (url.includes("/api/admin/prompt-history")) {
           // Handle both chat and fit-assessment for "all" filter
           if (url.includes("agentType=chat")) {
@@ -731,7 +733,7 @@ describe("Admin Workflows Integration Tests", () => {
       const user = userEvent.setup();
 
       // Mock login API with failure
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 401,
@@ -760,7 +762,7 @@ describe("Admin Workflows Integration Tests", () => {
       const user = userEvent.setup();
 
       // Mock network error
-      global.fetch = mock(() => Promise.reject(new Error("Network error")));
+      global.fetch = vi.fn(() => Promise.reject(new Error("Network error")));
 
       render(<LoginForm />);
 
@@ -798,7 +800,7 @@ describe("Admin Workflows Integration Tests", () => {
 
       let refinementCount = 0;
 
-      global.fetch = mock(() => {
+      global.fetch = vi.fn(() => {
         refinementCount++;
         return Promise.resolve({
           ok: true,
@@ -852,7 +854,7 @@ describe("Admin Workflows Integration Tests", () => {
     it("maintains workflow state across component interactions", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () =>

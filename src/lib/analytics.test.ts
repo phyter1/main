@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   trackChatMessage,
   trackContextExpansion,
@@ -11,7 +11,7 @@ describe("Analytics Utility - Privacy-Respecting AI Feature Usage Tracking", () 
 
   beforeEach(() => {
     // Create mock for Umami tracking
-    mockUmamiTrack = mock(() => undefined);
+    mockUmamiTrack = vi.fn(() => undefined);
 
     // Setup window.umami global (preserve existing window object)
     if (typeof window !== "undefined") {
@@ -226,7 +226,7 @@ describe("Analytics Utility - Privacy-Respecting AI Feature Usage Tracking", () 
 
   describe("Error Handling", () => {
     it("should not throw if Umami.track throws an error", () => {
-      mockUmamiTrack = mock(() => {
+      mockUmamiTrack = vi.fn(() => {
         throw new Error("Umami tracking failed");
       });
       (

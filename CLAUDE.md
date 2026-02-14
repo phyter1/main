@@ -27,74 +27,114 @@ bun format
 
 ## Testing
 
+### Test Framework
+
+This project uses **Vitest** as the test framework with Node.js runtime, while maintaining **Bun as the package manager** and dev server.
+
+**Key Benefits:**
+- ✅ Automatic test isolation (no mock leakage between tests)
+- ✅ Fast execution with parallel test running
+- ✅ Better error messages and debugging
+- ✅ Official `convex-test` support for testing Convex queries/mutations
+- ✅ Compatible with Vitest UI for interactive test development
+
 ### Test Execution
 
-**IMPORTANT: Known Issue with Parallel Test Execution**
-
-This project has known issues when running all tests in parallel (Bun's default behavior). Tests must be run sequentially to avoid concurrency-related failures.
-
 ```bash
-# Run all tests sequentially (default test command)
+# Run all tests (default test command)
 bun test
 
-# Run specific test suites
-bun test:lib          # Library tests only
-bun test:components   # Component tests only
-bun test:api          # API route tests only
-bun test:pages        # Page tests only
-bun test:admin        # Admin tests only
-
-# Watch mode (use for individual file development)
+# Run tests in watch mode (re-run on file changes)
 bun test:watch
+
+# Run tests with interactive UI
+bun test:ui
+
+# Run tests with coverage report
+bun test:coverage
+
+# Fallback to Bun test harness (if needed)
+bun test:bun
 ```
 
 ### Adding New Tests
 
-**CRITICAL: When adding new test files, you MUST update the sequential test script:**
+Creating new test files with Vitest is straightforward:
 
-1. Create your test file (e.g., `src/components/MyComponent.test.tsx`)
-2. Open `scripts/test-all-sequential.sh`
-3. Add your test file to the appropriate section with the `run_test` function:
+1. Create your test file alongside the source file (e.g., `src/components/MyComponent.test.tsx`)
+2. Use Vitest imports and syntax:
 
-```bash
-# Example: Adding a new component test
-echo "🎨 UI Component Tests"
-run_test "src/components/ui/chat-message.test.tsx" "chat-message"
-run_test "src/components/ui/my-component.test.tsx" "my-component"  # <-- Add here
+```typescript
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { MyComponent } from "./MyComponent";
+
+describe("MyComponent", () => {
+  it("should render correctly", () => {
+    render(<MyComponent />);
+    expect(screen.getByText("Hello")).toBeDefined();
+  });
+});
 ```
 
-**Why Sequential Testing?**
-- Parallel test execution causes race conditions in shared resources
-- Mock state can leak between parallel test files
-- DOM cleanup conflicts when tests run simultaneously
-- The sequential script ensures proper isolation between test files
+**Test Naming Convention:**
+- Place tests alongside source files: `MyComponent.tsx` → `MyComponent.test.tsx`
+- Use descriptive test names with "should" statements
+- Group related tests with `describe()` blocks
 
-**Test Organization in `test-all-sequential.sh`:**
-- 📚 Library Tests (`src/lib/`)
-- 🔌 Provider Tests (`src/providers/`)
-- 🪝 Hook Tests (`src/hooks/`)
-- 🎨 UI Component Tests (`src/components/ui/`)
-- 🎨 Theme Component Tests (`src/components/theme/`)
-- ✨ Effects Component Tests (`src/components/effects/`)
-- 📦 Section Component Tests (`src/components/sections/`)
-- 🔧 Admin Component Tests (`src/components/admin/`)
-- 🏗️ Layout Component Tests (`src/components/layout/`)
-- 📄 Page Tests (`src/app/*/page.test.tsx`)
-- 🔐 Admin Page Tests (`src/app/admin/`)
-- 🌐 API Route Tests (`src/app/api/`)
-- 🔐 Admin API Route Tests (`src/app/api/admin/`)
-- 💾 Data Tests (`src/data/`)
-- 🔗 Integration Tests (`src/app/__tests__/`, `src/__tests__/`)
+**Vitest Benefits:**
+- ✅ Automatic test isolation - no mock cleanup needed between tests
+- ✅ Parallel execution by default - faster test runs
+- ✅ Hot module reload in watch mode
+- ✅ No manual test registration required
+
+### Testing Convex Functions
+
+For testing Convex queries, mutations, and actions, use the `convex-test` library instead of mocking:
+
+```typescript
+import { convexTest } from "convex-test";
+import { describe, it, expect } from "vitest";
+import { api } from "@/convex/_generated/api";
+import schema from "@/convex/schema";
+
+describe("Convex Functions", () => {
+  it("should store and retrieve data", async () => {
+    const t = convexTest(schema);
+
+    // Call real Convex mutation (in-memory simulation)
+    const id = await t.mutation(api.sessions.storeSession, {
+      token: "test-token",
+      expiresAt: Date.now() + 60000
+    });
+
+    // Call real Convex query
+    const result = await t.query(api.sessions.verifySession, {
+      token: "test-token"
+    });
+
+    expect(result.valid).toBe(true);
+  });
+});
+```
+
+**Benefits of `convex-test`:**
+- ✅ No mocking required - tests actual Convex function logic
+- ✅ Fast (JavaScript simulation, not network calls)
+- ✅ Officially supported by Convex
+- ✅ Works only with Vitest (requires edge-runtime environment)
 
 ## Technology Stack
 
 - **Framework**: Next.js 16 with App Router
 - **React**: 19.2.0 with React Compiler enabled (next.config.ts)
+- **Runtime**: Bun (package manager and dev server)
+- **Testing**: Vitest with Node.js runtime + convex-test
 - **Styling**: Tailwind CSS 4 with custom theming system
 - **Linting/Formatting**: Biome (not ESLint/Prettier)
 - **UI Components**: shadcn/ui (new-york style)
 - **Fonts**: Fira Sans and Fira Mono from next/font/google
-- **Package Manager**: Bun
+- **Backend**: Convex (real-time backend)
 - **AI Integration**: Vercel AI SDK with Anthropic provider
 
 ## Code Organization

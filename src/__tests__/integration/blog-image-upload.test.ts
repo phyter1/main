@@ -9,19 +9,17 @@
  * - Old image cleanup
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fetch for API calls
-const mockFetch = mock();
+const mockFetch = vi.fn();
 
 beforeEach(() => {
   globalThis.fetch = mockFetch as any;
   mockFetch.mockClear();
 });
 
-afterEach(() => {
-  mock.restore();
-});
+afterEach(() => {});
 
 describe("Blog Image Upload Integration", () => {
   describe("Upload Flow", () => {

@@ -2,7 +2,6 @@
  * Tests for GuardrailFeedback Component
  */
 
-import { afterEach, describe, expect, it } from "bun:test";
 import {
   cleanup,
   render,
@@ -10,6 +9,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import type { GuardrailViolation } from "@/types/guardrails";
 import { GuardrailFeedback } from "./guardrail-feedback";
 

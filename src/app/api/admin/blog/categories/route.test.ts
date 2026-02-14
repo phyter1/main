@@ -3,24 +3,24 @@
  * Tests POST /api/admin/blog/categories for creating categories
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { fetchMutation } from "convex/nextjs";
 import type { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { verifySessionToken } from "@/lib/auth";
 import { POST } from "./route";
 
 // Mock auth module
-const mockVerifySessionToken = mock(() => true);
-mock.module("@/lib/auth", () => ({
-  verifySessionToken: mockVerifySessionToken,
+vi.mock("@/lib/auth", () => ({
+  verifySessionToken: vi.fn(() => Promise.resolve(true)),
 }));
 
 // Mock Convex fetchMutation
-const mockFetchMutation = mock(() => Promise.resolve("category123"));
-mock.module("convex/nextjs", () => ({
-  fetchMutation: mockFetchMutation,
+vi.mock("convex/nextjs", () => ({
+  fetchMutation: vi.fn(() => Promise.resolve("category123")),
 }));
 
 // Mock Convex API
-mock.module("../../../../../../convex/_generated/api", () => ({
+vi.mock("../../../../../../convex/_generated/api", () => ({
   api: {
     blog: {
       createCategory: "blog:createCategory",
@@ -30,13 +30,12 @@ mock.module("../../../../../../convex/_generated/api", () => ({
 
 describe("POST /api/admin/blog/categories", () => {
   beforeEach(() => {
-    mock.restore();
-    mockVerifySessionToken.mockReturnValue(true);
-    mockFetchMutation.mockResolvedValue("category123");
+    vi.mocked(verifySessionToken).mockReturnValue(true);
+    vi.mocked(fetchMutation).mockResolvedValue("category123");
   });
 
   it("should require authentication", async () => {
-    mockVerifySessionToken.mockReturnValue(false);
+    vi.mocked(verifySessionToken).mockReturnValue(Promise.resolve(false));
 
     const request = new Request(
       "http://localhost:3000/api/admin/blog/categories",
@@ -114,7 +113,7 @@ describe("POST /api/admin/blog/categories", () => {
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
     expect(data.categoryId).toBeDefined();
-    expect(mockFetchMutation).toHaveBeenCalled();
+    expect(vi.mocked(fetchMutation)).toHaveBeenCalled();
   });
 
   it("should validate name length", async () => {
@@ -168,7 +167,7 @@ describe("POST /api/admin/blog/categories", () => {
   });
 
   it("should handle duplicate category errors", async () => {
-    mockFetchMutation.mockRejectedValue(
+    vi.mocked(fetchMutation).mockRejectedValue(
       new Error('Category with slug "technology" already exists'),
     );
 
@@ -221,7 +220,7 @@ describe("POST /api/admin/blog/categories", () => {
   });
 
   it("should handle Convex errors gracefully", async () => {
-    mockFetchMutation.mockRejectedValue(
+    vi.mocked(fetchMutation).mockRejectedValue(
       new Error("Database connection failed"),
     );
 

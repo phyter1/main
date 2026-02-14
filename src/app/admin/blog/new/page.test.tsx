@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import {
   cleanup,
   fireEvent,
@@ -6,6 +5,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { useMutation } from "convex/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import NewBlogPostPage from "./page";
 
 /**
@@ -22,10 +23,10 @@ import NewBlogPostPage from "./page";
  */
 
 // Mock Next.js navigation
-const mockPush = mock(() => {});
-const mockBack = mock(() => {});
+const mockPush = vi.fn(() => {});
+const mockBack = vi.fn(() => {});
 
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
     back: mockBack,
@@ -33,53 +34,53 @@ mock.module("next/navigation", () => ({
 }));
 
 // Mock Convex client
-const mockUseMutation = mock(() => mock(() => Promise.resolve()));
-
-mock.module("convex/react", () => ({
-  useMutation: mockUseMutation,
-  useQuery: mock(() => []),
+vi.mock("convex/react", () => ({
+  useMutation: vi.fn(() => vi.fn(() => Promise.resolve())),
+  useQuery: vi.fn(() => []),
 }));
 
 // Mock blog components
-const mockBlogPostEditor = mock(
-  ({ onSave }: { onSave: (data: unknown) => void }) => (
-    <div data-testid="blog-post-editor">
-      <button
-        type="button"
-        onClick={() => onSave({ title: "Test", content: "Content" })}
-      >
-        Save Editor
-      </button>
-    </div>
-  ),
-);
+const { mockBlogPostEditor } = vi.hoisted(() => {
+  const mockBlogPostEditor = vi.fn(
+    ({ onSave }: { onSave: (data: unknown) => void }) => (
+      <div data-testid="blog-post-editor">
+        <button
+          type="button"
+          onClick={() => onSave({ title: "Test", content: "Content" })}
+        >
+          Save Editor
+        </button>
+      </div>
+    ),
+  );
 
-const mockBlogPostMetadata = mock(
-  ({ onChange }: { onChange: (data: unknown) => void }) => (
-    <div data-testid="blog-post-metadata">
-      <button
-        type="button"
-        onClick={() =>
-          onChange({
-            slug: "test-slug",
-            tags: [],
-            featured: false,
-            seoMetadata: { metaTitle: "", metaDescription: "" },
-          })
-        }
-      >
-        Update Metadata
-      </button>
-    </div>
-  ),
-);
+  return { mockBlogPostEditor };
+});
 
-mock.module("@/components/admin/blog/BlogPostEditor", () => ({
+vi.mock("@/components/admin/blog/BlogPostEditor", () => ({
   BlogPostEditor: mockBlogPostEditor,
 }));
 
-mock.module("@/components/admin/blog/BlogPostMetadata", () => ({
-  BlogPostMetadata: mockBlogPostMetadata,
+vi.mock("@/components/admin/blog/BlogPostMetadata", () => ({
+  BlogPostMetadata: vi.fn(
+    ({ onChange }: { onChange: (data: unknown) => void }) => (
+      <div data-testid="blog-post-metadata">
+        <button
+          type="button"
+          onClick={() =>
+            onChange({
+              slug: "test-slug",
+              tags: [],
+              featured: false,
+              seoMetadata: { metaTitle: "", metaDescription: "" },
+            })
+          }
+        >
+          Update Metadata
+        </button>
+      </div>
+    ),
+  ),
 }));
 
 describe("NewBlogPostPage", () => {
@@ -156,8 +157,8 @@ describe("NewBlogPostPage", () => {
 
   describe("Save Draft Functionality", () => {
     it("should save draft when save draft button clicked", async () => {
-      const mockCreatePost = mock(() => Promise.resolve("new-post-id"));
-      mockUseMutation.mockReturnValue(mockCreatePost);
+      const mockCreatePost = vi.fn(() => Promise.resolve("new-post-id"));
+      vi.mocked(useMutation).mockReturnValue(mockCreatePost);
 
       render(<NewBlogPostPage />);
 
@@ -170,10 +171,10 @@ describe("NewBlogPostPage", () => {
     });
 
     it("should show saving status while saving draft", async () => {
-      const mockCreatePost = mock(
+      const mockCreatePost = vi.fn(
         () => new Promise((resolve) => setTimeout(resolve, 100)),
       );
-      mockUseMutation.mockReturnValue(mockCreatePost);
+      vi.mocked(useMutation).mockReturnValue(mockCreatePost);
 
       render(<NewBlogPostPage />);
 
@@ -184,8 +185,8 @@ describe("NewBlogPostPage", () => {
     });
 
     it("should navigate to blog list after saving draft", async () => {
-      const mockCreatePost = mock(() => Promise.resolve("new-post-id"));
-      mockUseMutation.mockReturnValue(mockCreatePost);
+      const mockCreatePost = vi.fn(() => Promise.resolve("new-post-id"));
+      vi.mocked(useMutation).mockReturnValue(mockCreatePost);
 
       render(<NewBlogPostPage />);
 
@@ -200,9 +201,9 @@ describe("NewBlogPostPage", () => {
 
   describe("Publish Functionality", () => {
     it("should publish post when publish button clicked", async () => {
-      const mockCreatePost = mock(() => Promise.resolve("new-post-id"));
-      const mockPublishPost = mock(() => Promise.resolve());
-      mockUseMutation
+      const mockCreatePost = vi.fn(() => Promise.resolve("new-post-id"));
+      const mockPublishPost = vi.fn(() => Promise.resolve());
+      vi.mocked(useMutation)
         .mockReturnValueOnce(mockCreatePost)
         .mockReturnValueOnce(mockPublishPost);
 
@@ -217,10 +218,10 @@ describe("NewBlogPostPage", () => {
     });
 
     it("should show publishing status while publishing", async () => {
-      const mockCreatePost = mock(
+      const mockCreatePost = vi.fn(
         () => new Promise((resolve) => setTimeout(resolve, 100)),
       );
-      mockUseMutation.mockReturnValue(mockCreatePost);
+      vi.mocked(useMutation).mockReturnValue(mockCreatePost);
 
       render(<NewBlogPostPage />);
 

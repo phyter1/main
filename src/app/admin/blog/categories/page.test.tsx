@@ -3,9 +3,9 @@
  * Tests for /admin/blog/categories page rendering and component integration
  */
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import CategoriesPage from "./page";
 
 // Create mock Convex client
@@ -14,7 +14,7 @@ const mockConvexClient = new ConvexReactClient(
 );
 
 // Mock useRouter
-const mockPush = mock(() => {});
+const mockPush = vi.fn(() => {});
 const mockRouter = {
   push: mockPush,
   pathname: "/admin/blog/categories",
@@ -22,25 +22,23 @@ const mockRouter = {
   asPath: "/admin/blog/categories",
 };
 
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => mockRouter,
   usePathname: () => "/admin/blog/categories",
 }));
 
 // Mock Convex queries
-mock.module("convex/react", () => {
+vi.mock("convex/react", () => {
   const actual = require("convex/react");
   return {
     ...actual,
-    useQuery: mock(() => []), // Empty categories array
-    useMutation: mock(() => mock(() => Promise.resolve())),
+    useQuery: vi.fn(() => []), // Empty categories array
+    useMutation: vi.fn(() => vi.fn(() => Promise.resolve())),
   };
 });
 
 describe("CategoriesPage", () => {
-  beforeEach(() => {
-    mock.restore();
-  });
+  beforeEach(() => {});
 
   it("should render page with title", () => {
     render(

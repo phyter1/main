@@ -5,7 +5,7 @@
  * Part of T034: Configure caching and ISR
  */
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 describe("Next.js Configuration - Cache Headers", () => {
   it("should have headers configuration function", async () => {

@@ -3,9 +3,9 @@
  * Tests for AI prompt testing interface with test case management
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TestRunner from "./TestRunner";
 
 describe("TestRunner Component", () => {
@@ -16,10 +16,9 @@ describe("TestRunner Component", () => {
 
   beforeEach(() => {
     // Reset all mocks
-    mock.restore();
 
     // Mock fetch with default success response
-    global.fetch = mock(() =>
+    global.fetch = vi.fn(() =>
       Promise.resolve(
         new Response(
           JSON.stringify({
@@ -201,7 +200,7 @@ describe("TestRunner Component", () => {
 
     it("should call API with correct parameters", async () => {
       const user = userEvent.setup();
-      const mockFetch = mock(() =>
+      const mockFetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -259,7 +258,7 @@ describe("TestRunner Component", () => {
     it("should display test results after execution", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -312,7 +311,7 @@ describe("TestRunner Component", () => {
     it("should display failed test results", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -370,7 +369,7 @@ describe("TestRunner Component", () => {
     it("should display summary metrics after test run", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -421,7 +420,7 @@ describe("TestRunner Component", () => {
     it("should calculate pass rate correctly", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({
@@ -484,7 +483,7 @@ describe("TestRunner Component", () => {
     it("should display error message on API failure", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ error: "API Error" }), {
             status: 500,
@@ -515,7 +514,7 @@ describe("TestRunner Component", () => {
     it("should handle network errors", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.reject(new Error("Network error")),
       ) as typeof fetch;
 
@@ -566,7 +565,7 @@ describe("TestRunner Component", () => {
     it("should use Card component for metrics", async () => {
       const user = userEvent.setup();
 
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({

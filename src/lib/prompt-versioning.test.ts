@@ -3,32 +3,24 @@
  * Validates version storage, retrieval, activation, and rollback functionality using Convex
  */
 
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type Mock,
-  mock,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, type Mock } from "vitest";
 
 // Mock Convex client and API
-const mockQuery: Mock<any> = mock();
-const mockMutation: Mock<any> = mock();
+const mockQuery: Mock<any> = vi.fn();
+const mockMutation: Mock<any> = vi.fn();
 
-mock.module("convex/browser", () => ({
-  ConvexHttpClient: mock(function ConvexHttpClient() {
+vi.mock("convex/browser", () => ({
+  ConvexHttpClient: vi.fn(function ConvexHttpClient() {
     return {
       query: mockQuery,
       mutation: mockMutation,
-      action: mock(() => Promise.resolve(null)),
+      action: vi.fn(() => Promise.resolve(null)),
     };
   }),
 }));
 
 // Mock the Convex API
-mock.module("../../convex/_generated/api", () => ({
+vi.mock("../../convex/_generated/api", () => ({
   api: {
     prompts: {
       listVersions: "prompts:listVersions",
@@ -41,7 +33,7 @@ mock.module("../../convex/_generated/api", () => ({
 }));
 
 // Mock dataModel types
-mock.module("../../convex/_generated/dataModel", () => ({
+vi.mock("../../convex/_generated/dataModel", () => ({
   Id: String,
 }));
 
@@ -54,7 +46,6 @@ describe("T002: Prompt Versioning System", () => {
 
   afterEach(() => {
     // Ensure clean state after each test
-    mock.restore();
   });
 
   describe("savePromptVersion", () => {

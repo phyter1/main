@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import {
   cleanup,
   fireEvent,
@@ -6,6 +5,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatInterface } from "./ChatInterface";
 
 // Mock fetch for API calls
@@ -96,7 +96,7 @@ describe("ChatInterface Component - T007", () => {
 
     it("should clear input after sending message", async () => {
       // Mock fetch for successful response
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           body: new ReadableStream({
@@ -126,7 +126,7 @@ describe("ChatInterface Component - T007", () => {
 
   describe("Keyboard Shortcuts", () => {
     it("should send message on Enter key", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           body: new ReadableStream({
@@ -178,7 +178,7 @@ describe("ChatInterface Component - T007", () => {
 
   describe("Message Display", () => {
     it("should display user message after sending", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           body: new ReadableStream({
@@ -207,7 +207,7 @@ describe("ChatInterface Component - T007", () => {
     });
 
     it("should display assistant response after streaming", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           body: new ReadableStream({
@@ -240,7 +240,7 @@ describe("ChatInterface Component - T007", () => {
 
     it("should display multiple messages in order", async () => {
       let callCount = 0;
-      global.fetch = mock(() => {
+      global.fetch = vi.fn(() => {
         callCount++;
         return Promise.resolve({
           ok: true,
@@ -280,7 +280,7 @@ describe("ChatInterface Component - T007", () => {
 
   describe("Loading States", () => {
     it("should show typing indicator while streaming", async () => {
-      global.fetch = mock(
+      global.fetch = vi.fn(
         () =>
           new Promise((resolve) => {
             setTimeout(() => {
@@ -317,7 +317,7 @@ describe("ChatInterface Component - T007", () => {
     });
 
     it("should disable input while streaming", async () => {
-      global.fetch = mock(
+      global.fetch = vi.fn(
         () =>
           new Promise((resolve) => {
             setTimeout(() => {
@@ -356,7 +356,7 @@ describe("ChatInterface Component - T007", () => {
 
   describe("Error Handling", () => {
     it("should display error message on API failure", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.reject(new Error("Network error")),
       ) as typeof fetch;
 
@@ -375,7 +375,7 @@ describe("ChatInterface Component - T007", () => {
     });
 
     it("should display error on HTTP error status", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -399,7 +399,7 @@ describe("ChatInterface Component - T007", () => {
     });
 
     it("should re-enable input after error", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.reject(new Error("Network error")),
       ) as typeof fetch;
 
@@ -432,7 +432,7 @@ describe("ChatInterface Component - T007", () => {
 
   describe("Scroll Behavior", () => {
     it("should auto-scroll to bottom on new messages", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           body: new ReadableStream({
@@ -465,7 +465,7 @@ describe("ChatInterface Component - T007", () => {
 
   describe("Typing Indicator (Issue #20 Fixes)", () => {
     it("should show 'Ryan is typing...' label during streaming", async () => {
-      global.fetch = mock(
+      global.fetch = vi.fn(
         () =>
           new Promise((resolve) => {
             setTimeout(() => {
@@ -500,7 +500,7 @@ describe("ChatInterface Component - T007", () => {
     });
 
     it("should hide typing indicator after streaming completes", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           body: new ReadableStream({
@@ -542,7 +542,7 @@ describe("ChatInterface Component - T007", () => {
     });
 
     it("should properly cleanup loading state on successful stream", async () => {
-      global.fetch = mock(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           body: new ReadableStream({
@@ -580,7 +580,7 @@ describe("ChatInterface Component - T007", () => {
 
   describe("API Integration", () => {
     it("should call /api/chat endpoint with correct payload", async () => {
-      const mockFetch = mock(() =>
+      const mockFetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           body: new ReadableStream({
@@ -608,7 +608,6 @@ describe("ChatInterface Component - T007", () => {
         expect(mockFetch).toHaveBeenCalled();
 
         // Check fetch was called with correct URL
-        // biome-ignore lint/suspicious/noExplicitAny: Mock function type is not easily typed
         const call = (mockFetch as any).mock.calls[0];
         expect(call[0]).toBe("/api/chat");
       });
