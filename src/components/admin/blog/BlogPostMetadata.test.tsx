@@ -1638,44 +1638,15 @@ describe("BlogPostMetadata", () => {
       });
     });
 
-    describe("T014: Re-run Logic for Approved Fields", () => {
-      it("should show NewSuggestionChip underneath approved fields on re-run", async () => {
-        // Create metadata with approved excerpt (state = "approved")
-        const metadataWithApprovedExcerpt = {
-          ...defaultMetadata,
-          excerpt: "Current approved excerpt",
-          aiSuggestions: {
-            excerpt: {
-              value: "Old suggestion",
-              state: "approved" as const,
-            },
-          },
-        };
-
-        render(
-          <BlogPostMetadata
-            title="Test Post"
-            metadata={metadataWithApprovedExcerpt}
-            onChange={mockOnChange}
-            newSuggestions={{
-              excerpt: "New AI suggested excerpt",
-            }}
-          />,
-        );
-
-        // Should show NewSuggestionChip with new suggestion
-        expect(screen.getByText(/new suggestion:/i)).toBeDefined();
-        expect(screen.getByText(/new ai suggested excerpt/i)).toBeDefined();
-      });
-
-      it("should replace pending fields with new suggestions", async () => {
-        // Create metadata with pending excerpt (state = "pending")
+    describe("T014: Inline Suggestion Panels", () => {
+      it("should show inline suggestion panel for pending excerpt", async () => {
+        // Create metadata with pending excerpt suggestion
         const metadataWithPendingExcerpt = {
           ...defaultMetadata,
-          excerpt: "Old pending suggestion",
+          excerpt: "",
           aiSuggestions: {
             excerpt: {
-              value: "Old pending suggestion",
+              value: "AI generated excerpt suggestion",
               state: "pending" as const,
             },
           },
@@ -1686,29 +1657,25 @@ describe("BlogPostMetadata", () => {
             title="Test Post"
             metadata={metadataWithPendingExcerpt}
             onChange={mockOnChange}
-            newSuggestions={{
-              excerpt: "New AI suggested excerpt",
-            }}
           />,
         );
 
-        // Should NOT show NewSuggestionChip (pending fields get replaced, not shown as chip)
-        expect(screen.queryByText(/new suggestion:/i)).toBeNull();
-
-        // Should show badge for the new suggestion
-        expect(screen.getByLabelText(/ai suggestion/i)).toBeDefined();
+        // Should show inline suggestion panel with AI icon and text
+        expect(screen.getByText(/🤖/)).toBeDefined();
+        expect(screen.getByText(/ai suggestion/i)).toBeDefined();
+        expect(
+          screen.getByText(/ai generated excerpt suggestion/i),
+        ).toBeDefined();
       });
 
-      it("should not re-suggest rejected tags", async () => {
-        // Create metadata with rejected tags
-        const metadataWithRejectedTags = {
+      it("should show approve and reject buttons in suggestion panel", async () => {
+        const metadataWithPendingExcerpt = {
           ...defaultMetadata,
-          tags: ["current-tag"],
+          excerpt: "",
           aiSuggestions: {
-            tags: {
-              value: ["old-suggested-tag"],
-              state: "rejected" as const,
-              rejectedTags: ["rejected-tag-1", "rejected-tag-2"],
+            excerpt: {
+              value: "AI suggested excerpt",
+              state: "pending" as const,
             },
           },
         };
@@ -1716,28 +1683,31 @@ describe("BlogPostMetadata", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
-            metadata={metadataWithRejectedTags}
+            metadata={metadataWithPendingExcerpt}
             onChange={mockOnChange}
-            newSuggestions={{
-              tags: ["new-tag", "rejected-tag-1"], // rejected-tag-1 should be filtered out
-            }}
           />,
         );
 
-        // Should only show new-tag in suggestions, not rejected-tag-1
-        // This is tested via onChange callback when new suggestions are processed
-        expect(mockOnChange).toHaveBeenCalled();
+        // Should show approve and reject buttons within the suggestion panel
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
+        });
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
+        });
+
+        expect(approveButtons.length).toBeGreaterThan(0);
+        expect(rejectButtons.length).toBeGreaterThan(0);
       });
 
-      it("should keep approved tags and add new tags with badges", async () => {
-        // Create metadata with approved tags
-        const metadataWithApprovedTags = {
+      it("should show individual tag chips with approve/reject buttons for pending tags", async () => {
+        const metadataWithPendingTags = {
           ...defaultMetadata,
-          tags: ["approved-tag-1", "approved-tag-2"],
+          tags: [],
           aiSuggestions: {
             tags: {
-              value: ["approved-tag-1", "approved-tag-2"],
-              state: "approved" as const,
+              value: ["suggested-tag-1", "suggested-tag-2"],
+              state: "pending" as const,
               rejectedTags: [],
             },
           },
@@ -1746,28 +1716,29 @@ describe("BlogPostMetadata", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
-            metadata={metadataWithApprovedTags}
+            metadata={metadataWithPendingTags}
             onChange={mockOnChange}
-            newSuggestions={{
-              tags: ["new-suggested-tag"],
-            }}
           />,
         );
 
-        // Should show both approved tags (without badges) and new tags (with badges)
-        expect(screen.getByText("approved-tag-1")).toBeDefined();
-        expect(screen.getByText("approved-tag-2")).toBeDefined();
+        // Should show individual tag chips
+        expect(screen.getByText("suggested-tag-1")).toBeDefined();
+        expect(screen.getByText("suggested-tag-2")).toBeDefined();
+
+        // Each tag chip should have approve/reject buttons (by title attribute)
+        const approveButtons = screen.getAllByTitle("Approve tag");
+        const rejectButtons = screen.getAllByTitle("Reject tag");
+        expect(approveButtons.length).toBe(2);
+        expect(rejectButtons.length).toBe(2);
       });
 
-      it("should call onReplace when Replace button is clicked on NewSuggestionChip", async () => {
-        const user = userEvent.setup();
-
+      it("should not show suggestion panel for approved excerpt", async () => {
         const metadataWithApprovedExcerpt = {
           ...defaultMetadata,
-          excerpt: "Current approved excerpt",
+          excerpt: "Approved excerpt text",
           aiSuggestions: {
             excerpt: {
-              value: "Old suggestion",
+              value: "Approved excerpt text",
               state: "approved" as const,
             },
           },
@@ -1778,35 +1749,22 @@ describe("BlogPostMetadata", () => {
             title="Test Post"
             metadata={metadataWithApprovedExcerpt}
             onChange={mockOnChange}
-            newSuggestions={{
-              excerpt: "New AI suggested excerpt",
-            }}
           />,
         );
 
-        // Find and click Replace button
-        const replaceButton = screen.getByRole("button", { name: /replace/i });
-        await user.click(replaceButton);
-
-        // Should update excerpt with new suggestion
-        await waitFor(() => {
-          expect(mockOnChange).toHaveBeenCalled();
-          const lastCall =
-            mockOnChange.mock.calls[mockOnChange.mock.calls.length - 1][0];
-          expect(lastCall.excerpt).toBe("New AI suggested excerpt");
-        });
+        // Should NOT show inline suggestion panel for approved suggestions
+        expect(screen.queryByText(/🤖/)).toBeNull();
+        expect(screen.queryByText(/ai suggestion/i)).toBeNull();
       });
 
-      it("should call onDismiss when Dismiss button is clicked on NewSuggestionChip", async () => {
-        const user = userEvent.setup();
-
-        const metadataWithApprovedExcerpt = {
+      it("should not show suggestion panel for rejected excerpt", async () => {
+        const metadataWithRejectedExcerpt = {
           ...defaultMetadata,
-          excerpt: "Current approved excerpt",
+          excerpt: "",
           aiSuggestions: {
             excerpt: {
-              value: "Old suggestion",
-              state: "approved" as const,
+              value: "Rejected excerpt",
+              state: "rejected" as const,
             },
           },
         };
@@ -1814,97 +1772,13 @@ describe("BlogPostMetadata", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
-            metadata={metadataWithApprovedExcerpt}
+            metadata={metadataWithRejectedExcerpt}
             onChange={mockOnChange}
-            newSuggestions={{
-              excerpt: "New AI suggested excerpt",
-            }}
           />,
         );
 
-        // Find and click Dismiss button
-        const dismissButton = screen.getByRole("button", { name: /dismiss/i });
-        await user.click(dismissButton);
-
-        // Chip should be removed (no longer visible)
-        await waitFor(() => {
-          expect(screen.queryByText(/new suggestion:/i)).toBeNull();
-        });
-      });
-
-      it("should handle multiple field re-runs simultaneously", async () => {
-        const metadataWithMultipleApproved = {
-          ...defaultMetadata,
-          excerpt: "Approved excerpt",
-          seoMetadata: {
-            ...defaultMetadata.seoMetadata,
-            metaTitle: "Approved title",
-            metaDescription: "Approved description",
-          },
-          aiSuggestions: {
-            excerpt: {
-              value: "Approved excerpt",
-              state: "approved" as const,
-            },
-            seoMetadata: {
-              metaTitle: {
-                value: "Approved title",
-                state: "approved" as const,
-              },
-              metaDescription: {
-                value: "Approved description",
-                state: "approved" as const,
-              },
-            },
-          },
-        };
-
-        render(
-          <BlogPostMetadata
-            title="Test Post"
-            metadata={metadataWithMultipleApproved}
-            onChange={mockOnChange}
-            newSuggestions={{
-              excerpt: "New excerpt suggestion",
-              seoMetadata: {
-                metaTitle: "New title suggestion",
-                metaDescription: "New description suggestion",
-              },
-            }}
-          />,
-        );
-
-        // Should show multiple NewSuggestionChips for different fields
-        const suggestions = screen.getAllByText(/new suggestion:/i);
-        expect(suggestions.length).toBeGreaterThan(0);
-      });
-
-      it("should maintain approved state for fields without new suggestions", async () => {
-        const metadataWithApprovedExcerpt = {
-          ...defaultMetadata,
-          excerpt: "Approved excerpt",
-          aiSuggestions: {
-            excerpt: {
-              value: "Approved excerpt",
-              state: "approved" as const,
-            },
-          },
-        };
-
-        render(
-          <BlogPostMetadata
-            title="Test Post"
-            metadata={metadataWithApprovedExcerpt}
-            onChange={mockOnChange}
-            // No newSuggestions provided
-          />,
-        );
-
-        // Should NOT show NewSuggestionChip when there are no new suggestions
-        expect(screen.queryByText(/new suggestion:/i)).toBeNull();
-
-        // Should still show the approved excerpt value
-        expect(metadataWithApprovedExcerpt.excerpt).toBe("Approved excerpt");
+        // Should NOT show inline suggestion panel for rejected suggestions
+        expect(screen.queryByText(/rejected excerpt/i)).toBeNull();
       });
     });
   });
