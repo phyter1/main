@@ -1059,6 +1059,7 @@ export const approveSuggestion = mutation({
   args: {
     postId: v.id("blogPosts"),
     field: v.string(),
+    tagValue: v.optional(v.string()), // For individual tag approval
   },
   handler: async (ctx, args) => {
     const post = await ctx.db.get(args.postId);
@@ -1072,10 +1073,36 @@ export const approveSuggestion = mutation({
     }
 
     const suggestions = { ...post.aiSuggestions };
+    const updates: any = { updatedAt: Date.now() };
     const fieldPath = args.field.split(".");
 
+    // Handle individual tag approval
+    if (args.field === "tag" && args.tagValue) {
+      if (
+        !suggestions.tags ||
+        !suggestions.tags.value.includes(args.tagValue)
+      ) {
+        throw new Error(`Tag not found in suggestions: ${args.tagValue}`);
+      }
+
+      // Add tag to post's tags array if not already present
+      if (!post.tags.includes(args.tagValue)) {
+        updates.tags = [...post.tags, args.tagValue];
+      }
+
+      // Remove approved tag from suggestions
+      suggestions.tags = {
+        ...suggestions.tags,
+        value: suggestions.tags.value.filter((t) => t !== args.tagValue),
+      };
+
+      // If all tags approved, mark state as approved
+      if (suggestions.tags.value.length === 0) {
+        suggestions.tags.state = "approved" as const;
+      }
+    }
     // Handle nested fields (seoMetadata.metaTitle, etc.)
-    if (fieldPath.length === 2 && fieldPath[0] === "seoMetadata") {
+    else if (fieldPath.length === 2 && fieldPath[0] === "seoMetadata") {
       const seoField = fieldPath[1] as
         | "metaTitle"
         | "metaDescription"
@@ -1084,6 +1111,12 @@ export const approveSuggestion = mutation({
       if (!suggestions.seoMetadata || !suggestions.seoMetadata[seoField]) {
         throw new Error(`No suggestion found for field: ${args.field}`);
       }
+
+      // Populate the actual field value
+      updates.seoMetadata = {
+        ...post.seoMetadata,
+        [seoField]: suggestions.seoMetadata[seoField].value,
+      };
 
       suggestions.seoMetadata = {
         ...suggestions.seoMetadata,
@@ -1098,22 +1131,37 @@ export const approveSuggestion = mutation({
         if (!suggestions.excerpt) {
           throw new Error(`No suggestion found for field: ${args.field}`);
         }
+        // Populate the actual excerpt field
+        updates.excerpt = suggestions.excerpt.value;
+
         suggestions.excerpt = {
           ...suggestions.excerpt,
           state: "approved" as const,
         };
       } else if (args.field === "tags") {
+        // Approve all tags at once
         if (!suggestions.tags) {
           throw new Error(`No suggestion found for field: ${args.field}`);
         }
+        // Add all suggested tags to post's tags array
+        const newTags = suggestions.tags.value.filter(
+          (tag) => !post.tags.includes(tag),
+        );
+        if (newTags.length > 0) {
+          updates.tags = [...post.tags, ...newTags];
+        }
+
         suggestions.tags = {
           ...suggestions.tags,
+          value: [],
           state: "approved" as const,
         };
       } else if (args.field === "category") {
         if (!suggestions.category) {
           throw new Error(`No suggestion found for field: ${args.field}`);
         }
+        // TODO: Look up category ID from name
+        // For now, just mark as approved
         suggestions.category = {
           ...suggestions.category,
           state: "approved" as const,
@@ -1123,10 +1171,8 @@ export const approveSuggestion = mutation({
       }
     }
 
-    await ctx.db.patch(args.postId, {
-      aiSuggestions: suggestions,
-      updatedAt: Date.now(),
-    });
+    updates.aiSuggestions = suggestions;
+    await ctx.db.patch(args.postId, updates);
 
     return args.postId;
   },
@@ -1146,6 +1192,7 @@ export const rejectSuggestion = mutation({
   args: {
     postId: v.id("blogPosts"),
     field: v.string(),
+    tagValue: v.optional(v.string()), // For individual tag rejection
   },
   handler: async (ctx, args) => {
     const post = await ctx.db.get(args.postId);
@@ -1159,10 +1206,27 @@ export const rejectSuggestion = mutation({
     }
 
     const suggestions = { ...post.aiSuggestions };
+    const updates: any = { updatedAt: Date.now() };
     const fieldPath = args.field.split(".");
 
+    // Handle individual tag rejection
+    if (args.field === "tag" && args.tagValue) {
+      if (!suggestions.tags) {
+        throw new Error("No tag suggestions found");
+      }
+
+      // Remove tag from suggestions and from post's tags array
+      suggestions.tags = {
+        ...suggestions.tags,
+        value: suggestions.tags.value.filter((t) => t !== args.tagValue),
+        rejectedTags: [...suggestions.tags.rejectedTags, args.tagValue],
+      };
+
+      // Remove from post's tags array if present
+      updates.tags = post.tags.filter((t) => t !== args.tagValue);
+    }
     // Handle nested fields (seoMetadata.metaTitle, etc.)
-    if (fieldPath.length === 2 && fieldPath[0] === "seoMetadata") {
+    else if (fieldPath.length === 2 && fieldPath[0] === "seoMetadata") {
       const seoField = fieldPath[1] as
         | "metaTitle"
         | "metaDescription"
@@ -1199,9 +1263,13 @@ export const rejectSuggestion = mutation({
 
         suggestions.tags = {
           ...suggestions.tags,
+          value: [],
           state: "rejected" as const,
           rejectedTags: updatedRejectedTags,
         };
+
+        // Remove all suggested tags from post's tags array
+        updates.tags = post.tags.filter((tag) => !newRejected.includes(tag));
       } else if (args.field === "excerpt") {
         if (!suggestions.excerpt) {
           throw new Error(`No suggestion found for field: ${args.field}`);
@@ -1223,10 +1291,8 @@ export const rejectSuggestion = mutation({
       }
     }
 
-    await ctx.db.patch(args.postId, {
-      aiSuggestions: suggestions,
-      updatedAt: Date.now(),
-    });
+    updates.aiSuggestions = suggestions;
+    await ctx.db.patch(args.postId, updates);
 
     return args.postId;
   },

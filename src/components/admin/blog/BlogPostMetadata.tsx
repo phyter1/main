@@ -20,10 +20,15 @@
  */
 
 import { useMutation, useQuery } from "convex/react";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, Plus, X } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -46,13 +51,11 @@ import { generateSlug, validateSlug } from "@/lib/blog-utils";
 import type { AIMetadataSuggestions, SEOMetadata } from "@/types/blog";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { AISuggestionBadge } from "./AISuggestionBadge";
-import { AISuggestionOverlay } from "./AISuggestionOverlay";
 import { ImageUploader } from "./ImageUploader";
-import { NewSuggestionChip } from "./NewSuggestionChip";
 
 export interface BlogPostMetadataProps {
   title: string;
+  postId?: Id<"blogPosts">; // Optional for new posts
   metadata: {
     slug: string;
     categoryId?: Id<"blogCategories">;
@@ -83,6 +86,7 @@ export interface BlogPostMetadataProps {
 
 export function BlogPostMetadata({
   title,
+  postId,
   metadata,
   onChange,
   newSuggestions,
@@ -105,6 +109,11 @@ export function BlogPostMetadata({
   const existingTags = useQuery(api.blog.getTags) || [];
   const createCategory = useMutation(api.blog.createCategory);
 
+  // AI suggestion mutations
+  const approveSuggestionMutation = useMutation(api.blog.approveSuggestion);
+  const rejectSuggestionMutation = useMutation(api.blog.rejectSuggestion);
+  const _clearSuggestionMutation = useMutation(api.blog.clearSuggestion);
+
   // Local state for UI interactions
   const [slugError, setSlugError] = useState<string | null>(null);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -124,7 +133,9 @@ export function BlogPostMetadata({
     | "keywords"
     | "category"
     | { type: "tag"; value: string };
-  const [activeOverlay, setActiveOverlay] = useState<OverlayField | null>(null);
+  const [_activeOverlay, setActiveOverlay] = useState<OverlayField | null>(
+    null,
+  );
 
   // T014: State for dismissed new suggestions (re-run logic)
   const [dismissedNewSuggestions, setDismissedNewSuggestions] = useState<
@@ -159,7 +170,7 @@ export function BlogPostMetadata({
   }, [newSuggestions, metadata, onChange]);
 
   // T014: Helper to check if field has an approved suggestion
-  const hasApprovedSuggestion = (
+  const _hasApprovedSuggestion = (
     field:
       | "excerpt"
       | "metaTitle"
@@ -190,7 +201,7 @@ export function BlogPostMetadata({
   };
 
   // T014: Helper to get new suggestion if not dismissed
-  const getNewSuggestion = (
+  const _getNewSuggestion = (
     field:
       | "excerpt"
       | "metaTitle"
@@ -212,7 +223,7 @@ export function BlogPostMetadata({
   };
 
   // T014: Handle replace action from NewSuggestionChip
-  const handleReplaceNewSuggestion = (
+  const _handleReplaceNewSuggestion = (
     field:
       | "excerpt"
       | "metaTitle"
@@ -246,7 +257,7 @@ export function BlogPostMetadata({
   };
 
   // T014: Handle dismiss action from NewSuggestionChip
-  const handleDismissNewSuggestion = (field: string) => {
+  const _handleDismissNewSuggestion = (field: string) => {
     setDismissedNewSuggestions((prev) => new Set(prev).add(field));
   };
 
@@ -448,147 +459,82 @@ export function BlogPostMetadata({
   };
 
   // AI Suggestion handlers (T011)
-  const handleApproveSuggestion = (field: OverlayField) => {
-    if (!metadata.aiSuggestions) return;
+  const handleApproveSuggestion = async (field: OverlayField) => {
+    if (!metadata.aiSuggestions || !postId) return;
 
-    const updatedSuggestions = { ...metadata.aiSuggestions };
+    try {
+      // Determine field string and tagValue for Convex mutation
+      let fieldString: string;
+      let tagValue: string | undefined;
 
-    if (field === "excerpt" && updatedSuggestions.excerpt) {
-      updatedSuggestions.excerpt = {
-        ...updatedSuggestions.excerpt,
-        state: "approved",
-      };
-    } else if (field === "category" && updatedSuggestions.category) {
-      updatedSuggestions.category = {
-        ...updatedSuggestions.category,
-        state: "approved",
-      };
-    } else if (
-      field === "metaTitle" &&
-      updatedSuggestions.seoMetadata?.metaTitle
-    ) {
-      updatedSuggestions.seoMetadata = {
-        ...updatedSuggestions.seoMetadata,
-        metaTitle: {
-          ...updatedSuggestions.seoMetadata.metaTitle,
-          state: "approved",
-        },
-      };
-    } else if (
-      field === "metaDescription" &&
-      updatedSuggestions.seoMetadata?.metaDescription
-    ) {
-      updatedSuggestions.seoMetadata = {
-        ...updatedSuggestions.seoMetadata,
-        metaDescription: {
-          ...updatedSuggestions.seoMetadata.metaDescription,
-          state: "approved",
-        },
-      };
-    } else if (
-      field === "keywords" &&
-      updatedSuggestions.seoMetadata?.keywords
-    ) {
-      updatedSuggestions.seoMetadata = {
-        ...updatedSuggestions.seoMetadata,
-        keywords: {
-          ...updatedSuggestions.seoMetadata.keywords,
-          state: "approved",
-        },
-      };
-    } else if (
-      typeof field === "object" &&
-      field.type === "tag" &&
-      updatedSuggestions.tags
-    ) {
-      // For tags, mark as approved and filter out from value
-      updatedSuggestions.tags = {
-        ...updatedSuggestions.tags,
-        state: "approved",
-      };
+      if (typeof field === "object" && field.type === "tag") {
+        fieldString = "tag";
+        tagValue = field.value;
+      } else if (
+        field === "metaTitle" ||
+        field === "metaDescription" ||
+        field === "keywords"
+      ) {
+        // SEO metadata fields need full path for Convex mutation
+        fieldString = `seoMetadata.${field}`;
+      } else {
+        fieldString = field;
+      }
+
+      // Call Convex mutation to approve and populate
+      await approveSuggestionMutation({
+        postId,
+        field: fieldString,
+        tagValue,
+      });
+
+      // Convex will update the post, which will trigger a re-render via useQuery
+    } catch (error) {
+      console.error("Failed to approve suggestion:", error);
     }
-
-    onChange({
-      ...metadata,
-      aiSuggestions: updatedSuggestions,
-    });
 
     setActiveOverlay(null);
   };
 
-  const handleRejectSuggestion = (field: OverlayField) => {
-    if (!metadata.aiSuggestions) return;
+  const handleRejectSuggestion = async (field: OverlayField) => {
+    if (!metadata.aiSuggestions || !postId) return;
 
-    const updatedSuggestions = { ...metadata.aiSuggestions };
+    try {
+      // Determine field string and tagValue for Convex mutation
+      let fieldString: string;
+      let tagValue: string | undefined;
 
-    if (field === "excerpt" && updatedSuggestions.excerpt) {
-      updatedSuggestions.excerpt = {
-        ...updatedSuggestions.excerpt,
-        state: "rejected",
-      };
-    } else if (field === "category" && updatedSuggestions.category) {
-      updatedSuggestions.category = {
-        ...updatedSuggestions.category,
-        state: "rejected",
-      };
-    } else if (
-      field === "metaTitle" &&
-      updatedSuggestions.seoMetadata?.metaTitle
-    ) {
-      updatedSuggestions.seoMetadata = {
-        ...updatedSuggestions.seoMetadata,
-        metaTitle: {
-          ...updatedSuggestions.seoMetadata.metaTitle,
-          state: "rejected",
-        },
-      };
-    } else if (
-      field === "metaDescription" &&
-      updatedSuggestions.seoMetadata?.metaDescription
-    ) {
-      updatedSuggestions.seoMetadata = {
-        ...updatedSuggestions.seoMetadata,
-        metaDescription: {
-          ...updatedSuggestions.seoMetadata.metaDescription,
-          state: "rejected",
-        },
-      };
-    } else if (
-      field === "keywords" &&
-      updatedSuggestions.seoMetadata?.keywords
-    ) {
-      updatedSuggestions.seoMetadata = {
-        ...updatedSuggestions.seoMetadata,
-        keywords: {
-          ...updatedSuggestions.seoMetadata.keywords,
-          state: "rejected",
-        },
-      };
-    } else if (
-      typeof field === "object" &&
-      field.type === "tag" &&
-      updatedSuggestions.tags
-    ) {
-      // For tags, add to rejectedTags and remove from suggestions
-      updatedSuggestions.tags = {
-        ...updatedSuggestions.tags,
-        rejectedTags: [...updatedSuggestions.tags.rejectedTags, field.value],
-        value: updatedSuggestions.tags.value.filter(
-          (tag) => tag !== field.value,
-        ),
-      };
+      if (typeof field === "object" && field.type === "tag") {
+        fieldString = "tag";
+        tagValue = field.value;
+      } else if (
+        field === "metaTitle" ||
+        field === "metaDescription" ||
+        field === "keywords"
+      ) {
+        // SEO metadata fields need full path for Convex mutation
+        fieldString = `seoMetadata.${field}`;
+      } else {
+        fieldString = field;
+      }
+
+      // Call Convex mutation to reject
+      await rejectSuggestionMutation({
+        postId,
+        field: fieldString,
+        tagValue,
+      });
+
+      // Convex will update the post, which will trigger a re-render via useQuery
+    } catch (error) {
+      console.error("Failed to reject suggestion:", error);
     }
-
-    onChange({
-      ...metadata,
-      aiSuggestions: updatedSuggestions,
-    });
 
     setActiveOverlay(null);
   };
 
   // Helper to check if field has pending AI suggestion
-  const hasPendingSuggestion = (field: string): boolean => {
+  const _hasPendingSuggestion = (field: string): boolean => {
     if (!metadata.aiSuggestions) return false;
 
     switch (field) {
@@ -764,38 +710,52 @@ export function BlogPostMetadata({
 
       {/* Excerpt Field */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Label htmlFor={excerptId}>Excerpt</Label>
-          {hasPendingSuggestion("excerpt") && (
-            <AISuggestionBadge onClick={() => setActiveOverlay("excerpt")} />
-          )}
-        </div>
-        <div className="relative">
-          <Textarea
-            id={excerptId}
-            value={metadata.excerpt || ""}
-            onChange={(e) => handleExcerptChange(e.target.value)}
-            placeholder="Brief summary of the post..."
-            rows={3}
-            maxLength={200}
-          />
-          <AISuggestionOverlay
-            isOpen={activeOverlay === "excerpt"}
-            onApprove={() => handleApproveSuggestion("excerpt")}
-            onReject={() => handleRejectSuggestion("excerpt")}
-            onClose={() => setActiveOverlay(null)}
-          />
-        </div>
+        <Label htmlFor={excerptId}>Excerpt</Label>
+        <Textarea
+          id={excerptId}
+          value={metadata.excerpt || ""}
+          onChange={(e) => handleExcerptChange(e.target.value)}
+          placeholder="Brief summary of the post..."
+          rows={3}
+          maxLength={200}
+        />
         <p className="text-muted-foreground text-xs">
           {metadata.excerpt?.length || 0} / 200 characters
         </p>
-        {/* T014: Show NewSuggestionChip for approved fields with new suggestions */}
-        {hasApprovedSuggestion("excerpt") && getNewSuggestion("excerpt") && (
-          <NewSuggestionChip
-            value={getNewSuggestion("excerpt") as string}
-            onReplace={(value) => handleReplaceNewSuggestion("excerpt", value)}
-            onDismiss={() => handleDismissNewSuggestion("excerpt")}
-          />
+
+        {/* AI Suggestion Panel */}
+        {metadata.aiSuggestions?.excerpt?.state === "pending" && (
+          <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 p-3 space-y-2">
+            <div className="flex items-start gap-2">
+              <span className="text-xl">🤖</span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                  AI Suggestion
+                </p>
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  {metadata.aiSuggestions.excerpt.value}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => handleApproveSuggestion("excerpt")}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                ✓ Approve
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => handleRejectSuggestion("excerpt")}
+              >
+                ✗ Reject
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 
@@ -806,53 +766,19 @@ export function BlogPostMetadata({
           {/* Current Tags */}
           {metadata.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {metadata.tags.map((tag) => {
-                // Check if this tag is an AI suggestion
-                const isAISuggested =
-                  metadata.aiSuggestions?.tags?.state === "pending" &&
-                  metadata.aiSuggestions.tags.value.includes(tag);
-
-                return (
-                  <div
-                    key={tag}
-                    className="relative inline-flex items-center gap-1"
+              {metadata.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="gap-1">
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="ml-1 hover:bg-muted rounded-full p-0.5"
+                    aria-label={`Remove ${tag} tag`}
                   >
-                    <Badge variant="secondary" className="gap-1">
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 hover:bg-muted rounded-full p-0.5"
-                        aria-label={`Remove ${tag} tag`}
-                      >
-                        <X className="size-3" />
-                      </button>
-                    </Badge>
-                    {isAISuggested && (
-                      <AISuggestionBadge
-                        onClick={() =>
-                          setActiveOverlay({ type: "tag", value: tag })
-                        }
-                      />
-                    )}
-                    <AISuggestionOverlay
-                      isOpen={
-                        typeof activeOverlay === "object" &&
-                        activeOverlay !== null &&
-                        activeOverlay.type === "tag" &&
-                        activeOverlay.value === tag
-                      }
-                      onApprove={() =>
-                        handleApproveSuggestion({ type: "tag", value: tag })
-                      }
-                      onReject={() =>
-                        handleRejectSuggestion({ type: "tag", value: tag })
-                      }
-                      onClose={() => setActiveOverlay(null)}
-                    />
-                  </div>
-                );
-              })}
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+              ))}
             </div>
           )}
 
@@ -889,6 +815,51 @@ export function BlogPostMetadata({
         <p className="text-muted-foreground text-xs">
           Press Enter to add tags. Click suggestions to use existing tags.
         </p>
+
+        {/* AI Suggested Tags */}
+        {metadata.aiSuggestions?.tags?.state === "pending" &&
+          metadata.aiSuggestions.tags.value.length > 0 && (
+            <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-xl">🤖</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                    AI Suggested Tags
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {metadata.aiSuggestions.tags.value.map((tag) => (
+                      <div
+                        key={tag}
+                        className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded-md px-2 py-1 border"
+                      >
+                        <span className="text-sm">{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleApproveSuggestion({ type: "tag", value: tag })
+                          }
+                          className="text-green-600 hover:text-green-700 ml-1"
+                          title="Approve tag"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRejectSuggestion({ type: "tag", value: tag })
+                          }
+                          className="text-red-600 hover:text-red-700"
+                          title="Reject tag"
+                        >
+                          ✗
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
 
       {/* Cover Image */}
@@ -966,92 +937,110 @@ export function BlogPostMetadata({
 
         {/* Meta Title */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor={metaTitleId}>Meta Title</Label>
-            {hasPendingSuggestion("metaTitle") && (
-              <AISuggestionBadge
-                onClick={() => setActiveOverlay("metaTitle")}
-              />
-            )}
-          </div>
-          <div className="relative">
-            <Input
-              id={metaTitleId}
-              value={metadata.seoMetadata.metaTitle || ""}
-              onChange={(e) => handleSeoChange("metaTitle", e.target.value)}
-              placeholder={title}
-              maxLength={60}
-            />
-            <AISuggestionOverlay
-              isOpen={activeOverlay === "metaTitle"}
-              onApprove={() => handleApproveSuggestion("metaTitle")}
-              onReject={() => handleRejectSuggestion("metaTitle")}
-              onClose={() => setActiveOverlay(null)}
-            />
-          </div>
+          <Label htmlFor={metaTitleId}>Meta Title</Label>
+          <Input
+            id={metaTitleId}
+            value={metadata.seoMetadata.metaTitle || ""}
+            onChange={(e) => handleSeoChange("metaTitle", e.target.value)}
+            placeholder={title}
+            maxLength={60}
+          />
           <p className="text-muted-foreground text-xs">
             {metadata.seoMetadata.metaTitle?.length || 0} / 60 characters
             (recommended: 50-60)
           </p>
-          {/* T014: Show NewSuggestionChip for approved fields with new suggestions */}
-          {hasApprovedSuggestion("metaTitle") &&
-            getNewSuggestion("metaTitle") && (
-              <NewSuggestionChip
-                value={getNewSuggestion("metaTitle") as string}
-                onReplace={(value) =>
-                  handleReplaceNewSuggestion("metaTitle", value)
-                }
-                onDismiss={() => handleDismissNewSuggestion("metaTitle")}
-              />
-            )}
+
+          {/* AI Suggestion Panel */}
+          {metadata.aiSuggestions?.seoMetadata?.metaTitle?.state ===
+            "pending" && (
+            <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-xl">🤖</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                    AI Suggestion
+                  </p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    {metadata.aiSuggestions.seoMetadata.metaTitle.value}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleApproveSuggestion("metaTitle")}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  ✓ Approve
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleRejectSuggestion("metaTitle")}
+                >
+                  ✗ Reject
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Meta Description */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor={metaDescId}>Meta Description</Label>
-            {hasPendingSuggestion("metaDescription") && (
-              <AISuggestionBadge
-                onClick={() => setActiveOverlay("metaDescription")}
-              />
-            )}
-          </div>
-          <div className="relative">
-            <Textarea
-              id={metaDescId}
-              value={metadata.seoMetadata.metaDescription || ""}
-              onChange={(e) =>
-                handleSeoChange("metaDescription", e.target.value)
-              }
-              placeholder="Brief description for search engines..."
-              rows={3}
-              maxLength={200}
-              className={isMetaDescTooLong ? "border-yellow-500" : ""}
-            />
-            <AISuggestionOverlay
-              isOpen={activeOverlay === "metaDescription"}
-              onApprove={() => handleApproveSuggestion("metaDescription")}
-              onReject={() => handleRejectSuggestion("metaDescription")}
-              onClose={() => setActiveOverlay(null)}
-            />
-          </div>
+          <Label htmlFor={metaDescId}>Meta Description</Label>
+          <Textarea
+            id={metaDescId}
+            value={metadata.seoMetadata.metaDescription || ""}
+            onChange={(e) => handleSeoChange("metaDescription", e.target.value)}
+            placeholder="Brief description for search engines..."
+            rows={3}
+            maxLength={200}
+            className={isMetaDescTooLong ? "border-yellow-500" : ""}
+          />
           <p
             className={`text-xs ${isMetaDescTooLong ? "text-yellow-600" : "text-muted-foreground"}`}
           >
             {metaDescLength} / 160 characters (recommended)
             {isMetaDescTooLong && " - Exceeds recommended length"}
           </p>
-          {/* T014: Show NewSuggestionChip for approved fields with new suggestions */}
-          {hasApprovedSuggestion("metaDescription") &&
-            getNewSuggestion("metaDescription") && (
-              <NewSuggestionChip
-                value={getNewSuggestion("metaDescription") as string}
-                onReplace={(value) =>
-                  handleReplaceNewSuggestion("metaDescription", value)
-                }
-                onDismiss={() => handleDismissNewSuggestion("metaDescription")}
-              />
-            )}
+
+          {/* AI Suggestion Panel */}
+          {metadata.aiSuggestions?.seoMetadata?.metaDescription?.state ===
+            "pending" && (
+            <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-xl">🤖</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                    AI Suggestion
+                  </p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    {metadata.aiSuggestions.seoMetadata.metaDescription.value}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleApproveSuggestion("metaDescription")}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  ✓ Approve
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleRejectSuggestion("metaDescription")}
+                >
+                  ✗ Reject
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* OG Image */}
@@ -1068,6 +1057,97 @@ export function BlogPostMetadata({
             Image for social media sharing (recommended: 1200x630px)
           </p>
         </div>
+
+        {/* Advanced SEO Options */}
+        <Collapsible className="space-y-2">
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center justify-between"
+            >
+              <span>Advanced SEO Options</span>
+              <ChevronDown className="size-4" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 pt-4">
+            {/* Keywords */}
+            <div className="space-y-2">
+              <Label>Keywords</Label>
+              <Input
+                value={metadata.seoMetadata.keywords?.join(", ") || ""}
+                onChange={(e) =>
+                  handleSeoChange(
+                    "keywords",
+                    e.target.value
+                      .split(",")
+                      .map((k) => k.trim())
+                      .filter(Boolean),
+                  )
+                }
+                placeholder="react, nextjs, typescript"
+              />
+              <p className="text-muted-foreground text-xs">
+                Comma-separated keywords for search engines
+              </p>
+
+              {/* AI Suggestion Panel for Keywords */}
+              {metadata.aiSuggestions?.seoMetadata?.keywords?.state ===
+                "pending" && (
+                <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 p-3 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-xl">🤖</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                        AI Suggestion
+                      </p>
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        {metadata.aiSuggestions.seoMetadata.keywords.value.join(
+                          ", ",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleApproveSuggestion("keywords")}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      ✓ Approve
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRejectSuggestion("keywords")}
+                    >
+                      ✗ Reject
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Canonical URL */}
+            <div className="space-y-2">
+              <Label>Canonical URL</Label>
+              <Input
+                value={metadata.seoMetadata.canonicalUrl || ""}
+                onChange={(e) =>
+                  handleSeoChange("canonicalUrl", e.target.value)
+                }
+                placeholder="https://example.com/blog/post-slug"
+                type="url"
+              />
+              <p className="text-muted-foreground text-xs">
+                Optional: Specify the canonical URL to prevent duplicate content
+                issues
+              </p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </div>
   );

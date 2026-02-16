@@ -79,6 +79,7 @@ export default defineSchema({
       metaDescription: v.optional(v.string()),
       ogImage: v.optional(v.string()),
       keywords: v.optional(v.array(v.string())),
+      canonicalUrl: v.optional(v.string()),
     }),
     // AI-powered metadata suggestions (T001)
     aiSuggestions: v.optional(

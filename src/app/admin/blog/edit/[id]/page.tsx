@@ -114,8 +114,18 @@ export default function EditBlogPostPage() {
           metaTitle: post.seoMetadata?.metaTitle ?? "",
           metaDescription: post.seoMetadata?.metaDescription ?? "",
           ogImage: post.seoMetadata?.ogImage ?? "",
+          keywords: post.seoMetadata?.keywords ?? [],
         },
       });
+
+      // Initialize hash state from last analyzed content/title
+      // This prevents AI from regenerating on first load if content unchanged
+      if (post.lastAnalyzedContent) {
+        hashContent(post.lastAnalyzedContent).then(setLastAnalyzedContentHash);
+      }
+      if (post.lastAnalyzedTitle) {
+        hashContent(post.lastAnalyzedTitle).then(setLastAnalyzedTitleHash);
+      }
     }
   }, [post]);
 
@@ -142,6 +152,18 @@ export default function EditBlogPostPage() {
    * T012: Handle AI metadata suggestion request
    */
   const handleSuggestMetadata = async () => {
+    // Check if content or title has changed
+    const currentContentHash = await hashContent(formData.content);
+    const currentTitleHash = await hashContent(formData.title);
+
+    if (
+      currentContentHash === lastAnalyzedContentHash &&
+      currentTitleHash === lastAnalyzedTitleHash
+    ) {
+      console.log("Content and title unchanged, skipping AI suggestions");
+      return;
+    }
+
     setIsAnalyzing(true);
     setAnalysisError(null);
 
@@ -232,8 +254,8 @@ export default function EditBlogPostPage() {
       setLastAnalyzedContentHash(await hashContent(formData.content));
       setLastAnalyzedTitleHash(await hashContent(formData.title));
 
-      // Pass suggestions to metadata component
-      setNewSuggestions(suggestions);
+      // Suggestions are stored in Convex and accessed via post.aiSuggestions
+      // No need to set newSuggestions - that's only for re-run scenarios
     } catch (error) {
       console.error("AI metadata suggestion error:", error);
       setAnalysisError(
@@ -455,6 +477,7 @@ export default function EditBlogPostPage() {
         <div className="lg:col-span-1">
           <BlogPostMetadata
             title={formData.title}
+            postId={postId}
             metadata={{
               slug: formData.slug,
               categoryId: formData.categoryId,
