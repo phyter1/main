@@ -1,12 +1,12 @@
 import { resolve } from "node:path";
-import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { config } from "dotenv";
 
 // Load test environment variables from .env.test
 config({ path: resolve(process.cwd(), ".env.test") });
 
-// Explicitly register Happy DOM globals (required for Vitest v4+)
-GlobalRegistrator.register();
+// Note: GlobalRegistrator.register() is NOT needed here
+// Vitest automatically sets up happy-dom when environment: "happy-dom" is specified
+// Manual registration interferes with Vitest's environment setup
 
 // Add matchMedia mock for responsive design tests
 if (typeof window !== "undefined" && !window.matchMedia) {

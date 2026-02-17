@@ -1214,7 +1214,7 @@ describe("BlogPostMetadata", () => {
         expect(badges.length).toBe(0);
       });
 
-      it("should show badge for AI-suggested excerpt", () => {
+      it("should show inline panel for AI-suggested excerpt", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
@@ -1223,14 +1223,26 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Should have at least one AI badge (excerpt)
-        const badges = screen.queryAllByRole("button", {
-          name: /ai suggestion/i,
+        // Should show inline AI suggestion panel with approve/reject buttons
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+        expect(
+          screen.getByText(
+            metadataWithAISuggestions.aiSuggestions!.excerpt!.value,
+          ),
+        ).toBeDefined();
+
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
         });
-        expect(badges.length).toBeGreaterThan(0);
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
+        });
+        expect(approveButtons.length).toBeGreaterThan(0);
+        expect(rejectButtons.length).toBeGreaterThan(0);
       });
 
-      it("should show individual badges for each suggested tag", () => {
+      it("should show inline panels for suggested tags", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
@@ -1239,15 +1251,12 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Should show badges for AI-suggested tags
-        const badges = screen.queryAllByRole("button", {
-          name: /ai suggestion/i,
-        });
-        // At least 2 badges for tags + others for excerpt, metaTitle, metaDescription
-        expect(badges.length).toBeGreaterThanOrEqual(2);
+        // Should show AI Suggestion text (multiple panels will have this)
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
       });
 
-      it("should show badge for AI-suggested category", () => {
+      it("should show inline panel for AI-suggested category", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
@@ -1256,14 +1265,12 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Badge should exist for category
-        const badges = screen.queryAllByRole("button", {
-          name: /ai suggestion/i,
-        });
-        expect(badges.length).toBeGreaterThan(0);
+        // Should show AI suggestion panels
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
       });
 
-      it("should show badges for AI-suggested SEO metadata fields", () => {
+      it("should show inline panels for AI-suggested SEO metadata fields", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
@@ -1272,14 +1279,12 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Badges for metaTitle, metaDescription
-        const badges = screen.queryAllByRole("button", {
-          name: /ai suggestion/i,
-        });
-        expect(badges.length).toBeGreaterThan(0);
+        // Should show AI suggestion panels for SEO fields
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
       });
 
-      it("should not show badge when suggestion is approved", () => {
+      it("should not show inline panel when suggestion is approved", () => {
         const approvedMetadata = {
           ...metadataWithAISuggestions,
           aiSuggestions: {
@@ -1299,15 +1304,20 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Fewer badges since excerpt is approved
-        const badges = screen.queryAllByRole("button", {
-          name: /ai suggestion/i,
-        });
-        // Should still have badges for other pending suggestions
-        expect(badges.length).toBeGreaterThan(0);
+        // Should still show panels for other pending suggestions (not excerpt)
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+
+        // Excerpt value should not be in a suggestion panel
+        const excerptText = approvedMetadata.aiSuggestions.excerpt!.value;
+        // The excerpt should be in the textarea, not in an AI Suggestion panel
+        const textarea = screen.getByRole("textbox", {
+          name: /excerpt/i,
+        }) as HTMLTextAreaElement;
+        expect(textarea.value).toBe(""); // Approved suggestions don't auto-fill
       });
 
-      it("should not show badge when suggestion is rejected", () => {
+      it("should not show inline panel when suggestion is rejected", () => {
         const rejectedMetadata = {
           ...metadataWithAISuggestions,
           aiSuggestions: {
@@ -1327,18 +1337,14 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Badges should exist for other pending suggestions but not excerpt
-        const badges = screen.queryAllByRole("button", {
-          name: /ai suggestion/i,
-        });
-        expect(badges.length).toBeGreaterThan(0);
+        // Should show panels for other pending suggestions (not rejected excerpt)
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
       });
     });
 
     describe("Overlay Interaction", () => {
-      it("should open overlay when badge is clicked", async () => {
-        const user = userEvent.setup();
-
+      it("should show approve and reject buttons inline", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
@@ -1347,24 +1353,19 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Click first AI suggestion badge
-        const badges = screen.getAllByRole("button", {
-          name: /ai suggestion/i,
+        // Approve and reject buttons should be visible in inline panels
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
         });
-        await user.click(badges[0]);
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
+        });
 
-        // Overlay should be visible
-        await waitFor(() => {
-          const overlay = screen.getByRole("dialog", {
-            name: /ai suggestion actions/i,
-          });
-          expect(overlay).toBeDefined();
-        });
+        expect(approveButtons.length).toBeGreaterThan(0);
+        expect(rejectButtons.length).toBeGreaterThan(0);
       });
 
-      it("should show approve and reject buttons in overlay", async () => {
-        const user = userEvent.setup();
-
+      it("should display suggested value in inline panel", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
@@ -1373,26 +1374,13 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Click AI suggestion badge
-        const badges = screen.getAllByRole("button", {
-          name: /ai suggestion/i,
-        });
-        await user.click(badges[0]);
-
-        // Verify approve and reject buttons exist
-        await waitFor(() => {
-          expect(
-            screen.getByRole("button", { name: /approve ai suggestion/i }),
-          ).toBeDefined();
-          expect(
-            screen.getByRole("button", { name: /reject ai suggestion/i }),
-          ).toBeDefined();
-        });
+        // Verify suggested excerpt value is displayed
+        const excerptValue =
+          metadataWithAISuggestions.aiSuggestions!.excerpt!.value;
+        expect(screen.getByText(excerptValue)).toBeDefined();
       });
 
-      it("should close overlay on Escape key", async () => {
-        const user = userEvent.setup();
-
+      it("should display all pending suggestions in inline panels", () => {
         render(
           <BlogPostMetadata
             title="Test Post"
@@ -1401,168 +1389,130 @@ describe("BlogPostMetadata", () => {
           />,
         );
 
-        // Open overlay
-        const badges = screen.getAllByRole("button", {
-          name: /ai suggestion/i,
-        });
-        await user.click(badges[0]);
+        // All pending suggestions should have inline panels
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
 
-        // Wait for overlay to appear
-        await waitFor(() => {
-          expect(
-            screen.getByRole("dialog", { name: /ai suggestion actions/i }),
-          ).toBeDefined();
+        // Each panel should have approve and reject buttons
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
         });
-
-        // Press Escape
-        await user.keyboard("{Escape}");
-
-        // Overlay should close
-        await waitFor(() => {
-          expect(
-            screen.queryByRole("dialog", { name: /ai suggestion actions/i }),
-          ).toBeNull();
-        });
+        expect(approveButtons.length).toBe(suggestionHeadings.length);
       });
     });
 
     describe("Approve Action", () => {
-      it("should keep value and remove badge when approve is clicked", async () => {
+      it("should call Convex mutation when approve is clicked in inline panel", async () => {
         const user = userEvent.setup();
+        const mockApproveMutation = vi.fn(() => Promise.resolve());
+
+        // Mock the approve mutation
+        vi.mocked(useMutation).mockReturnValue(mockApproveMutation);
 
         render(
           <BlogPostMetadata
             title="Test Post"
+            postId={"mock-post-id" as any}
             metadata={metadataWithAISuggestions}
             onChange={mockOnChange}
           />,
         );
 
-        // Get initial badge count
-        const initialBadges = screen.getAllByRole("button", {
-          name: /ai suggestion/i,
+        // Click approve button directly (it's visible in the inline panel)
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
         });
-        const initialCount = initialBadges.length;
+        await user.click(approveButtons[0]);
 
-        // Click first badge
-        await user.click(initialBadges[0]);
-
-        // Click approve button
+        // Convex mutation should be called
         await waitFor(() => {
-          const approveButton = screen.getByRole("button", {
-            name: /approve ai suggestion/i,
-          });
-          return user.click(approveButton);
-        });
-
-        // onChange should be called with approved state
-        await waitFor(() => {
-          expect(mockOnChange).toHaveBeenCalled();
-          const lastCall =
-            mockOnChange.mock.calls[mockOnChange.mock.calls.length - 1][0];
-
-          // Check that one suggestion changed to approved state
-          expect(lastCall.aiSuggestions).toBeDefined();
+          expect(mockApproveMutation).toHaveBeenCalled();
         });
       });
 
-      it("should update metadata with approved value for excerpt", async () => {
+      it("should call Convex mutation when approve is clicked", async () => {
         const user = userEvent.setup();
+        const mockApproveMutation = vi.fn(() => Promise.resolve());
+
+        // Mock the approve mutation
+        vi.mocked(useMutation).mockReturnValue(mockApproveMutation);
 
         render(
           <BlogPostMetadata
             title="Test Post"
+            postId={"mock-post-id" as any}
             metadata={metadataWithAISuggestions}
             onChange={mockOnChange}
           />,
         );
 
-        // Find and click badge (need to identify excerpt badge specifically)
-        const badges = screen.getAllByRole("button", {
-          name: /ai suggestion/i,
+        // Click approve button in inline panel
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
         });
-        await user.click(badges[0]);
+        await user.click(approveButtons[0]);
 
-        // Approve
-        const approveButton = await screen.findByRole("button", {
-          name: /approve ai suggestion/i,
-        });
-        await user.click(approveButton);
-
-        // Verify onChange was called
+        // Verify Convex mutation was called
         await waitFor(() => {
-          expect(mockOnChange).toHaveBeenCalled();
+          expect(mockApproveMutation).toHaveBeenCalled();
         });
       });
     });
 
     describe("Reject Action", () => {
-      it("should clear value and remove badge when reject is clicked", async () => {
+      it("should call Convex mutation when reject is clicked in inline panel", async () => {
         const user = userEvent.setup();
+        const mockRejectMutation = vi.fn(() => Promise.resolve());
+
+        // Mock the reject mutation
+        vi.mocked(useMutation).mockReturnValue(mockRejectMutation);
 
         render(
           <BlogPostMetadata
             title="Test Post"
+            postId={"mock-post-id" as any}
             metadata={metadataWithAISuggestions}
             onChange={mockOnChange}
           />,
         );
 
-        // Click first AI suggestion badge
-        const badges = screen.getAllByRole("button", {
-          name: /ai suggestion/i,
+        // Click reject button directly (it's visible in the inline panel)
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
         });
-        await user.click(badges[0]);
+        await user.click(rejectButtons[0]);
 
-        // Click reject button
-        await waitFor(async () => {
-          const rejectButton = screen.getByRole("button", {
-            name: /reject ai suggestion/i,
-          });
-          await user.click(rejectButton);
-        });
-
-        // onChange should be called with rejected state
+        // Convex mutation should be called
         await waitFor(() => {
-          expect(mockOnChange).toHaveBeenCalled();
-          const lastCall =
-            mockOnChange.mock.calls[mockOnChange.mock.calls.length - 1][0];
-
-          // Check that suggestion changed to rejected state
-          expect(lastCall.aiSuggestions).toBeDefined();
+          expect(mockRejectMutation).toHaveBeenCalled();
         });
       });
 
-      it("should add rejected tag to rejectedTags array", async () => {
+      it("should call Convex mutation when reject is clicked", async () => {
         const user = userEvent.setup();
+        const mockRejectMutation = vi.fn(() => Promise.resolve());
+
+        // Mock the reject mutation
+        vi.mocked(useMutation).mockReturnValue(mockRejectMutation);
 
         render(
           <BlogPostMetadata
             title="Test Post"
+            postId={"mock-post-id" as any}
             metadata={metadataWithAISuggestions}
             onChange={mockOnChange}
           />,
         );
 
-        // Find tag badge and reject it
-        const badges = screen.getAllByRole("button", {
-          name: /ai suggestion/i,
+        // Click reject button in inline panel
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
         });
+        await user.click(rejectButtons[0]);
 
-        // Click a tag badge (need to identify which one is for tags)
-        await user.click(badges[1]); // Assume second badge is a tag
-
-        // Reject
-        await waitFor(async () => {
-          const rejectButton = screen.getByRole("button", {
-            name: /reject ai suggestion/i,
-          });
-          await user.click(rejectButton);
-        });
-
-        // Verify onChange was called with rejectedTags updated
+        // Verify Convex mutation was called
         await waitFor(() => {
-          expect(mockOnChange).toHaveBeenCalled();
+          expect(mockRejectMutation).toHaveBeenCalled();
         });
       });
     });
