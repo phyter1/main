@@ -489,7 +489,21 @@ export default function EditBlogPostPage() {
               aiSuggestions: post?.aiSuggestions,
             }}
             onChange={handleMetadataChange}
-            newSuggestions={newSuggestions || undefined}
+            newSuggestions={
+              newSuggestions
+                ? {
+                    excerpt: newSuggestions.excerpt?.value,
+                    tags: newSuggestions.tags?.value,
+                    category: newSuggestions.category?.value,
+                    seoMetadata: {
+                      metaTitle: newSuggestions.seoMetadata?.metaTitle?.value,
+                      metaDescription:
+                        newSuggestions.seoMetadata?.metaDescription?.value,
+                      keywords: newSuggestions.seoMetadata?.keywords?.value,
+                    },
+                  }
+                : undefined
+            }
           />
         </div>
       </div>

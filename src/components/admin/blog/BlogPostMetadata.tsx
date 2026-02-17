@@ -387,7 +387,10 @@ export function BlogPostMetadata({
   };
 
   // Update SEO metadata
-  const handleSeoChange = (field: keyof SEOMetadata, value: string) => {
+  const handleSeoChange = (
+    field: keyof SEOMetadata,
+    value: string | string[],
+  ) => {
     // Clear AI suggestion for this field when manually edited (T011)
     const updatedSuggestions = metadata.aiSuggestions
       ? { ...metadata.aiSuggestions }
@@ -478,7 +481,8 @@ export function BlogPostMetadata({
         // SEO metadata fields need full path for Convex mutation
         fieldString = `seoMetadata.${field}`;
       } else {
-        fieldString = field;
+        // At this point, field must be "excerpt" or "category"
+        fieldString = field as string;
       }
 
       // Call Convex mutation to approve and populate
@@ -515,7 +519,8 @@ export function BlogPostMetadata({
         // SEO metadata fields need full path for Convex mutation
         fieldString = `seoMetadata.${field}`;
       } else {
-        fieldString = field;
+        // At this point, field must be "excerpt" or "category"
+        fieldString = field as string;
       }
 
       // Call Convex mutation to reject
