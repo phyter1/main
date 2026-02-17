@@ -1,21 +1,41 @@
 #!/usr/bin/env sh
 
-# Pre-push hook for test suite validation
-# Runs full test suite to ensure no failing tests are pushed
+# Pre-push hook for build and test validation
+# Ensures code builds and all tests pass before pushing
 
 echo "Running pre-push checks..."
 
-# Run full test suite sequentially
-# This ensures all tests run in the same order as CI/CD
+# Step 1: Build the project
+echo ""
+echo "Building project..."
+bun run build
+
+# Capture build exit code
+BUILD_EXIT_CODE=$?
+
+# Check if build succeeded
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
+  echo ""
+  echo "❌ Build failed!"
+  echo "Please fix the build errors above before pushing."
+  echo ""
+  exit 1
+fi
+
+echo "✅ Build successful"
+
+# Step 2: Run full test suite
+echo ""
+echo "Running tests..."
 bun run test
 
-# Capture the exit code
+# Capture test exit code
 TEST_EXIT_CODE=$?
 
 # Check if tests passed
 if [ $TEST_EXIT_CODE -ne 0 ]; then
   echo ""
-  echo "❌ Pre-push checks failed!"
+  echo "❌ Tests failed!"
   echo "Please fix the failing tests above before pushing."
   echo ""
   exit 1
