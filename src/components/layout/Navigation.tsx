@@ -92,7 +92,7 @@ export function Navigation() {
           <div className="hidden md:flex md:items-center md:gap-4">
             <ThemeToggle />
             <Button size="sm" variant="vibrant" asChild>
-              <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
+              <a href="/resume.pdf" download>
                 Resume
               </a>
             </Button>
@@ -138,7 +138,7 @@ export function Navigation() {
             <div className="flex items-center gap-4 pt-2">
               <ThemeToggle />
               <Button size="sm" variant="vibrant" className="flex-1" asChild>
-                <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
+                <a href="/resume.pdf" download>
                   Resume
                 </a>
               </Button>

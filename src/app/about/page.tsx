@@ -118,7 +118,7 @@ export default function AboutPage() {
 
               <div>
                 <Button size="lg" className="gap-2" asChild>
-                  <a href="/assets/ryan_lowe_resume_2025v2.pdf" download>
+                  <a href="/resume.pdf" download>
                     <Download className="h-4 w-4" />
                     Download Resume
                   </a>
