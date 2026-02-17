@@ -3157,6 +3157,551 @@ More content...
 - Rate limiting on upload endpoint (10 uploads/minute)
 - Vercel Blob Storage handles CDN and access control
 
+### AI-Powered Metadata Suggestions
+
+The blog editor includes an AI-powered metadata suggestion system that automatically generates SEO-optimized metadata, tags, categories, and content analysis when you save a blog post draft. This feature streamlines content creation by providing intelligent suggestions while maintaining full editorial control.
+
+#### Overview
+
+When you save a blog post draft with new or modified content, the AI analyzes the post and suggests:
+- Excerpt (150-200 characters)
+- Tags (3-5 relevant tags based on content and existing tags)
+- Category (most appropriate category)
+- SEO metadata (metaTitle, metaDescription, keywords)
+- Content analysis (tone and readability assessment)
+
+All suggestions appear with a 🤖 badge that you can approve, reject, or ignore. The system intelligently handles re-runs, updates, and publishing workflows.
+
+#### Features
+
+**Automatic Suggestion Generation**
+- Triggers when post content or title changes on save
+- Uses OpenAI GPT-4 with structured output via Vercel AI SDK
+- Context-aware: learns from existing tags and categories
+- Respects previously rejected suggestions
+
+**Interactive Badge System**
+- 🤖 badge appears next to AI-suggested fields
+- Click badge to show overlay with approve/reject actions
+- Manual editing automatically removes badge
+- Keyboard accessible (Enter/Space to trigger)
+
+**Intelligent State Management**
+- Suggestions have three states: pending, approved, rejected
+- Approved suggestions persist but can be updated
+- Rejected tags are tracked and not re-suggested
+- Only approved/manual content published to readers
+
+**Re-run Behavior**
+- Approved fields: New suggestions appear as chips underneath
+- Pending fields: Suggestions replaced with new values
+- Rejected tags: Never re-suggested
+- Replace or dismiss new suggestions with one click
+
+#### Usage Examples
+
+**Basic Workflow: Create New Post**
+
+1. Write blog post title and content
+2. Click "Save Draft"
+3. AI analyzes content and generates suggestions
+4. Review suggestions with 🤖 badges
+5. Click badge to approve (✓) or reject (✗)
+6. Approved fields populate, badges disappear
+7. Publish when ready (only approved/manual content visible)
+
+**Advanced Workflow: Update Existing Post**
+
+1. Edit published post content
+2. Click "Save Draft"
+3. AI detects changes and generates new suggestions
+4. Previously approved fields show new suggestions as chips
+5. Click "Replace" to update or "Dismiss" to keep current
+6. Pending suggestions replaced automatically
+7. Rejected tags remain rejected
+
+**Manual Override**
+
+At any time, you can manually edit any field:
+- Type in excerpt field → Badge disappears immediately
+- Add/remove tags → Badge removed, suggestion cleared
+- Change category → Suggestion dismissed
+- Manual edits take precedence over AI suggestions
+
+#### Components
+
+**AISuggestionBadge**
+```tsx
+<AISuggestionBadge
+  onClick={() => setOverlayOpen(true)}
+/>
+```
+
+Displays 🤖 badge with tooltip and keyboard accessibility. Click or press Enter/Space to trigger overlay.
+
+**AISuggestionOverlay**
+```tsx
+<AISuggestionOverlay
+  isOpen={overlayOpen}
+  onApprove={() => approveSuggestion('excerpt')}
+  onReject={() => rejectSuggestion('excerpt')}
+  onClose={() => setOverlayOpen(false)}
+/>
+```
+
+Inline overlay that covers the field with approve/reject buttons. Press Escape to close. Auto-focuses approve button for quick keyboard workflow.
+
+**NewSuggestionChip**
+```tsx
+<NewSuggestionChip
+  value="New suggested excerpt text..."
+  onReplace={(value) => updateExcerpt(value)}
+  onDismiss={() => clearNewSuggestion('excerpt')}
+/>
+```
+
+Shown underneath approved fields when AI generates new suggestions on re-run. Replace updates the field, Dismiss keeps current value.
+
+**AIAnalysisSection**
+```tsx
+<AIAnalysisSection
+  tone="Professional"
+  readability="Intermediate"
+/>
+```
+
+Collapsible section (collapsed by default) showing AI-generated tone and readability analysis. Read-only, informational only.
+
+#### Technical Architecture
+
+**API Route: `/api/admin/blog/suggest-metadata`**
+
+```typescript
+// Request
+POST /api/admin/blog/suggest-metadata
+{
+  content: string;      // Full blog post content
+  title: string;        // Post title
+  excerpt?: string;     // Current excerpt (optional)
+  postId?: string;      // Post ID (optional)
+}
+
+// Response
+{
+  excerpt: string;
+  tags: string[];
+  category: string;
+  seoMetadata: {
+    metaTitle: string;
+    metaDescription: string;
+    keywords: string[];
+  };
+  analysis: {
+    tone: string;
+    readability: string;
+  };
+}
+```
+
+**Features:**
+- OpenAI GPT-4 via `createOpenAIClient()` from `@/lib/ai-config`
+- Structured output with Zod schema validation
+- Rate limiting: 10 requests/minute per IP
+- Context injection: existing tags, categories
+- Versioned prompts via `getActiveVersion("blog-metadata")`
+
+**Convex Schema Changes**
+
+Added to `blogPosts` table in `convex/schema.ts`:
+
+```typescript
+aiSuggestions: v.optional(
+  v.object({
+    excerpt: v.optional(v.object({
+      value: v.string(),
+      state: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))
+    })),
+    tags: v.optional(v.object({
+      value: v.array(v.string()),
+      state: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+      rejectedTags: v.array(v.string())
+    })),
+    category: v.optional(v.object({
+      value: v.string(),
+      state: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))
+    })),
+    seoMetadata: v.optional(v.object({
+      metaTitle: v.optional(v.object({ value: v.string(), state: v.string() })),
+      metaDescription: v.optional(v.object({ value: v.string(), state: v.string() })),
+      keywords: v.optional(v.object({ value: v.array(v.string()), state: v.string() }))
+    })),
+    analysis: v.optional(v.object({
+      tone: v.string(),
+      readability: v.string()
+    }))
+  })
+),
+lastAnalyzedContent: v.optional(v.string()),
+lastAnalyzedTitle: v.optional(v.string())
+```
+
+**TypeScript Types**
+
+Added to `src/types/blog.ts`:
+
+```typescript
+export type AISuggestionState = "pending" | "approved" | "rejected";
+
+export interface AISuggestion<T> {
+  value: T;
+  state: AISuggestionState;
+}
+
+export interface AIAnalysis {
+  tone: string;
+  readability: string;
+}
+
+export interface AIMetadataSuggestions {
+  excerpt?: AISuggestion<string>;
+  tags?: AISuggestion<string[]> & { rejectedTags: string[] };
+  category?: AISuggestion<string>;
+  seoMetadata?: {
+    metaTitle?: AISuggestion<string>;
+    metaDescription?: AISuggestion<string>;
+    keywords?: AISuggestion<string[]>;
+  };
+  analysis?: AIAnalysis;
+}
+```
+
+**Convex Mutations**
+
+Added to `convex/blog.ts`:
+
+```typescript
+// Save AI-generated suggestions to post
+saveSuggestions(args: {
+  postId: Id<"blogPosts">;
+  suggestions: AIMetadataSuggestions;
+})
+
+// Approve a suggestion (sets state to "approved")
+approveSuggestion(args: {
+  postId: Id<"blogPosts">;
+  field: "excerpt" | "tags" | "category" | "seoMetadata.metaTitle" | ...;
+})
+
+// Reject a suggestion (sets state to "rejected")
+rejectSuggestion(args: {
+  postId: Id<"blogPosts">;
+  field: string;
+})
+
+// Clear a suggestion completely
+clearSuggestion(args: {
+  postId: Id<"blogPosts">;
+  field: string;
+})
+```
+
+**Change Detection**
+
+Content hashing in `src/lib/blog-utils.ts`:
+
+```typescript
+// SHA-256 hash of content for change detection
+export function hashContent(content: string): string {
+  // Uses Web Crypto API for fast hashing
+}
+
+// Compare current content with last analyzed
+export function hasContentChanged(
+  current: string,
+  previous?: string
+): boolean {
+  if (!previous) return true;
+  return hashContent(current) !== hashContent(previous);
+}
+```
+
+**Prompt Versioning**
+
+AI prompts are versioned and stored in Convex `promptVersions` table:
+- Agent type: `"blog-metadata"`
+- Prompts include placeholders: `{existingTags}`, `{existingCategories}`
+- Active version loaded via `getActiveVersion("blog-metadata")`
+- Admins can refine prompts via Agent Workbench (`/admin/agent-workbench`)
+
+#### Interaction Patterns
+
+**Badge Click → Overlay → Approve**
+1. User clicks 🤖 badge next to excerpt field
+2. Overlay slides in covering the field
+3. User clicks ✓ Approve button
+4. Suggestion value populates field
+5. Badge disappears
+6. Overlay closes
+7. State saved to Convex as "approved"
+
+**Badge Click → Overlay → Reject**
+1. User clicks 🤖 badge
+2. Overlay appears
+3. User clicks ✗ Reject button
+4. Suggestion cleared from field
+5. Badge disappears
+6. Overlay closes
+7. State saved as "rejected" (won't re-suggest)
+
+**Manual Edit → Badge Removal**
+1. User types directly in excerpt field
+2. onChange handler detects manual edit
+3. Badge removed immediately
+4. Suggestion cleared from Convex
+5. User's manual text preserved
+
+**Re-run with Approved Field**
+1. User edits post content and saves
+2. AI detects changes (content hash differs)
+3. New suggestions generated
+4. Approved excerpt field already has value
+5. New suggestion appears as chip underneath
+6. User clicks "Replace" → Field updated, chip removed
+7. User clicks "Dismiss" → Chip removed, field unchanged
+
+**Tag Rejection Tracking**
+1. AI suggests tags: ["React", "TypeScript", "Tutorial"]
+2. User rejects "Tutorial" tag
+3. "Tutorial" added to `rejectedTags` array
+4. On next re-run, AI suggests: ["React", "Next.js", "TypeScript"]
+5. "Tutorial" never re-suggested for this post
+
+#### Publishing Workflow
+
+**Publishing with Pending Suggestions**
+
+When publishing a post with pending AI suggestions:
+- Only approved/manually-entered metadata visible to readers
+- Pending suggestions remain in database
+- Edit post later → Pending suggestions still show badges
+- Can approve pending suggestions after publish
+- Approving updates published metadata immediately
+
+**Example:**
+
+Draft State:
+- Excerpt: Manual "My custom excerpt" (no badge)
+- Tags: ["React", "TypeScript"] approved, ["Tutorial"] pending with badge
+- Category: "Technology" approved
+
+Published State (reader view):
+- Excerpt: "My custom excerpt"
+- Tags: ["React", "TypeScript"] only
+- Category: "Technology"
+
+Database State:
+- Excerpt: "My custom excerpt" (manual)
+- Tags: ["React", "TypeScript"] (approved), ["Tutorial"] (pending)
+- Category: "Technology" (approved)
+
+Edit Published Post:
+- All fields visible in editor
+- "Tutorial" tag still shows 🤖 badge
+- Can approve now → Tag appears to readers immediately
+
+#### Testing
+
+**Unit Tests:**
+- `AISuggestionBadge.test.tsx` - Badge rendering, click, keyboard
+- `AISuggestionOverlay.test.tsx` - Overlay display, approve/reject, escape key
+- `NewSuggestionChip.test.tsx` - Chip display, replace/dismiss
+- `AIAnalysisSection.test.tsx` - Collapsible section, content display
+- `blog-utils.test.ts` - Content hashing, change detection
+
+**Integration Tests:**
+- Save draft → Suggestions appear → Approve → Save again
+- Edit content → Save → New suggestions for approved fields
+- Publish with pending → Edit → Pending still there
+- Approve after publish → Metadata updates
+
+**API Tests:**
+- `/api/admin/blog/suggest-metadata` route tests
+- Request validation (content, title)
+- AI SDK mocking with Vitest
+- Rate limiting enforcement
+- Error handling
+
+**Running Tests:**
+```bash
+# All AI suggestion tests
+bun test src/components/admin/blog/AISuggestion
+
+# API route tests
+bun test src/app/api/admin/blog/suggest-metadata
+
+# Integration tests
+bun test src/app/admin/__tests__/ai-metadata-suggestion.integration.test.tsx
+
+# All tests with coverage
+bun test:coverage
+```
+
+#### Configuration
+
+**Environment Variables:**
+
+The AI metadata suggestion system uses the same OpenAI configuration as other AI features:
+
+```bash
+# Required: OpenAI API key
+OPENAI_API_KEY=sk-...
+
+# Optional: Rate limiting
+AI_MAX_REQUESTS_PER_MINUTE=10
+```
+
+**Prompt Management:**
+
+Prompts are managed via the Agent Workbench:
+1. Navigate to `/admin/agent-workbench`
+2. Select "Blog Metadata" agent type
+3. Refine prompt using natural language
+4. Test changes with sample content
+5. Deploy new version when satisfied
+
+**Default Prompt Structure:**
+
+```
+You are an expert content strategist analyzing blog posts to generate SEO-optimized metadata.
+
+Existing Tags: {existingTags}
+Existing Categories: {existingCategories}
+
+For the given blog post, generate:
+1. Excerpt (150-200 characters, engaging summary)
+2. Tags (3-5 tags, prefer existing tags when relevant, create new only if necessary)
+3. Category (choose from existing or suggest new if truly unique)
+4. SEO Metadata:
+   - metaTitle (50-60 characters, keyword-optimized)
+   - metaDescription (150-160 characters, compelling for search results)
+   - keywords (5-8 relevant keywords)
+5. Analysis:
+   - tone (e.g., Professional, Casual, Technical, Conversational)
+   - readability (e.g., Beginner-friendly, Intermediate, Advanced)
+
+Be concise, specific, and SEO-conscious. Match the author's writing style.
+```
+
+#### Troubleshooting
+
+**Problem: Suggestions Not Appearing**
+
+Solution:
+1. Verify content/title has changed since last analysis
+2. Check browser console for API errors
+3. Verify `OPENAI_API_KEY` is configured
+4. Check rate limit (10 requests/minute per IP)
+5. Review server logs for generation errors
+
+**Problem: Badge Doesn't Disappear on Manual Edit**
+
+Solution:
+1. Verify onChange handler is called
+2. Check clearSuggestion mutation is executed
+3. Ensure Convex connection is active
+4. Check browser console for React errors
+
+**Problem: Rejected Tags Re-appear**
+
+Solution:
+1. Verify rejectedTags array is populated in Convex
+2. Check API filters rejected tags from suggestions
+3. Review prompt context includes rejectedTags
+4. Test with clean post (no existing rejectedTags)
+
+**Problem: Rate Limit Errors During Development**
+
+Solution:
+1. Increase `AI_MAX_REQUESTS_PER_MINUTE` in `.env.local`
+2. Use longer intervals between saves
+3. Clear rate limit state (restart dev server)
+4. Consider caching suggestions during rapid iteration
+
+**Problem: Published Post Shows Pending Suggestions**
+
+Solution:
+1. Verify publishing filter excludes pending state
+2. Check publishPost mutation in `convex/blog.ts`
+3. Ensure only approved/manual fields in published output
+4. Review BlogContent component filtering logic
+
+#### Best Practices
+
+**Using AI Suggestions Effectively:**
+
+1. Review suggestions critically - AI is helpful but not perfect
+2. Approve SEO metadata that accurately represents content
+3. Reject tags that are too generic or off-topic
+4. Edit suggested excerpts to match your voice
+5. Use analysis (tone/readability) to guide revisions
+
+**When to Use Manual Entry:**
+
+- Brand-specific terminology AI might not know
+- Intentional SEO strategy (specific keyword targeting)
+- Style guide requirements (capitalization, punctuation)
+- Promotional or marketing-focused metadata
+
+**Optimizing AI Performance:**
+
+1. Write clear, well-structured content (helps AI understand)
+2. Use descriptive titles (AI uses title for context)
+3. Build consistent tag taxonomy (AI learns from existing tags)
+4. Create distinct categories (helps AI categorize accurately)
+5. Provide feedback by rejecting poor suggestions
+
+**Privacy and Security:**
+
+- Blog content sent to OpenAI API for analysis
+- No personally identifiable information should be in posts
+- API key stored securely in environment variables
+- Rate limiting prevents abuse
+- All suggestions stored in Convex (not OpenAI)
+
+#### Implementation Files
+
+**Components:**
+- `src/components/admin/blog/AISuggestionBadge.tsx` - Badge with tooltip
+- `src/components/admin/blog/AISuggestionOverlay.tsx` - Approve/reject overlay
+- `src/components/admin/blog/NewSuggestionChip.tsx` - Replace/dismiss chip
+- `src/components/admin/blog/AIAnalysisSection.tsx` - Tone/readability display
+- `src/components/admin/blog/BlogPostMetadata.tsx` - Integration point
+
+**API Routes:**
+- `src/app/api/admin/blog/suggest-metadata/route.ts` - Suggestion generation
+
+**Utilities:**
+- `src/lib/blog-utils.ts` - Content hashing and change detection
+- `src/lib/ai-config.ts` - OpenAI client configuration
+- `src/lib/prompt-versioning.ts` - Prompt version management
+
+**Types:**
+- `src/types/blog.ts` - AI suggestion type definitions
+
+**Convex:**
+- `convex/schema.ts` - AI suggestion schema
+- `convex/blog.ts` - Mutations for suggestion state management
+- `convex/prompts.ts` - Prompt version storage
+
+**Tests:**
+- `src/components/admin/blog/AISuggestionBadge.test.tsx`
+- `src/components/admin/blog/AISuggestionOverlay.test.tsx`
+- `src/components/admin/blog/NewSuggestionChip.test.tsx`
+- `src/components/admin/blog/AIAnalysisSection.test.tsx`
+- `src/app/api/admin/blog/suggest-metadata/route.test.ts`
+- `src/lib/blog-utils.test.ts`
+- `src/app/admin/__tests__/ai-metadata-suggestion.integration.test.tsx`
+
 ### Future Enhancements
 
 **Planned Features:**

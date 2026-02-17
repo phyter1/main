@@ -7,6 +7,7 @@
  * - Consistent date formatting
  * - Markdown sanitization for security
  * - Slug validation with detailed error messages
+ * - Content hashing for change detection
  */
 
 import { format } from "date-fns";
@@ -240,4 +241,100 @@ export function validateSlug(slug: string): SlugValidationResult {
   return {
     isValid: true,
   };
+}
+
+/**
+ * Generate SHA-256 hash of content for change detection
+ *
+ * Creates a consistent cryptographic hash of content using SHA-256 algorithm.
+ * The hash can be stored and later compared to detect if content has changed.
+ *
+ * **Use Cases:**
+ * - Detect when blog post content has been modified
+ * - Trigger AI re-analysis only when content changes
+ * - Cache invalidation based on content changes
+ *
+ * **Performance:**
+ * - Handles large content (100KB+) efficiently
+ * - SHA-256 computed in < 100ms for typical blog posts
+ * - Returns 64-character hexadecimal string
+ *
+ * @param content - The content to hash (markdown, plain text, etc.)
+ * @returns 64-character hexadecimal SHA-256 hash
+ *
+ * @example
+ * const hash1 = hashContent("Hello, world!");
+ * const hash2 = hashContent("Hello, world!");
+ * console.log(hash1 === hash2); // true
+ *
+ * const hash3 = hashContent("Goodbye, world!");
+ * console.log(hash1 === hash3); // false
+ */
+export async function hashContent(content: string): Promise<string> {
+  // Convert string to Uint8Array for Web Crypto API
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content);
+
+  // Generate SHA-256 hash using Web Crypto API (available in Node.js 15+ and browsers)
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+  // Convert ArrayBuffer to hexadecimal string
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+
+  return hashHex;
+}
+
+/**
+ * Check if content has changed compared to a previous hash
+ *
+ * Compares current content against a previously stored hash to determine
+ * if the content has been modified. Useful for triggering actions only
+ * when content actually changes.
+ *
+ * **Use Cases:**
+ * - Determine if AI should re-analyze blog post
+ * - Detect changes before saving to database
+ * - Cache invalidation logic
+ *
+ * **Edge Case Handling:**
+ * - Returns `true` if previous hash is null/undefined/empty (treat as changed)
+ * - Returns `true` if hash format is invalid
+ * - Case-sensitive comparison (whitespace matters)
+ *
+ * @param currentContent - The current content to check
+ * @param previousHash - The hash of the previous content (or null/undefined)
+ * @returns `true` if content has changed, `false` if identical
+ *
+ * @example
+ * const original = "Hello, world!";
+ * const hash = await hashContent(original);
+ *
+ * const unchanged = await hasContentChanged(original, hash);
+ * console.log(unchanged); // false
+ *
+ * const modified = "Goodbye, world!";
+ * const changed = await hasContentChanged(modified, hash);
+ * console.log(changed); // true
+ *
+ * // Handle null/undefined previous hash
+ * const firstTime = await hasContentChanged("New content", null);
+ * console.log(firstTime); // true (no previous hash to compare)
+ */
+export async function hasContentChanged(
+  currentContent: string,
+  previousHash: string | null | undefined,
+): Promise<boolean> {
+  // If no previous hash exists, treat as changed
+  if (!previousHash || previousHash.trim() === "") {
+    return true;
+  }
+
+  // Generate hash of current content
+  const currentHash = await hashContent(currentContent);
+
+  // Compare hashes (case-sensitive)
+  return currentHash !== previousHash;
 }

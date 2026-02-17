@@ -333,3 +333,111 @@ export interface PaginatedBlogPosts {
    */
   hasMore: boolean;
 }
+
+/**
+ * AI suggestion state
+ *
+ * Tracks the approval status of AI-generated metadata suggestions
+ */
+export type AISuggestionState = "pending" | "approved" | "rejected";
+
+/**
+ * Generic AI suggestion wrapper
+ *
+ * Wraps a suggested value with its approval state
+ */
+export interface AISuggestion<T> {
+  /**
+   * The suggested value
+   */
+  value: T;
+
+  /**
+   * Current state of the suggestion
+   */
+  state: AISuggestionState;
+}
+
+/**
+ * AI suggestions for tags
+ *
+ * Includes additional tracking for rejected tags to prevent re-suggestion
+ */
+export interface AITagSuggestions extends AISuggestion<string[]> {
+  /**
+   * Tags that have been explicitly rejected
+   * AI won't suggest these again
+   */
+  rejectedTags: string[];
+}
+
+/**
+ * AI suggestions for SEO metadata fields
+ *
+ * Each SEO field can be independently suggested and approved/rejected
+ */
+export interface AISEOMetadataSuggestions {
+  /**
+   * Suggested meta title
+   */
+  metaTitle?: AISuggestion<string>;
+
+  /**
+   * Suggested meta description
+   */
+  metaDescription?: AISuggestion<string>;
+
+  /**
+   * Suggested keywords
+   */
+  keywords?: AISuggestion<string[]>;
+}
+
+/**
+ * AI content analysis
+ *
+ * Read-only analysis of post content (tone, readability)
+ */
+export interface AIAnalysis {
+  /**
+   * Detected tone of the content (e.g., "Professional", "Casual", "Technical")
+   */
+  tone: string;
+
+  /**
+   * Readability assessment (e.g., "Easy", "Moderate", "Advanced")
+   */
+  readability: string;
+}
+
+/**
+ * Complete AI metadata suggestions
+ *
+ * All AI-generated suggestions for a blog post
+ */
+export interface AIMetadataSuggestions {
+  /**
+   * Suggested excerpt
+   */
+  excerpt?: AISuggestion<string>;
+
+  /**
+   * Suggested tags with rejection tracking
+   */
+  tags?: AITagSuggestions;
+
+  /**
+   * Suggested category
+   */
+  category?: AISuggestion<string>;
+
+  /**
+   * Suggested SEO metadata fields
+   */
+  seoMetadata?: AISEOMetadataSuggestions;
+
+  /**
+   * Content analysis (read-only, not approve/reject)
+   */
+  analysis?: AIAnalysis;
+}

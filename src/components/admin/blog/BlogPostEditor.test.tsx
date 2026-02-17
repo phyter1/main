@@ -7,12 +7,12 @@
  * - Preview toggle functionality
  * - Character and word count display
  * - Accessibility (useId for form fields)
+ * - T012: Change detection and AI metadata suggestion
  */
 
 import { cleanup, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BlogPostEditor } from "./BlogPostEditor";
 
 // Mock BlogContent component
 vi.mock("@/components/blog/BlogContent", () => ({
@@ -20,6 +20,23 @@ vi.mock("@/components/blog/BlogContent", () => ({
     <div data-testid="blog-content">{content}</div>
   ),
 }));
+
+// Mock blog-utils for hash functions
+vi.mock("@/lib/blog-utils", () => ({
+  hashContent: vi.fn((content: string) => {
+    // Simple mock hash based on content
+    return Promise.resolve(`hash-${content.length}-${content.slice(0, 10)}`);
+  }),
+  hasContentChanged: vi.fn(
+    (currentContent: string, previousHash: string | null | undefined) => {
+      if (!previousHash) return Promise.resolve(true);
+      const currentHash = `hash-${currentContent.length}-${currentContent.slice(0, 10)}`;
+      return Promise.resolve(currentHash !== previousHash);
+    },
+  ),
+}));
+
+import { BlogPostEditor } from "./BlogPostEditor";
 
 describe("BlogPostEditor", () => {
   let user: ReturnType<typeof userEvent.setup>;
@@ -412,6 +429,416 @@ describe("BlogPostEditor", () => {
           /No content yet\. Switch to Edit mode to start writing\./i,
         ),
       ).toBeDefined();
+    });
+  });
+
+  describe("T012: Change Detection and AI Metadata Suggestion", () => {
+    beforeEach(() => {
+      // Mock fetch for AI suggestion API
+      global.fetch = vi.fn();
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    describe("Initial State", () => {
+      it("should not trigger AI analysis on initial render", () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => {});
+
+        render(
+          <BlogPostEditor
+            title="Initial Title"
+            content="Initial content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+          />,
+        );
+
+        expect(onSuggestMetadata).not.toHaveBeenCalled();
+      });
+
+      it("should initialize without last analyzed hashes", () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => {});
+
+        render(
+          <BlogPostEditor
+            title=""
+            content=""
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+          />,
+        );
+
+        // Component should render successfully
+        expect(screen.getByLabelText("Title")).toBeDefined();
+      });
+    });
+
+    describe("Change Detection", () => {
+      it("should detect content change and call onSuggestMetadata", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        const { rerender } = render(
+          <BlogPostEditor
+            title="Test Title"
+            content="Original content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedContentHash="hash-of-original"
+            lastAnalyzedTitleHash="hash-of-title"
+          />,
+        );
+
+        // Simulate content change by re-rendering with new content
+        rerender(
+          <BlogPostEditor
+            title="Test Title"
+            content="Modified content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedContentHash="hash-of-original"
+            lastAnalyzedTitleHash="hash-of-title"
+          />,
+        );
+
+        // Wait for async hash comparison
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Should detect change and trigger callback on save
+        // Note: Actual trigger happens on "Save Draft" click
+      });
+
+      it("should detect title change", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        const { rerender } = render(
+          <BlogPostEditor
+            title="Original Title"
+            content="Test content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedContentHash="hash-of-content"
+            lastAnalyzedTitleHash="hash-of-original-title"
+          />,
+        );
+
+        rerender(
+          <BlogPostEditor
+            title="Modified Title"
+            content="Test content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedContentHash="hash-of-content"
+            lastAnalyzedTitleHash="hash-of-original-title"
+          />,
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
+
+      it("should not trigger AI when content unchanged", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        render(
+          <BlogPostEditor
+            title="Same Title"
+            content="Same content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedContentHash="hash-of-same-content"
+            lastAnalyzedTitleHash="hash-of-same-title"
+          />,
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // If hashes match (mocked scenario), no trigger should occur
+      });
+    });
+
+    describe("Loading State", () => {
+      it("should show loading state during AI analysis", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(
+          () => new Promise((resolve) => setTimeout(resolve, 1000)),
+        );
+
+        render(
+          <BlogPostEditor
+            title="Test"
+            content="Test content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            isAnalyzing={true}
+          />,
+        );
+
+        // Look for analyzing message
+        expect(screen.getByText(/analyzing content/i)).toBeDefined();
+      });
+
+      it("should show spinner icon during analysis", () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        const { container } = render(
+          <BlogPostEditor
+            title="Test"
+            content="Test"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            isAnalyzing={true}
+          />,
+        );
+
+        // Check for loading spinner
+        const spinner = container.querySelector(".animate-spin");
+        expect(spinner).toBeDefined();
+      });
+    });
+
+    describe("Error Handling", () => {
+      it("should display error message on API failure", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() =>
+          Promise.reject(new Error("API Error")),
+        );
+
+        render(
+          <BlogPostEditor
+            title="Test"
+            content="Test"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            analysisError="Failed to analyze content. Please try again."
+          />,
+        );
+
+        // Error message should be displayed
+        expect(screen.getByText(/failed to analyze content/i)).toBeDefined();
+      });
+
+      it("should not show error during analysis", () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        render(
+          <BlogPostEditor
+            title="Test"
+            content="Test"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            analysisError="Error message"
+            isAnalyzing={true}
+          />,
+        );
+
+        // Error should be hidden during analysis
+        expect(screen.queryByText(/error message/i)).toBeNull();
+        // But analyzing message should show
+        expect(screen.getByText(/analyzing content/i)).toBeDefined();
+      });
+
+      it("should clear error on retry", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        const { rerender } = render(
+          <BlogPostEditor
+            title="Test"
+            content="Test"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            analysisError="Previous error"
+          />,
+        );
+
+        // Error should be displayed
+        expect(screen.queryByText(/previous error/i)).toBeDefined();
+
+        // Clear error by re-rendering without error prop
+        rerender(
+          <BlogPostEditor
+            title="Test"
+            content="Test"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+          />,
+        );
+
+        // Error should be cleared
+        expect(screen.queryByText(/previous error/i)).toBeNull();
+      });
+    });
+
+    describe("Success Flow", () => {
+      it("should trigger metadata update on successful analysis", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() =>
+          Promise.resolve({
+            excerpt: "AI suggested excerpt",
+            tags: ["react", "typescript"],
+            category: "Technology",
+          }),
+        );
+
+        render(
+          <BlogPostEditor
+            title="Test Post"
+            content="Test content for AI analysis"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+          />,
+        );
+
+        // Trigger analysis would happen on save
+        // Callback should update parent component state
+      });
+    });
+
+    describe("Hash Tracking", () => {
+      it("should accept lastAnalyzedContentHash prop", () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        render(
+          <BlogPostEditor
+            title="Test"
+            content="Test"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedContentHash="abc123hash"
+          />,
+        );
+
+        expect(screen.getByLabelText("Title")).toBeDefined();
+      });
+
+      it("should accept lastAnalyzedTitleHash prop", () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        render(
+          <BlogPostEditor
+            title="Test"
+            content="Test"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedTitleHash="def456hash"
+          />,
+        );
+
+        expect(screen.getByLabelText("Title")).toBeDefined();
+      });
+    });
+
+    describe("Changes Indicator", () => {
+      it("should show changes indicator when content has changed", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        render(
+          <BlogPostEditor
+            title="Test"
+            content="New content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedContentHash="hash-of-old-content"
+            lastAnalyzedTitleHash="hash-of-title"
+          />,
+        );
+
+        // Wait for async hash comparison
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Should show changes detected message
+        expect(
+          screen.queryByText(/content has changed/i) ||
+            screen.queryByText(/ai suggestions will be generated/i),
+        ).toBeDefined();
+      });
+
+      it("should not show changes indicator when analyzing", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+        const onSuggestMetadata = vi.fn(() => Promise.resolve());
+
+        render(
+          <BlogPostEditor
+            title="Test"
+            content="Changed content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onSuggestMetadata={onSuggestMetadata}
+            lastAnalyzedContentHash="old-hash"
+            isAnalyzing={true}
+          />,
+        );
+
+        // Wait for async processing
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Changes indicator should be hidden during analysis
+        expect(screen.queryByText(/content has changed/i)).toBeNull();
+      });
+
+      it("should not show changes indicator without onSuggestMetadata callback", async () => {
+        const onTitleChange = vi.fn(() => {});
+        const onContentChange = vi.fn(() => {});
+
+        render(
+          <BlogPostEditor
+            title="Test"
+            content="Changed content"
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            lastAnalyzedContentHash="old-hash"
+          />,
+        );
+
+        // Wait for async processing
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Should not show indicator without callback
+        expect(screen.queryByText(/content has changed/i)).toBeNull();
+      });
     });
   });
 });

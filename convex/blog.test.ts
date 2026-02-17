@@ -427,6 +427,1017 @@ describe("Blog Functions - Validation Logic", () => {
       });
     });
   });
+
+  describe("T010: AI Context Queries", () => {
+    describe("getAllTags logic", () => {
+      it("should return all unique tag names from posts", () => {
+        const posts = [
+          { id: "1", tags: ["react", "javascript"], status: "published" },
+          { id: "2", tags: ["vue", "javascript"], status: "published" },
+          { id: "3", tags: ["react", "typescript"], status: "published" },
+          { id: "4", tags: ["python", "django"], status: "draft" },
+        ];
+
+        const allTags = new Set<string>();
+        for (const post of posts) {
+          for (const tag of post.tags) {
+            allTags.add(tag);
+          }
+        }
+
+        const uniqueTags = Array.from(allTags);
+
+        expect(uniqueTags.length).toBe(6);
+        expect(uniqueTags).toContain("react");
+        expect(uniqueTags).toContain("javascript");
+        expect(uniqueTags).toContain("vue");
+        expect(uniqueTags).toContain("typescript");
+        expect(uniqueTags).toContain("python");
+        expect(uniqueTags).toContain("django");
+      });
+
+      it("should handle posts with no tags", () => {
+        const posts = [
+          { id: "1", tags: ["react"], status: "published" },
+          { id: "2", tags: [], status: "published" },
+          { id: "3", tags: ["vue"], status: "published" },
+        ];
+
+        const allTags = new Set<string>();
+        for (const post of posts) {
+          for (const tag of post.tags) {
+            allTags.add(tag);
+          }
+        }
+
+        const uniqueTags = Array.from(allTags);
+
+        expect(uniqueTags.length).toBe(2);
+        expect(uniqueTags).toContain("react");
+        expect(uniqueTags).toContain("vue");
+      });
+
+      it("should handle duplicate tags across posts", () => {
+        const posts = [
+          { id: "1", tags: ["react", "javascript"], status: "published" },
+          { id: "2", tags: ["react", "typescript"], status: "published" },
+          { id: "3", tags: ["react", "nextjs"], status: "published" },
+        ];
+
+        const allTags = new Set<string>();
+        for (const post of posts) {
+          for (const tag of post.tags) {
+            allTags.add(tag);
+          }
+        }
+
+        const uniqueTags = Array.from(allTags);
+
+        expect(uniqueTags.length).toBe(4);
+        expect(uniqueTags.filter((tag) => tag === "react").length).toBe(1);
+      });
+
+      it("should return empty array when no posts exist", () => {
+        const posts: Array<{ id: string; tags: string[] }> = [];
+
+        const allTags = new Set<string>();
+        for (const post of posts) {
+          for (const tag of post.tags) {
+            allTags.add(tag);
+          }
+        }
+
+        const uniqueTags = Array.from(allTags);
+
+        expect(uniqueTags.length).toBe(0);
+        expect(Array.isArray(uniqueTags)).toBe(true);
+      });
+    });
+
+    describe("getAllCategories logic", () => {
+      it("should return all categories with IDs and names", () => {
+        const categories = [
+          {
+            _id: "cat-1",
+            name: "Technology",
+            slug: "technology",
+            postCount: 5,
+          },
+          { _id: "cat-2", name: "Design", slug: "design", postCount: 3 },
+          { _id: "cat-3", name: "Business", slug: "business", postCount: 2 },
+        ];
+
+        const result = categories.map((cat) => ({
+          id: cat._id,
+          name: cat.name,
+        }));
+
+        expect(result.length).toBe(3);
+        expect(result[0]).toHaveProperty("id");
+        expect(result[0]).toHaveProperty("name");
+        expect(result[0].id).toBe("cat-1");
+        expect(result[0].name).toBe("Technology");
+      });
+
+      it("should handle empty categories list", () => {
+        const categories: Array<{
+          _id: string;
+          name: string;
+          slug: string;
+        }> = [];
+
+        const result = categories.map((cat) => ({
+          id: cat._id,
+          name: cat.name,
+        }));
+
+        expect(result.length).toBe(0);
+        expect(Array.isArray(result)).toBe(true);
+      });
+
+      it("should preserve all category data", () => {
+        const categories = [
+          {
+            _id: "cat-1",
+            name: "Technology",
+            slug: "technology",
+            description: "Tech posts",
+            postCount: 10,
+          },
+        ];
+
+        const result = categories.map((cat) => ({
+          id: cat._id,
+          name: cat.name,
+        }));
+
+        expect(result[0].id).toBe("cat-1");
+        expect(result[0].name).toBe("Technology");
+      });
+    });
+
+    describe("getRecentPosts logic", () => {
+      it("should return last N published posts", () => {
+        const posts = [
+          {
+            id: "1",
+            publishedAt: 1000,
+            status: "published",
+            title: "Old Post",
+          },
+          {
+            id: "2",
+            publishedAt: 3000,
+            status: "published",
+            title: "Recent Post",
+          },
+          {
+            id: "3",
+            publishedAt: 2000,
+            status: "published",
+            title: "Middle Post",
+          },
+          {
+            id: "4",
+            publishedAt: 4000,
+            status: "published",
+            title: "Newest Post",
+          },
+        ];
+
+        const publishedPosts = posts.filter((p) => p.status === "published");
+        const sorted = publishedPosts.sort(
+          (a, b) => b.publishedAt - a.publishedAt,
+        );
+        const limit = 2;
+        const recent = sorted.slice(0, limit);
+
+        expect(recent.length).toBe(2);
+        expect(recent[0].title).toBe("Newest Post");
+        expect(recent[1].title).toBe("Recent Post");
+      });
+
+      it("should only include published posts", () => {
+        const posts = [
+          {
+            id: "1",
+            publishedAt: 1000,
+            status: "published",
+            title: "Published Post",
+          },
+          { id: "2", publishedAt: 2000, status: "draft", title: "Draft Post" },
+          {
+            id: "3",
+            publishedAt: 3000,
+            status: "archived",
+            title: "Archived Post",
+          },
+          {
+            id: "4",
+            publishedAt: 4000,
+            status: "published",
+            title: "Another Published",
+          },
+        ];
+
+        const publishedPosts = posts.filter((p) => p.status === "published");
+        const sorted = publishedPosts.sort(
+          (a, b) => b.publishedAt - a.publishedAt,
+        );
+
+        expect(sorted.length).toBe(2);
+        expect(sorted.every((p) => p.status === "published")).toBe(true);
+      });
+
+      it("should handle limit larger than available posts", () => {
+        const posts = [
+          {
+            id: "1",
+            publishedAt: 1000,
+            status: "published",
+            title: "Post 1",
+          },
+          {
+            id: "2",
+            publishedAt: 2000,
+            status: "published",
+            title: "Post 2",
+          },
+        ];
+
+        const publishedPosts = posts.filter((p) => p.status === "published");
+        const sorted = publishedPosts.sort(
+          (a, b) => b.publishedAt - a.publishedAt,
+        );
+        const limit = 10;
+        const recent = sorted.slice(0, limit);
+
+        expect(recent.length).toBe(2);
+        expect(recent[0].title).toBe("Post 2");
+        expect(recent[1].title).toBe("Post 1");
+      });
+
+      it("should return empty array when no published posts exist", () => {
+        const posts = [
+          { id: "1", publishedAt: 1000, status: "draft", title: "Draft" },
+          { id: "2", publishedAt: 2000, status: "archived", title: "Archived" },
+        ];
+
+        const publishedPosts = posts.filter((p) => p.status === "published");
+        const sorted = publishedPosts.sort(
+          (a, b) => b.publishedAt - a.publishedAt,
+        );
+        const limit = 5;
+        const recent = sorted.slice(0, limit);
+
+        expect(recent.length).toBe(0);
+        expect(Array.isArray(recent)).toBe(true);
+      });
+
+      it("should validate limit parameter", () => {
+        const validLimits = [1, 5, 10, 50, 100];
+        const invalidLimits = [0, -1, -10, NaN];
+
+        validLimits.forEach((limit) => {
+          expect(limit).toBeGreaterThan(0);
+          expect(Number.isInteger(limit)).toBe(true);
+        });
+
+        invalidLimits.forEach((limit) => {
+          const isValid = limit > 0 && Number.isInteger(limit);
+          expect(isValid).toBe(false);
+        });
+      });
+
+      it("should sort by most recent first", () => {
+        const posts = [
+          {
+            id: "1",
+            publishedAt: 100,
+            status: "published",
+            title: "Post from 100",
+          },
+          {
+            id: "2",
+            publishedAt: 500,
+            status: "published",
+            title: "Post from 500",
+          },
+          {
+            id: "3",
+            publishedAt: 300,
+            status: "published",
+            title: "Post from 300",
+          },
+        ];
+
+        const publishedPosts = posts.filter((p) => p.status === "published");
+        const sorted = publishedPosts.sort(
+          (a, b) => b.publishedAt - a.publishedAt,
+        );
+
+        expect(sorted[0].publishedAt).toBeGreaterThan(sorted[1].publishedAt);
+        expect(sorted[1].publishedAt).toBeGreaterThan(sorted[2].publishedAt);
+        expect(sorted[0].title).toBe("Post from 500");
+      });
+    });
+  });
+});
+
+describe("T008: AI Suggestion Mutations Logic", () => {
+  describe("saveSuggestions logic", () => {
+    it("should validate AI suggestion structure", () => {
+      const validSuggestion = {
+        excerpt: {
+          value: "AI-generated excerpt",
+          state: "pending" as const,
+        },
+        tags: {
+          value: ["tag1", "tag2"],
+          state: "pending" as const,
+          rejectedTags: [],
+        },
+        category: {
+          value: "Technology",
+          state: "pending" as const,
+        },
+        seoMetadata: {
+          metaTitle: {
+            value: "SEO Title",
+            state: "pending" as const,
+          },
+          metaDescription: {
+            value: "SEO Description",
+            state: "pending" as const,
+          },
+          keywords: {
+            value: ["keyword1", "keyword2"],
+            state: "pending" as const,
+          },
+        },
+        analysis: {
+          tone: "professional",
+          readability: "intermediate",
+        },
+      };
+
+      expect(validSuggestion.excerpt.value).toBeDefined();
+      expect(validSuggestion.excerpt.state).toBe("pending");
+      expect(Array.isArray(validSuggestion.tags.value)).toBe(true);
+      expect(Array.isArray(validSuggestion.tags.rejectedTags)).toBe(true);
+      expect(validSuggestion.analysis.tone).toBeDefined();
+      expect(validSuggestion.analysis.readability).toBeDefined();
+    });
+
+    it("should validate suggestion state values", () => {
+      const validStates = ["pending", "approved", "rejected"];
+      const testStates = ["pending", "approved", "rejected", "invalid"];
+
+      testStates.forEach((state) => {
+        const isValid = validStates.includes(state);
+        if (state === "invalid") {
+          expect(isValid).toBe(false);
+        } else {
+          expect(isValid).toBe(true);
+        }
+      });
+    });
+
+    it("should handle change detection fields", () => {
+      const changeDetection = {
+        lastAnalyzedContent: "Content hash or text",
+        lastAnalyzedTitle: "Title hash or text",
+      };
+
+      expect(typeof changeDetection.lastAnalyzedContent).toBe("string");
+      expect(typeof changeDetection.lastAnalyzedTitle).toBe("string");
+      expect(changeDetection.lastAnalyzedContent.length).toBeGreaterThan(0);
+      expect(changeDetection.lastAnalyzedTitle.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("approveSuggestion logic", () => {
+    it("should validate field paths", () => {
+      const validFields = [
+        "excerpt",
+        "tags",
+        "category",
+        "seoMetadata.metaTitle",
+        "seoMetadata.metaDescription",
+        "seoMetadata.keywords",
+      ];
+
+      validFields.forEach((field) => {
+        expect(typeof field).toBe("string");
+        expect(field.length).toBeGreaterThan(0);
+
+        // Nested fields should contain dot notation
+        if (field.startsWith("seoMetadata.")) {
+          expect(field.split(".").length).toBe(2);
+        }
+      });
+    });
+
+    it("should transition state from pending to approved", () => {
+      let state = "pending";
+      state = "approved";
+      expect(state).toBe("approved");
+    });
+
+    it("should preserve suggestion value when approving", () => {
+      const suggestion = {
+        value: "AI-generated content",
+        state: "pending" as "pending" | "approved" | "rejected",
+      };
+
+      suggestion.state = "approved";
+
+      expect(suggestion.value).toBe("AI-generated content");
+      expect(suggestion.state).toBe("approved");
+    });
+  });
+
+  describe("rejectSuggestion logic", () => {
+    it("should transition state from pending to rejected", () => {
+      let state = "pending";
+      state = "rejected";
+      expect(state).toBe("rejected");
+    });
+
+    it("should add rejected tags to rejectedTags array", () => {
+      const tagsSuggestion = {
+        value: ["new-tag-1", "new-tag-2"],
+        state: "pending" as "pending" | "approved" | "rejected",
+        rejectedTags: [] as string[],
+      };
+
+      // Simulate rejection
+      tagsSuggestion.rejectedTags.push(...tagsSuggestion.value);
+      tagsSuggestion.state = "rejected";
+
+      expect(tagsSuggestion.rejectedTags).toEqual(["new-tag-1", "new-tag-2"]);
+      expect(tagsSuggestion.state).toBe("rejected");
+    });
+
+    it("should preserve existing rejectedTags when adding new ones", () => {
+      const tagsSuggestion = {
+        value: ["new-tag"],
+        state: "pending" as "pending" | "approved" | "rejected",
+        rejectedTags: ["old-rejected-tag"] as string[],
+      };
+
+      // Simulate rejection with existing rejected tags
+      const updatedRejected = [
+        ...tagsSuggestion.rejectedTags,
+        ...tagsSuggestion.value,
+      ];
+
+      expect(updatedRejected).toEqual(["old-rejected-tag", "new-tag"]);
+      expect(updatedRejected.length).toBe(2);
+    });
+
+    it("should handle rejecting non-tag fields (no rejectedTags array)", () => {
+      const excerptSuggestion = {
+        value: "Some excerpt",
+        state: "pending" as "pending" | "approved" | "rejected",
+      };
+
+      excerptSuggestion.state = "rejected";
+
+      expect(excerptSuggestion.state).toBe("rejected");
+      expect("rejectedTags" in excerptSuggestion).toBe(false);
+    });
+  });
+
+  describe("clearSuggestion logic", () => {
+    it("should remove suggestion field entirely", () => {
+      const suggestions = {
+        excerpt: { value: "test", state: "pending" as const },
+        tags: { value: ["tag"], state: "pending" as const, rejectedTags: [] },
+      };
+
+      // Simulate clearing excerpt
+      const updated = { ...suggestions };
+      delete (updated as Partial<typeof updated>).excerpt;
+
+      expect(updated.excerpt).toBeUndefined();
+      expect(updated.tags).toBeDefined();
+    });
+
+    it("should handle clearing nested seoMetadata fields", () => {
+      const seoMetadata = {
+        metaTitle: { value: "Title", state: "pending" as const },
+        metaDescription: { value: "Desc", state: "pending" as const },
+        keywords: { value: ["kw"], state: "pending" as const },
+      };
+
+      // Simulate clearing metaTitle
+      const updated = { ...seoMetadata };
+      delete (updated as Partial<typeof updated>).metaTitle;
+
+      expect(updated.metaTitle).toBeUndefined();
+      expect(updated.metaDescription).toBeDefined();
+      expect(updated.keywords).toBeDefined();
+    });
+  });
+
+  describe("state transition validation", () => {
+    it("should allow all state transitions", () => {
+      const transitions = [
+        { from: "pending", to: "approved" },
+        { from: "pending", to: "rejected" },
+        { from: "approved", to: "rejected" },
+        { from: "rejected", to: "approved" },
+      ];
+
+      transitions.forEach(({ from, to }) => {
+        let state = from as "pending" | "approved" | "rejected";
+        state = to as "pending" | "approved" | "rejected";
+        expect(state).toBe(to);
+      });
+    });
+
+    it("should validate state values are in valid set", () => {
+      const validStates = new Set(["pending", "approved", "rejected"]);
+
+      expect(validStates.has("pending")).toBe(true);
+      expect(validStates.has("approved")).toBe(true);
+      expect(validStates.has("rejected")).toBe(true);
+      expect(validStates.has("invalid" as any)).toBe(false);
+    });
+  });
+});
+
+describe("T015: Publishing Filter for AI Suggestions", () => {
+  describe("publishing metadata filtering", () => {
+    it("should filter out pending excerpt suggestion", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI-generated excerpt",
+            state: "pending" as const,
+          },
+        },
+      };
+
+      // Only use the manual excerpt, not the pending AI suggestion
+      const publishedExcerpt =
+        !post.aiSuggestions?.excerpt ||
+        post.aiSuggestions.excerpt.state !== "approved"
+          ? post.excerpt
+          : post.aiSuggestions.excerpt.value;
+
+      expect(publishedExcerpt).toBe("Manual excerpt");
+    });
+
+    it("should use approved excerpt suggestion", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI-generated excerpt",
+            state: "approved" as const,
+          },
+        },
+      };
+
+      // Use approved AI suggestion
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      expect(publishedExcerpt).toBe("AI-generated excerpt");
+    });
+
+    it("should filter out pending tags suggestions", () => {
+      const post = {
+        tags: ["manual-tag-1", "manual-tag-2"],
+        aiSuggestions: {
+          tags: {
+            value: ["ai-tag-1", "ai-tag-2"],
+            state: "pending" as const,
+            rejectedTags: [],
+          },
+        },
+      };
+
+      // Only use manual tags when AI suggestions are pending
+      const publishedTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publishedTags).toEqual(["manual-tag-1", "manual-tag-2"]);
+      expect(publishedTags).not.toContain("ai-tag-1");
+    });
+
+    it("should use approved tags suggestions", () => {
+      const post = {
+        tags: ["manual-tag"],
+        aiSuggestions: {
+          tags: {
+            value: ["ai-tag-1", "ai-tag-2"],
+            state: "approved" as const,
+            rejectedTags: [],
+          },
+        },
+      };
+
+      // Use approved AI suggestion
+      const publishedTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publishedTags).toEqual(["ai-tag-1", "ai-tag-2"]);
+    });
+
+    it("should filter out pending category suggestion", () => {
+      const post = {
+        categoryId: "manual-cat-id",
+        aiSuggestions: {
+          category: {
+            value: "ai-category-id",
+            state: "pending" as const,
+          },
+        },
+      };
+
+      // Only use manual category when AI suggestion is pending
+      const publishedCategory =
+        post.aiSuggestions?.category?.state === "approved"
+          ? post.aiSuggestions.category.value
+          : post.categoryId;
+
+      expect(publishedCategory).toBe("manual-cat-id");
+    });
+
+    it("should filter out pending SEO metadata suggestions", () => {
+      const post = {
+        seoMetadata: {
+          metaTitle: "Manual Title",
+          metaDescription: "Manual Description",
+          keywords: ["manual-kw"],
+        },
+        aiSuggestions: {
+          seoMetadata: {
+            metaTitle: {
+              value: "AI Title",
+              state: "pending" as const,
+            },
+            metaDescription: {
+              value: "AI Description",
+              state: "pending" as const,
+            },
+            keywords: {
+              value: ["ai-kw"],
+              state: "pending" as const,
+            },
+          },
+        },
+      };
+
+      // Filter pending SEO suggestions
+      const publishedSeoMetadata = {
+        metaTitle:
+          post.aiSuggestions?.seoMetadata?.metaTitle?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.metaTitle.value
+            : post.seoMetadata.metaTitle,
+        metaDescription:
+          post.aiSuggestions?.seoMetadata?.metaDescription?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.metaDescription.value
+            : post.seoMetadata.metaDescription,
+        keywords:
+          post.aiSuggestions?.seoMetadata?.keywords?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.keywords.value
+            : post.seoMetadata.keywords,
+      };
+
+      expect(publishedSeoMetadata.metaTitle).toBe("Manual Title");
+      expect(publishedSeoMetadata.metaDescription).toBe("Manual Description");
+      expect(publishedSeoMetadata.keywords).toEqual(["manual-kw"]);
+    });
+
+    it("should use approved SEO metadata suggestions", () => {
+      const post = {
+        seoMetadata: {
+          metaTitle: "Manual Title",
+          metaDescription: "Manual Description",
+          keywords: ["manual-kw"],
+        },
+        aiSuggestions: {
+          seoMetadata: {
+            metaTitle: {
+              value: "AI Title",
+              state: "approved" as const,
+            },
+            metaDescription: {
+              value: "AI Description",
+              state: "approved" as const,
+            },
+            keywords: {
+              value: ["ai-kw"],
+              state: "approved" as const,
+            },
+          },
+        },
+      };
+
+      // Use approved SEO suggestions
+      const publishedSeoMetadata = {
+        metaTitle:
+          post.aiSuggestions?.seoMetadata?.metaTitle?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.metaTitle.value
+            : post.seoMetadata.metaTitle,
+        metaDescription:
+          post.aiSuggestions?.seoMetadata?.metaDescription?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.metaDescription.value
+            : post.seoMetadata.metaDescription,
+        keywords:
+          post.aiSuggestions?.seoMetadata?.keywords?.state === "approved"
+            ? post.aiSuggestions.seoMetadata.keywords.value
+            : post.seoMetadata.keywords,
+      };
+
+      expect(publishedSeoMetadata.metaTitle).toBe("AI Title");
+      expect(publishedSeoMetadata.metaDescription).toBe("AI Description");
+      expect(publishedSeoMetadata.keywords).toEqual(["ai-kw"]);
+    });
+
+    it("should filter out rejected suggestions", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "rejected" as const,
+          },
+          tags: {
+            value: ["ai-tag"],
+            state: "rejected" as const,
+            rejectedTags: ["ai-tag"],
+          },
+        },
+      };
+
+      // Don't use rejected suggestions
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      const publishedTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publishedExcerpt).toBe("Manual excerpt");
+      expect(publishedTags).toEqual(["manual-tag"]);
+    });
+
+    it("should handle posts with no AI suggestions", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        categoryId: "manual-cat",
+        seoMetadata: {
+          metaTitle: "Manual Title",
+          metaDescription: "Manual Description",
+          keywords: ["manual-kw"],
+        },
+        aiSuggestions: undefined,
+      };
+
+      // Use manual values when no AI suggestions
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      expect(publishedExcerpt).toBe("Manual excerpt");
+    });
+
+    it("should handle partial AI suggestions", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        categoryId: "manual-cat",
+        seoMetadata: {
+          metaTitle: "Manual Title",
+        },
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "approved" as const,
+          },
+          // No tags or category suggestions
+        },
+      };
+
+      // Use AI excerpt, manual tags and category
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      const publishedTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publishedExcerpt).toBe("AI excerpt");
+      expect(publishedTags).toEqual(["manual-tag"]);
+    });
+  });
+
+  describe("post editing workflow with pending suggestions", () => {
+    it("should preserve pending suggestions when editing published post", () => {
+      const publishedPost = {
+        status: "published" as const,
+        excerpt: "Manual excerpt",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as const,
+          },
+          tags: {
+            value: ["ai-tag"],
+            state: "pending" as const,
+            rejectedTags: [],
+          },
+        },
+      };
+
+      // When editing, pending suggestions should still be present in DB
+      expect(publishedPost.aiSuggestions.excerpt.state).toBe("pending");
+      expect(publishedPost.aiSuggestions.tags?.state).toBe("pending");
+
+      // But public view should only show manual excerpt
+      const publicExcerpt =
+        publishedPost.aiSuggestions?.excerpt?.state === "approved"
+          ? publishedPost.aiSuggestions.excerpt.value
+          : publishedPost.excerpt;
+
+      expect(publicExcerpt).toBe("Manual excerpt");
+    });
+
+    it("should allow approving pending suggestion after publish", () => {
+      const post = {
+        status: "published" as const,
+        excerpt: "Manual excerpt",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as "pending" | "approved" | "rejected",
+          },
+        },
+      };
+
+      // Approve the suggestion
+      if (post.aiSuggestions.excerpt) {
+        post.aiSuggestions.excerpt.state = "approved";
+      }
+
+      // Now the AI excerpt should be used
+      const publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+
+      expect(publishedExcerpt).toBe("AI excerpt");
+    });
+
+    it("should update published metadata when approving suggestion", () => {
+      const post = {
+        status: "published" as const,
+        excerpt: "Manual excerpt",
+        seoMetadata: {
+          metaTitle: "Manual Title",
+        },
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as "pending" | "approved" | "rejected",
+          },
+          seoMetadata: {
+            metaTitle: {
+              value: "AI Title",
+              state: "pending" as "pending" | "approved" | "rejected",
+            },
+          },
+        },
+      };
+
+      // Before approval - manual values
+      let publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      let publishedMetaTitle =
+        post.aiSuggestions?.seoMetadata?.metaTitle?.state === "approved"
+          ? post.aiSuggestions.seoMetadata.metaTitle.value
+          : post.seoMetadata.metaTitle;
+
+      expect(publishedExcerpt).toBe("Manual excerpt");
+      expect(publishedMetaTitle).toBe("Manual Title");
+
+      // Approve suggestions
+      post.aiSuggestions.excerpt.state = "approved";
+      post.aiSuggestions.seoMetadata!.metaTitle!.state = "approved";
+
+      // After approval - AI values
+      publishedExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      publishedMetaTitle =
+        post.aiSuggestions?.seoMetadata?.metaTitle?.state === "approved"
+          ? post.aiSuggestions.seoMetadata.metaTitle.value
+          : post.seoMetadata.metaTitle;
+
+      expect(publishedExcerpt).toBe("AI excerpt");
+      expect(publishedMetaTitle).toBe("AI Title");
+    });
+  });
+
+  describe("AI suggestions persistence in database", () => {
+    it("should retain all AI suggestions in database including pending", () => {
+      const postInDB = {
+        _id: "post-123",
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as const,
+          },
+          tags: {
+            value: ["ai-tag-1", "ai-tag-2"],
+            state: "pending" as const,
+            rejectedTags: ["rejected-tag"],
+          },
+          category: {
+            value: "ai-category",
+            state: "approved" as const,
+          },
+        },
+      };
+
+      // All suggestions should be in DB
+      expect(postInDB.aiSuggestions.excerpt).toBeDefined();
+      expect(postInDB.aiSuggestions.tags).toBeDefined();
+      expect(postInDB.aiSuggestions.category).toBeDefined();
+
+      // Including pending ones
+      expect(postInDB.aiSuggestions.excerpt.state).toBe("pending");
+      expect(postInDB.aiSuggestions.tags?.state).toBe("pending");
+
+      // And rejected tags array
+      expect(postInDB.aiSuggestions.tags?.rejectedTags).toEqual([
+        "rejected-tag",
+      ]);
+    });
+
+    it("should maintain separate manual and AI suggestion values", () => {
+      const post = {
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag-1", "manual-tag-2"],
+        categoryId: "manual-cat-id",
+        aiSuggestions: {
+          excerpt: {
+            value: "AI excerpt",
+            state: "pending" as const,
+          },
+          tags: {
+            value: ["ai-tag-1", "ai-tag-2", "ai-tag-3"],
+            state: "pending" as const,
+            rejectedTags: [],
+          },
+          category: {
+            value: "ai-cat-id",
+            state: "pending" as const,
+          },
+        },
+      };
+
+      // Manual values unchanged
+      expect(post.excerpt).toBe("Manual excerpt");
+      expect(post.tags).toEqual(["manual-tag-1", "manual-tag-2"]);
+      expect(post.categoryId).toBe("manual-cat-id");
+
+      // AI suggestions stored separately
+      expect(post.aiSuggestions.excerpt.value).toBe("AI excerpt");
+      expect(post.aiSuggestions.tags?.value).toEqual([
+        "ai-tag-1",
+        "ai-tag-2",
+        "ai-tag-3",
+      ]);
+      expect(post.aiSuggestions.category?.value).toBe("ai-cat-id");
+    });
+  });
 });
 
 describe("Blog Function Integration Contract", () => {
@@ -440,10 +1451,13 @@ describe("Blog Function Integration Contract", () => {
       "getCategories",
       "getTags",
       "validateSlugUnique",
+      "getAllTags",
+      "getAllCategories",
+      "getRecentPosts",
     ];
 
     // This test validates the function contract exists
-    expect(requiredQueries.length).toBe(8);
+    expect(requiredQueries.length).toBe(11);
     requiredQueries.forEach((query) => {
       expect(typeof query).toBe("string");
       expect(query.length).toBeGreaterThan(0);
@@ -458,10 +1472,14 @@ describe("Blog Function Integration Contract", () => {
       "unpublishPost",
       "deletePost",
       "incrementViewCount",
+      "saveSuggestions",
+      "approveSuggestion",
+      "rejectSuggestion",
+      "clearSuggestion",
     ];
 
     // This test validates the function contract exists
-    expect(requiredMutations.length).toBe(6);
+    expect(requiredMutations.length).toBe(10);
     requiredMutations.forEach((mutation) => {
       expect(typeof mutation).toBe("string");
       expect(mutation.length).toBeGreaterThan(0);

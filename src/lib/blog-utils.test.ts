@@ -3,6 +3,8 @@ import {
   calculateReadingTime,
   formatDate,
   generateSlug,
+  hasContentChanged,
+  hashContent,
   sanitizeMarkdown,
   validateSlug,
 } from "./blog-utils";
@@ -568,6 +570,302 @@ describe("Blog Utilities", () => {
       it("should handle undefined input gracefully", () => {
         const result = validateSlug(undefined as unknown as string);
         expect(result.isValid).toBe(false);
+      });
+    });
+  });
+
+  describe("T003: Content Hashing for Change Detection", () => {
+    describe("hashContent", () => {
+      describe("Basic Hash Generation", () => {
+        it("should generate consistent SHA-256 hash for same content", async () => {
+          const content = "Hello, world!";
+          const hash1 = await hashContent(content);
+          const hash2 = await hashContent(content);
+          expect(hash1).toBe(hash2);
+        });
+
+        it("should generate different hashes for different content", async () => {
+          const content1 = "Hello, world!";
+          const content2 = "Goodbye, world!";
+          const hash1 = await hashContent(content1);
+          const hash2 = await hashContent(content2);
+          expect(hash1).not.toBe(hash2);
+        });
+
+        it("should generate hexadecimal hash string", async () => {
+          const content = "Test content";
+          const hash = await hashContent(content);
+          expect(hash).toMatch(/^[a-f0-9]+$/);
+        });
+
+        it("should generate 64-character hash (SHA-256)", async () => {
+          const content = "Test content";
+          const hash = await hashContent(content);
+          expect(hash.length).toBe(64);
+        });
+
+        it("should be case-sensitive", async () => {
+          const content1 = "Hello";
+          const content2 = "hello";
+          const hash1 = await hashContent(content1);
+          const hash2 = await hashContent(content2);
+          expect(hash1).not.toBe(hash2);
+        });
+      });
+
+      describe("Edge Cases", () => {
+        it("should handle empty string", async () => {
+          const hash = await hashContent("");
+          expect(hash).toBeDefined();
+          expect(hash.length).toBe(64);
+        });
+
+        it("should handle whitespace-only content", async () => {
+          const hash1 = await hashContent("   ");
+          const hash2 = await hashContent("\n\t");
+          expect(hash1).toBeDefined();
+          expect(hash2).toBeDefined();
+          expect(hash1).not.toBe(hash2);
+        });
+
+        it("should handle very long content (10KB+)", async () => {
+          const largeContent = "word ".repeat(2000); // ~10KB
+          const hash = await hashContent(largeContent);
+          expect(hash).toBeDefined();
+          expect(hash.length).toBe(64);
+        });
+
+        it("should handle very large content (100KB+)", async () => {
+          const veryLargeContent = "word ".repeat(20000); // ~100KB
+          const hash = await hashContent(veryLargeContent);
+          expect(hash).toBeDefined();
+          expect(hash.length).toBe(64);
+        });
+
+        it("should handle single character", async () => {
+          const hash = await hashContent("a");
+          expect(hash).toBeDefined();
+          expect(hash.length).toBe(64);
+        });
+
+        it("should handle special characters", async () => {
+          const content = "!@#$%^&*()_+-=[]{}|;:',.<>?/~`";
+          const hash = await hashContent(content);
+          expect(hash).toBeDefined();
+          expect(hash.length).toBe(64);
+        });
+
+        it("should handle unicode characters", async () => {
+          const content = "Hello 世界 🌍 café";
+          const hash = await hashContent(content);
+          expect(hash).toBeDefined();
+          expect(hash.length).toBe(64);
+        });
+
+        it("should handle newlines and tabs", async () => {
+          const content = "Line 1\nLine 2\tTabbed";
+          const hash = await hashContent(content);
+          expect(hash).toBeDefined();
+          expect(hash.length).toBe(64);
+        });
+      });
+
+      describe("Markdown Content", () => {
+        it("should handle markdown syntax", async () => {
+          const content = `
+# Heading
+
+This is **bold** and *italic*.
+
+- List item 1
+- List item 2
+
+\`\`\`javascript
+const x = 42;
+\`\`\`
+          `;
+          const hash = await hashContent(content);
+          expect(hash).toBeDefined();
+          expect(hash.length).toBe(64);
+        });
+
+        it("should detect changes in markdown formatting", async () => {
+          const content1 = "**bold**";
+          const content2 = "*italic*";
+          const hash1 = await hashContent(content1);
+          const hash2 = await hashContent(content2);
+          expect(hash1).not.toBe(hash2);
+        });
+      });
+
+      describe("Performance", () => {
+        it("should hash 10KB content quickly", async () => {
+          const content = "word ".repeat(2000); // ~10KB
+          const start = performance.now();
+          await hashContent(content);
+          const end = performance.now();
+          const duration = end - start;
+          expect(duration).toBeLessThan(100); // Should complete in < 100ms
+        });
+
+        it("should hash 50KB content efficiently", async () => {
+          const content = "word ".repeat(10000); // ~50KB
+          const start = performance.now();
+          await hashContent(content);
+          const end = performance.now();
+          const duration = end - start;
+          expect(duration).toBeLessThan(200); // Should complete in < 200ms
+        });
+      });
+    });
+
+    describe("hasContentChanged", () => {
+      describe("Basic Change Detection", () => {
+        it("should return false when content is unchanged", async () => {
+          const content = "Hello, world!";
+          const hash = await hashContent(content);
+          const changed = await hasContentChanged(content, hash);
+          expect(changed).toBe(false);
+        });
+
+        it("should return true when content has changed", async () => {
+          const original = "Hello, world!";
+          const modified = "Goodbye, world!";
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+
+        it("should detect minor changes", async () => {
+          const original = "Hello, world!";
+          const modified = "Hello, world."; // Changed ! to .
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+
+        it("should detect added content", async () => {
+          const original = "Hello";
+          const modified = "Hello, world!";
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+
+        it("should detect removed content", async () => {
+          const original = "Hello, world!";
+          const modified = "Hello";
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+      });
+
+      describe("Edge Cases", () => {
+        it("should handle empty previous hash", async () => {
+          const content = "Hello, world!";
+          const changed = await hasContentChanged(content, "");
+          expect(changed).toBe(true);
+        });
+
+        it("should handle null previous hash", async () => {
+          const content = "Hello, world!";
+          const changed = await hasContentChanged(content, null);
+          expect(changed).toBe(true);
+        });
+
+        it("should handle undefined previous hash", async () => {
+          const content = "Hello, world!";
+          const changed = await hasContentChanged(content, undefined);
+          expect(changed).toBe(true);
+        });
+
+        it("should return false for empty content matching empty hash", async () => {
+          const emptyHash = await hashContent("");
+          const changed = await hasContentChanged("", emptyHash);
+          expect(changed).toBe(false);
+        });
+
+        it("should detect whitespace changes", async () => {
+          const original = "Hello world";
+          const modified = "Hello  world"; // Double space
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+
+        it("should detect case changes", async () => {
+          const original = "Hello";
+          const modified = "hello";
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+      });
+
+      describe("Markdown Changes", () => {
+        it("should detect markdown formatting changes", async () => {
+          const original = "**bold text**";
+          const modified = "*italic text*";
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+
+        it("should detect content changes in markdown", async () => {
+          const original = "# Original Title\n\nOriginal content.";
+          const modified = "# Modified Title\n\nModified content.";
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+
+        it("should return false when markdown is identical", async () => {
+          const markdown = `
+# Heading
+
+This is **bold** and *italic*.
+
+- List item 1
+- List item 2
+          `;
+          const hash = await hashContent(markdown);
+          const changed = await hasContentChanged(markdown, hash);
+          expect(changed).toBe(false);
+        });
+      });
+
+      describe("Large Content", () => {
+        it("should detect changes in large content (10KB+)", async () => {
+          const original = "word ".repeat(2000); // ~10KB
+          const modified = `${"word ".repeat(2000)}extra`; // Add content
+          const originalHash = await hashContent(original);
+          const changed = await hasContentChanged(modified, originalHash);
+          expect(changed).toBe(true);
+        });
+
+        it("should return false for identical large content", async () => {
+          const content = "word ".repeat(2000); // ~10KB
+          const hash = await hashContent(content);
+          const changed = await hasContentChanged(content, hash);
+          expect(changed).toBe(false);
+        });
+      });
+
+      describe("Invalid Hash Handling", () => {
+        it("should handle invalid hash format", async () => {
+          const content = "Hello, world!";
+          const invalidHash = "not-a-valid-hash";
+          const changed = await hasContentChanged(content, invalidHash);
+          expect(changed).toBe(true);
+        });
+
+        it("should handle hash with wrong length", async () => {
+          const content = "Hello, world!";
+          const shortHash = "abc123";
+          const changed = await hasContentChanged(content, shortHash);
+          expect(changed).toBe(true);
+        });
       });
     });
   });

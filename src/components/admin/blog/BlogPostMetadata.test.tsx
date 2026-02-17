@@ -1153,4 +1153,583 @@ describe("BlogPostMetadata", () => {
       });
     });
   });
+
+  describe("T011: AI Suggestion Integration", () => {
+    const metadataWithAISuggestions = {
+      slug: "test-post",
+      categoryId: undefined,
+      tags: [],
+      featured: false,
+      coverImage: "",
+      seoMetadata: {
+        metaTitle: "",
+        metaDescription: "",
+        ogImage: "",
+      },
+      aiSuggestions: {
+        excerpt: {
+          value: "This is an AI-suggested excerpt",
+          state: "pending" as const,
+        },
+        tags: {
+          value: ["ai-tag-1", "ai-tag-2"],
+          state: "pending" as const,
+          rejectedTags: [],
+        },
+        category: {
+          value: "Technology",
+          state: "pending" as const,
+        },
+        seoMetadata: {
+          metaTitle: {
+            value: "AI-Generated Meta Title",
+            state: "pending" as const,
+          },
+          metaDescription: {
+            value: "AI-generated meta description for SEO",
+            state: "pending" as const,
+          },
+          keywords: {
+            value: ["keyword1", "keyword2"],
+            state: "pending" as const,
+          },
+        },
+      },
+    };
+
+    describe("Badge Display", () => {
+      it("should not show badges when no AI suggestions exist", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={defaultMetadata}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // No AI suggestion badges should be visible
+        const badges = screen.queryAllByRole("button", {
+          name: /ai suggestion/i,
+        });
+        expect(badges.length).toBe(0);
+      });
+
+      it("should show inline panel for AI-suggested excerpt", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show inline AI suggestion panel with approve/reject buttons
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+        expect(
+          screen.getByText(
+            metadataWithAISuggestions.aiSuggestions!.excerpt!.value,
+          ),
+        ).toBeDefined();
+
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
+        });
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
+        });
+        expect(approveButtons.length).toBeGreaterThan(0);
+        expect(rejectButtons.length).toBeGreaterThan(0);
+      });
+
+      it("should show inline panels for suggested tags", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show AI Suggestion text (multiple panels will have this)
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+      });
+
+      it("should show inline panel for AI-suggested category", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show AI suggestion panels
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+      });
+
+      it("should show inline panels for AI-suggested SEO metadata fields", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show AI suggestion panels for SEO fields
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+      });
+
+      it("should not show inline panel when suggestion is approved", () => {
+        const approvedMetadata = {
+          ...metadataWithAISuggestions,
+          aiSuggestions: {
+            ...metadataWithAISuggestions.aiSuggestions,
+            excerpt: {
+              value: "This is an AI-suggested excerpt",
+              state: "approved" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={approvedMetadata}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should still show panels for other pending suggestions (not excerpt)
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+
+        // Excerpt value should not be in a suggestion panel
+        const excerptText = approvedMetadata.aiSuggestions.excerpt!.value;
+        // The excerpt should be in the textarea, not in an AI Suggestion panel
+        const textarea = screen.getByRole("textbox", {
+          name: /excerpt/i,
+        }) as HTMLTextAreaElement;
+        expect(textarea.value).toBe(""); // Approved suggestions don't auto-fill
+      });
+
+      it("should not show inline panel when suggestion is rejected", () => {
+        const rejectedMetadata = {
+          ...metadataWithAISuggestions,
+          aiSuggestions: {
+            ...metadataWithAISuggestions.aiSuggestions,
+            excerpt: {
+              value: "This is an AI-suggested excerpt",
+              state: "rejected" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={rejectedMetadata}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show panels for other pending suggestions (not rejected excerpt)
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe("Overlay Interaction", () => {
+      it("should show approve and reject buttons inline", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Approve and reject buttons should be visible in inline panels
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
+        });
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
+        });
+
+        expect(approveButtons.length).toBeGreaterThan(0);
+        expect(rejectButtons.length).toBeGreaterThan(0);
+      });
+
+      it("should display suggested value in inline panel", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Verify suggested excerpt value is displayed
+        const excerptValue =
+          metadataWithAISuggestions.aiSuggestions!.excerpt!.value;
+        expect(screen.getByText(excerptValue)).toBeDefined();
+      });
+
+      it("should display all pending suggestions in inline panels", () => {
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // All pending suggestions should have inline panels
+        const suggestionHeadings = screen.getAllByText("AI Suggestion");
+        expect(suggestionHeadings.length).toBeGreaterThan(0);
+
+        // Each panel should have approve and reject buttons
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
+        });
+        expect(approveButtons.length).toBe(suggestionHeadings.length);
+      });
+    });
+
+    describe("Approve Action", () => {
+      it("should call Convex mutation when approve is clicked in inline panel", async () => {
+        const user = userEvent.setup();
+        const mockApproveMutation = vi.fn(() => Promise.resolve());
+
+        // Mock the approve mutation
+        vi.mocked(useMutation).mockReturnValue(mockApproveMutation);
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            postId={"mock-post-id" as any}
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Click approve button directly (it's visible in the inline panel)
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
+        });
+        await user.click(approveButtons[0]);
+
+        // Convex mutation should be called
+        await waitFor(() => {
+          expect(mockApproveMutation).toHaveBeenCalled();
+        });
+      });
+
+      it("should call Convex mutation when approve is clicked", async () => {
+        const user = userEvent.setup();
+        const mockApproveMutation = vi.fn(() => Promise.resolve());
+
+        // Mock the approve mutation
+        vi.mocked(useMutation).mockReturnValue(mockApproveMutation);
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            postId={"mock-post-id" as any}
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Click approve button in inline panel
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
+        });
+        await user.click(approveButtons[0]);
+
+        // Verify Convex mutation was called
+        await waitFor(() => {
+          expect(mockApproveMutation).toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe("Reject Action", () => {
+      it("should call Convex mutation when reject is clicked in inline panel", async () => {
+        const user = userEvent.setup();
+        const mockRejectMutation = vi.fn(() => Promise.resolve());
+
+        // Mock the reject mutation
+        vi.mocked(useMutation).mockReturnValue(mockRejectMutation);
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            postId={"mock-post-id" as any}
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Click reject button directly (it's visible in the inline panel)
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
+        });
+        await user.click(rejectButtons[0]);
+
+        // Convex mutation should be called
+        await waitFor(() => {
+          expect(mockRejectMutation).toHaveBeenCalled();
+        });
+      });
+
+      it("should call Convex mutation when reject is clicked", async () => {
+        const user = userEvent.setup();
+        const mockRejectMutation = vi.fn(() => Promise.resolve());
+
+        // Mock the reject mutation
+        vi.mocked(useMutation).mockReturnValue(mockRejectMutation);
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            postId={"mock-post-id" as any}
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Click reject button in inline panel
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
+        });
+        await user.click(rejectButtons[0]);
+
+        // Verify Convex mutation was called
+        await waitFor(() => {
+          expect(mockRejectMutation).toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe("Manual Editing", () => {
+      it("should remove badge immediately when field is manually edited", async () => {
+        const user = userEvent.setup();
+
+        // Metadata with AI-suggested meta title
+        const testMetadata = {
+          ...defaultMetadata,
+          seoMetadata: {
+            metaTitle: "AI-Generated Meta Title",
+            metaDescription: "",
+            ogImage: "",
+          },
+          aiSuggestions: {
+            seoMetadata: {
+              metaTitle: {
+                value: "AI-Generated Meta Title",
+                state: "pending" as const,
+              },
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={testMetadata}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Find meta title input
+        const metaTitleInput = screen.getByLabelText(/meta title/i);
+
+        // Type in the field (manual edit) - just add text to trigger onChange
+        await user.type(metaTitleInput, " Edited");
+
+        // onChange should be called with suggestion removed or set to rejected
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+          const lastCall =
+            mockOnChange.mock.calls[mockOnChange.mock.calls.length - 1][0];
+
+          // Badge should be removed (suggestion state changed to rejected)
+          expect(lastCall.aiSuggestions?.seoMetadata?.metaTitle?.state).toBe(
+            "rejected",
+          );
+        });
+      });
+
+      it("should clear AI suggestion when tag is manually added", async () => {
+        const user = userEvent.setup();
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithAISuggestions}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Find tag input and add a manual tag
+        const tagInput = screen.getByLabelText(/tags/i);
+        await user.type(tagInput, "manual-tag{Enter}");
+
+        // onChange should be called
+        await waitFor(() => {
+          expect(mockOnChange).toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe("T014: Inline Suggestion Panels", () => {
+      it("should show inline suggestion panel for pending excerpt", async () => {
+        // Create metadata with pending excerpt suggestion
+        const metadataWithPendingExcerpt = {
+          ...defaultMetadata,
+          excerpt: "",
+          aiSuggestions: {
+            excerpt: {
+              value: "AI generated excerpt suggestion",
+              state: "pending" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithPendingExcerpt}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show inline suggestion panel with AI icon and text
+        expect(screen.getByText(/🤖/)).toBeDefined();
+        expect(screen.getByText(/ai suggestion/i)).toBeDefined();
+        expect(
+          screen.getByText(/ai generated excerpt suggestion/i),
+        ).toBeDefined();
+      });
+
+      it("should show approve and reject buttons in suggestion panel", async () => {
+        const metadataWithPendingExcerpt = {
+          ...defaultMetadata,
+          excerpt: "",
+          aiSuggestions: {
+            excerpt: {
+              value: "AI suggested excerpt",
+              state: "pending" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithPendingExcerpt}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show approve and reject buttons within the suggestion panel
+        const approveButtons = screen.getAllByRole("button", {
+          name: /approve/i,
+        });
+        const rejectButtons = screen.getAllByRole("button", {
+          name: /reject/i,
+        });
+
+        expect(approveButtons.length).toBeGreaterThan(0);
+        expect(rejectButtons.length).toBeGreaterThan(0);
+      });
+
+      it("should show individual tag chips with approve/reject buttons for pending tags", async () => {
+        const metadataWithPendingTags = {
+          ...defaultMetadata,
+          tags: [],
+          aiSuggestions: {
+            tags: {
+              value: ["suggested-tag-1", "suggested-tag-2"],
+              state: "pending" as const,
+              rejectedTags: [],
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithPendingTags}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should show individual tag chips
+        expect(screen.getByText("suggested-tag-1")).toBeDefined();
+        expect(screen.getByText("suggested-tag-2")).toBeDefined();
+
+        // Each tag chip should have approve/reject buttons (by title attribute)
+        const approveButtons = screen.getAllByTitle("Approve tag");
+        const rejectButtons = screen.getAllByTitle("Reject tag");
+        expect(approveButtons.length).toBe(2);
+        expect(rejectButtons.length).toBe(2);
+      });
+
+      it("should not show suggestion panel for approved excerpt", async () => {
+        const metadataWithApprovedExcerpt = {
+          ...defaultMetadata,
+          excerpt: "Approved excerpt text",
+          aiSuggestions: {
+            excerpt: {
+              value: "Approved excerpt text",
+              state: "approved" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithApprovedExcerpt}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should NOT show inline suggestion panel for approved suggestions
+        expect(screen.queryByText(/🤖/)).toBeNull();
+        expect(screen.queryByText(/ai suggestion/i)).toBeNull();
+      });
+
+      it("should not show suggestion panel for rejected excerpt", async () => {
+        const metadataWithRejectedExcerpt = {
+          ...defaultMetadata,
+          excerpt: "",
+          aiSuggestions: {
+            excerpt: {
+              value: "Rejected excerpt",
+              state: "rejected" as const,
+            },
+          },
+        };
+
+        render(
+          <BlogPostMetadata
+            title="Test Post"
+            metadata={metadataWithRejectedExcerpt}
+            onChange={mockOnChange}
+          />,
+        );
+
+        // Should NOT show inline suggestion panel for rejected suggestions
+        expect(screen.queryByText(/rejected excerpt/i)).toBeNull();
+      });
+    });
+  });
 });

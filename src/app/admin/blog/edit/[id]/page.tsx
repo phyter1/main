@@ -31,8 +31,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { calculateReadingTime } from "@/lib/blog-utils";
-import type { SEOMetadata } from "@/types/blog";
+import { calculateReadingTime, hashContent } from "@/lib/blog-utils";
+import type { AIMetadataSuggestions, SEOMetadata } from "@/types/blog";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 
@@ -64,6 +64,7 @@ export default function EditBlogPostPage() {
   const publishPost = useMutation(api.blog.publishPost);
   const unpublishPost = useMutation(api.blog.unpublishPost);
   const deletePost = useMutation(api.blog.deletePost);
+  const saveSuggestions = useMutation(api.blog.saveSuggestions);
 
   // Form state
   const [formData, setFormData] = useState<PostFormState>({
@@ -83,6 +84,18 @@ export default function EditBlogPostPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  // T012: AI metadata suggestion state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [lastAnalyzedContentHash, setLastAnalyzedContentHash] = useState<
+    string | null
+  >(null);
+  const [lastAnalyzedTitleHash, setLastAnalyzedTitleHash] = useState<
+    string | null
+  >(null);
+  const [newSuggestions, setNewSuggestions] =
+    useState<AIMetadataSuggestions | null>(null);
+
   /**
    * Initialize form data from loaded post
    */
@@ -101,8 +114,18 @@ export default function EditBlogPostPage() {
           metaTitle: post.seoMetadata?.metaTitle ?? "",
           metaDescription: post.seoMetadata?.metaDescription ?? "",
           ogImage: post.seoMetadata?.ogImage ?? "",
+          keywords: post.seoMetadata?.keywords ?? [],
         },
       });
+
+      // Initialize hash state from last analyzed content/title
+      // This prevents AI from regenerating on first load if content unchanged
+      if (post.lastAnalyzedContent) {
+        hashContent(post.lastAnalyzedContent).then(setLastAnalyzedContentHash);
+      }
+      if (post.lastAnalyzedTitle) {
+        hashContent(post.lastAnalyzedTitle).then(setLastAnalyzedTitleHash);
+      }
     }
   }, [post]);
 
@@ -116,11 +139,133 @@ export default function EditBlogPostPage() {
     featured: boolean;
     coverImage?: string;
     seoMetadata: SEOMetadata;
+    excerpt?: string;
+    aiSuggestions?: any;
   }) => {
     setFormData((prev) => ({
       ...prev,
       ...metadata,
     }));
+  };
+
+  /**
+   * T012: Handle AI metadata suggestion request
+   */
+  const handleSuggestMetadata = async () => {
+    // Check if content or title has changed
+    const currentContentHash = await hashContent(formData.content);
+    const currentTitleHash = await hashContent(formData.title);
+
+    if (
+      currentContentHash === lastAnalyzedContentHash &&
+      currentTitleHash === lastAnalyzedTitleHash
+    ) {
+      console.log("Content and title unchanged, skipping AI suggestions");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      const response = await fetch("/api/admin/blog/suggest-metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: formData.content,
+          title: formData.title,
+          excerpt: formData.excerpt,
+          postId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to generate suggestions: ${response.statusText}`,
+        );
+      }
+
+      const suggestions = await response.json();
+
+      // Transform suggestions to AIMetadataSuggestions format for Convex
+      // Only include defined fields (Convex validator rejects undefined)
+      const aiSuggestions: any = {};
+
+      if (suggestions.excerpt) {
+        aiSuggestions.excerpt = {
+          value: suggestions.excerpt,
+          state: "pending" as const,
+        };
+      }
+
+      if (suggestions.tags) {
+        aiSuggestions.tags = {
+          value: suggestions.tags,
+          state: "pending" as const,
+          rejectedTags: [],
+        };
+      }
+
+      if (suggestions.category) {
+        aiSuggestions.category = {
+          value: suggestions.category,
+          state: "pending" as const,
+        };
+      }
+
+      if (suggestions.seoMetadata) {
+        aiSuggestions.seoMetadata = {};
+
+        if (suggestions.seoMetadata.metaTitle) {
+          aiSuggestions.seoMetadata.metaTitle = {
+            value: suggestions.seoMetadata.metaTitle,
+            state: "pending" as const,
+          };
+        }
+
+        if (suggestions.seoMetadata.metaDescription) {
+          aiSuggestions.seoMetadata.metaDescription = {
+            value: suggestions.seoMetadata.metaDescription,
+            state: "pending" as const,
+          };
+        }
+
+        if (suggestions.seoMetadata.keywords) {
+          aiSuggestions.seoMetadata.keywords = {
+            value: suggestions.seoMetadata.keywords,
+            state: "pending" as const,
+          };
+        }
+      }
+
+      if (suggestions.analysis) {
+        aiSuggestions.analysis = suggestions.analysis;
+      }
+
+      // Save suggestions to Convex
+      await saveSuggestions({
+        postId,
+        suggestions: aiSuggestions,
+        currentContent: formData.content,
+        currentTitle: formData.title,
+      });
+
+      // Update hashes
+      setLastAnalyzedContentHash(await hashContent(formData.content));
+      setLastAnalyzedTitleHash(await hashContent(formData.title));
+
+      // Suggestions are stored in Convex and accessed via post.aiSuggestions
+      // No need to set newSuggestions - that's only for re-run scenarios
+    } catch (error) {
+      console.error("AI metadata suggestion error:", error);
+      setAnalysisError(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate suggestions",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   /**
@@ -159,6 +304,12 @@ export default function EditBlogPostPage() {
     setIsSaving(true);
     try {
       await savePostData();
+
+      // Trigger AI metadata suggestions if content has changed
+      if (formData.title || formData.content) {
+        await handleSuggestMetadata();
+      }
+
       // Stay on page after saving (allow continued editing)
     } catch (error) {
       console.error("Failed to save post:", error);
@@ -175,6 +326,11 @@ export default function EditBlogPostPage() {
     try {
       // Save changes first
       await savePostData();
+
+      // Trigger AI metadata suggestions if content has changed
+      if (formData.title || formData.content) {
+        await handleSuggestMetadata();
+      }
 
       // Then publish
       await publishPost({ id: postId });
@@ -309,6 +465,11 @@ export default function EditBlogPostPage() {
             onContentChange={(content) =>
               setFormData((prev) => ({ ...prev, content }))
             }
+            onSuggestMetadata={handleSuggestMetadata}
+            lastAnalyzedContentHash={lastAnalyzedContentHash || undefined}
+            lastAnalyzedTitleHash={lastAnalyzedTitleHash || undefined}
+            isAnalyzing={isAnalyzing}
+            analysisError={analysisError || undefined}
           />
         </div>
 
@@ -316,15 +477,33 @@ export default function EditBlogPostPage() {
         <div className="lg:col-span-1">
           <BlogPostMetadata
             title={formData.title}
+            postId={postId}
             metadata={{
               slug: formData.slug,
               categoryId: formData.categoryId,
               tags: formData.tags,
               featured: formData.featured,
               coverImage: formData.coverImage,
+              excerpt: formData.excerpt,
               seoMetadata: formData.seoMetadata,
+              aiSuggestions: post?.aiSuggestions,
             }}
             onChange={handleMetadataChange}
+            newSuggestions={
+              newSuggestions
+                ? {
+                    excerpt: newSuggestions.excerpt?.value,
+                    tags: newSuggestions.tags?.value,
+                    category: newSuggestions.category?.value,
+                    seoMetadata: {
+                      metaTitle: newSuggestions.seoMetadata?.metaTitle?.value,
+                      metaDescription:
+                        newSuggestions.seoMetadata?.metaDescription?.value,
+                      keywords: newSuggestions.seoMetadata?.keywords?.value,
+                    },
+                  }
+                : undefined
+            }
           />
         </div>
       </div>

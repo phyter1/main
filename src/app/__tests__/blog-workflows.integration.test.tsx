@@ -774,6 +774,260 @@ describe("T036: Blog Workflows Integration Tests", () => {
     });
   });
 
+  describe("Workflow 8: T015 - Publishing Filter for AI Suggestions", () => {
+    it("filters pending AI suggestions from published posts", async () => {
+      // Create a post with pending AI suggestions
+      const postWithPendingSuggestions = createMockPost({
+        _id: "ai-post-1",
+        title: "Post with AI Suggestions",
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        status: "published",
+      }) as any;
+
+      // Add AI suggestions (pending state)
+      postWithPendingSuggestions.aiSuggestions = {
+        excerpt: {
+          value: "AI-generated excerpt",
+          state: "pending",
+        },
+        tags: {
+          value: ["ai-tag-1", "ai-tag-2"],
+          state: "pending",
+          rejectedTags: [],
+        },
+      };
+
+      // Simulate filtering logic (as implemented in filterPublishedMetadata)
+      const filteredPost = {
+        ...postWithPendingSuggestions,
+        excerpt:
+          postWithPendingSuggestions.aiSuggestions.excerpt.state === "approved"
+            ? postWithPendingSuggestions.aiSuggestions.excerpt.value
+            : postWithPendingSuggestions.excerpt,
+        tags:
+          postWithPendingSuggestions.aiSuggestions.tags?.state === "approved"
+            ? postWithPendingSuggestions.aiSuggestions.tags.value
+            : postWithPendingSuggestions.tags,
+      };
+
+      // Verify pending suggestions are NOT visible in filtered post
+      expect(filteredPost.excerpt).toBe("Manual excerpt");
+      expect(filteredPost.tags).toEqual(["manual-tag"]);
+      expect(filteredPost.tags).not.toContain("ai-tag-1");
+
+      // Verify AI suggestions still exist in the original post object
+      expect(postWithPendingSuggestions.aiSuggestions.excerpt.value).toBe(
+        "AI-generated excerpt",
+      );
+    });
+
+    it("uses approved AI suggestions in published posts", async () => {
+      // Create a post with approved AI suggestions
+      const postWithApprovedSuggestions = createMockPost({
+        _id: "ai-post-2",
+        title: "Post with Approved AI Suggestions",
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        status: "published",
+      }) as any;
+
+      // Add AI suggestions (approved state)
+      postWithApprovedSuggestions.aiSuggestions = {
+        excerpt: {
+          value: "AI-generated excerpt",
+          state: "approved",
+        },
+        tags: {
+          value: ["ai-tag-1", "ai-tag-2"],
+          state: "approved",
+          rejectedTags: [],
+        },
+      };
+
+      // Simulate filtering logic
+      const filteredPost = {
+        ...postWithApprovedSuggestions,
+        excerpt:
+          postWithApprovedSuggestions.aiSuggestions.excerpt.state === "approved"
+            ? postWithApprovedSuggestions.aiSuggestions.excerpt.value
+            : postWithApprovedSuggestions.excerpt,
+        tags:
+          postWithApprovedSuggestions.aiSuggestions.tags?.state === "approved"
+            ? postWithApprovedSuggestions.aiSuggestions.tags.value
+            : postWithApprovedSuggestions.tags,
+      };
+
+      // Verify approved suggestions ARE visible in filtered post
+      expect(filteredPost.excerpt).toBe("AI-generated excerpt");
+      expect(filteredPost.tags).toEqual(["ai-tag-1", "ai-tag-2"]);
+    });
+
+    it("preserves pending suggestions in database when editing published post", async () => {
+      // Create a published post with pending suggestions
+      const publishedPost = createMockPost({
+        _id: "edit-post-1",
+        title: "Published Post",
+        excerpt: "Manual excerpt",
+        status: "published",
+      }) as any;
+
+      publishedPost.aiSuggestions = {
+        excerpt: {
+          value: "AI excerpt",
+          state: "pending",
+        },
+      };
+
+      // When editing, admin should see pending suggestions
+      const adminView = { ...publishedPost };
+      expect(adminView.aiSuggestions.excerpt.state).toBe("pending");
+
+      // But public view should only show manual excerpt
+      const publicView = {
+        ...publishedPost,
+        excerpt:
+          publishedPost.aiSuggestions.excerpt.state === "approved"
+            ? publishedPost.aiSuggestions.excerpt.value
+            : publishedPost.excerpt,
+      };
+      expect(publicView.excerpt).toBe("Manual excerpt");
+    });
+
+    it("allows approving pending suggestion after publish", async () => {
+      // Create published post with pending suggestion
+      const post = createMockPost({
+        _id: "approve-post-1",
+        title: "Post",
+        excerpt: "Manual excerpt",
+        status: "published",
+      }) as any;
+
+      post.aiSuggestions = {
+        excerpt: {
+          value: "AI excerpt",
+          state: "pending",
+        },
+      };
+
+      // Before approval - manual value
+      let publicExcerpt =
+        post.aiSuggestions.excerpt.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      expect(publicExcerpt).toBe("Manual excerpt");
+
+      // Approve the suggestion
+      post.aiSuggestions.excerpt.state = "approved";
+
+      // After approval - AI value
+      publicExcerpt =
+        post.aiSuggestions.excerpt.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      expect(publicExcerpt).toBe("AI excerpt");
+    });
+
+    it("filters rejected suggestions from public view", async () => {
+      // Create post with rejected AI suggestions and no manual tags
+      const post = createMockPost({
+        _id: "reject-post-1",
+        title: "Post",
+        excerpt: "Manual excerpt",
+        tags: [], // No manual tags - only AI suggestion which was rejected
+        status: "published",
+      }) as any;
+
+      post.aiSuggestions = {
+        excerpt: {
+          value: "AI excerpt",
+          state: "rejected",
+        },
+        tags: {
+          value: ["ai-tag"],
+          state: "rejected",
+          rejectedTags: ["ai-tag"],
+        },
+      };
+
+      // Public view should use manual values, not rejected AI suggestions
+      const publicExcerpt =
+        post.aiSuggestions.excerpt.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      const publicTags =
+        post.aiSuggestions.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publicExcerpt).toBe("Manual excerpt");
+      expect(publicTags).toEqual([]);
+    });
+
+    it("handles posts with no AI suggestions", async () => {
+      // Create post without AI suggestions
+      const post = createMockPost({
+        _id: "no-ai-post-1",
+        title: "Post",
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        status: "published",
+      }) as any;
+
+      // No aiSuggestions field
+      expect(post.aiSuggestions).toBeUndefined();
+
+      // Public view should use manual values
+      const publicExcerpt =
+        post.aiSuggestions?.excerpt?.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      const publicTags =
+        post.aiSuggestions?.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publicExcerpt).toBe("Manual excerpt");
+      expect(publicTags).toEqual(["manual-tag"]);
+    });
+
+    it("handles partial AI suggestions (some approved, some pending)", async () => {
+      // Create post with mixed AI suggestion states
+      const post = createMockPost({
+        _id: "mixed-post-1",
+        title: "Post",
+        excerpt: "Manual excerpt",
+        tags: ["manual-tag"],
+        status: "published",
+      }) as any;
+
+      post.aiSuggestions = {
+        excerpt: {
+          value: "AI excerpt",
+          state: "approved",
+        },
+        tags: {
+          value: ["ai-tag"],
+          state: "pending",
+          rejectedTags: [],
+        },
+      };
+
+      // Public view should use approved excerpt but manual tags
+      const publicExcerpt =
+        post.aiSuggestions.excerpt.state === "approved"
+          ? post.aiSuggestions.excerpt.value
+          : post.excerpt;
+      const publicTags =
+        post.aiSuggestions.tags?.state === "approved"
+          ? post.aiSuggestions.tags.value
+          : post.tags;
+
+      expect(publicExcerpt).toBe("AI excerpt");
+      expect(publicTags).toEqual(["manual-tag"]);
+    });
+  });
+
   describe("End-to-End Acceptance Criteria Validation", () => {
     it("AC1: Create draft post → Publish → View on public page", async () => {
       // Covered in "Workflow 1: Create Draft → Publish → View Public"

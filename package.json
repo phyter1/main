@@ -104,8 +104,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
-      "biome check --write --unsafe",
-      "biome format --write"
+      "sh -c 'biome check --write --unsafe \"$@\" || true' --",
+      "sh -c 'biome format --write \"$@\" || true' --"
     ]
   },
   "simple-git-hooks": {

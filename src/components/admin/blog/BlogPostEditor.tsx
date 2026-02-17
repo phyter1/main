@@ -10,11 +10,18 @@
  * - Image upload via drag-drop or button
  */
 
-import { ExternalLink, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import {
+  ExternalLink,
+  ImagePlus,
+  Loader2,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import Image from "next/image";
 import {
   type ChangeEvent,
   type DragEvent,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -32,12 +39,34 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { hasContentChanged } from "@/lib/blog-utils";
 
 interface BlogPostEditorProps {
   title: string;
   content: string;
   onTitleChange: (title: string) => void;
   onContentChange: (content: string) => void;
+  /**
+   * T012: AI metadata suggestion callback
+   * Called when content/title changes are detected and AI analysis should be triggered
+   */
+  onSuggestMetadata?: () => Promise<void>;
+  /**
+   * T012: Hash of last analyzed content for change detection
+   */
+  lastAnalyzedContentHash?: string | null;
+  /**
+   * T012: Hash of last analyzed title for change detection
+   */
+  lastAnalyzedTitleHash?: string | null;
+  /**
+   * T012: Whether AI analysis is currently in progress
+   */
+  isAnalyzing?: boolean;
+  /**
+   * T012: Error message from AI analysis failure
+   */
+  analysisError?: string | null;
 }
 
 export function BlogPostEditor({
@@ -45,6 +74,11 @@ export function BlogPostEditor({
   content,
   onTitleChange,
   onContentChange,
+  onSuggestMetadata,
+  lastAnalyzedContentHash,
+  lastAnalyzedTitleHash,
+  isAnalyzing = false,
+  analysisError,
 }: BlogPostEditorProps) {
   const titleId = useId();
   const contentId = useId();
@@ -55,6 +89,36 @@ export function BlogPostEditor({
   const [deletingImageUrl, setDeletingImageUrl] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // T012: Track whether content or title has changed since last analysis
+  const [hasChanges, setHasChanges] = useState(false);
+
+  /**
+   * T012: Detect changes in content or title compared to last analyzed versions
+   * Updates hasChanges state to enable/disable AI suggestion trigger
+   */
+  useEffect(() => {
+    const detectChanges = async () => {
+      if (!lastAnalyzedContentHash && !lastAnalyzedTitleHash) {
+        // No previous analysis, treat as changed (first time)
+        setHasChanges(true);
+        return;
+      }
+
+      const contentChanged = await hasContentChanged(
+        content,
+        lastAnalyzedContentHash,
+      );
+      const titleChanged = await hasContentChanged(
+        title,
+        lastAnalyzedTitleHash,
+      );
+
+      setHasChanges(contentChanged || titleChanged);
+    };
+
+    detectChanges();
+  }, [content, title, lastAnalyzedContentHash, lastAnalyzedTitleHash]);
 
   /**
    * Extract all Vercel Blob Storage image URLs from markdown content
@@ -309,6 +373,33 @@ export function BlogPostEditor({
       {uploadError && (
         <Alert variant="destructive">
           <AlertDescription>{uploadError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* T012: AI Analysis Status */}
+      {isAnalyzing && (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertDescription>
+            Analyzing content for metadata suggestions...
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* T012: AI Analysis Error */}
+      {analysisError && !isAnalyzing && (
+        <Alert variant="destructive">
+          <AlertDescription>{analysisError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* T012: Changes Detected Indicator */}
+      {hasChanges && !isAnalyzing && onSuggestMetadata && (
+        <Alert>
+          <Sparkles className="h-4 w-4" />
+          <AlertDescription>
+            Content has changed. AI suggestions will be generated when you save.
+          </AlertDescription>
         </Alert>
       )}
 
