@@ -139,7 +139,7 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
       posthog.capture("blog_post_viewed", {
         slug: post.slug,
         title: post.title,
-        category: post.category?.name,
+        category: post.category,
         tags: post.tags,
       });
     }
