@@ -14,6 +14,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { notFound } from "next/navigation";
+import posthog from "posthog-js";
 import { useEffect, useMemo } from "react";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { BlogContent } from "@/components/blog/BlogContent";
@@ -134,6 +135,12 @@ export function BlogPostClient({ slug, preloadedPost }: BlogPostClientProps) {
     if (post?._id) {
       incrementViewCount({ id: post._id as Id<"blogPosts"> }).catch((error) => {
         console.error("Failed to increment view count:", error);
+      });
+      posthog.capture("blog_post_viewed", {
+        slug: post.slug,
+        title: post.title,
+        category: post.category?.name,
+        tags: post.tags,
       });
     }
   }, [post?._id, incrementViewCount]);

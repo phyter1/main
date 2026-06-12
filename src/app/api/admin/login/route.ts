@@ -11,6 +11,7 @@ import {
   storeSessionToken,
   verifyAdminPassword,
 } from "@/lib/auth";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 /**
  * Rate limiting for login attempts
@@ -169,6 +170,14 @@ export async function POST(request: NextRequest) {
     if (!isValid) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
+
+    // Track successful admin login
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: "admin",
+      event: "admin_login",
+      properties: { source: "api" },
+    });
 
     // Generate session token
     const sessionToken = generateSessionToken();

@@ -1,6 +1,7 @@
 "use client";
 
 import { Send } from "lucide-react";
+import posthog from "posthog-js";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatMessage } from "@/components/ui/chat-message";
@@ -65,6 +66,9 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
 
     // Track chat message interaction (privacy-respecting - no content tracked)
     trackChatMessage();
+    posthog.capture("ai_chat_message_sent", {
+      message_count: messages.length + 1,
+    });
 
     try {
       const response = await fetch("/api/chat", {
