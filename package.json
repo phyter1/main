@@ -94,6 +94,7 @@
     "@types/react-dom": "^19",
     "@vitest/ui": "^4.0.18",
     "babel-plugin-react-compiler": "1.0.0",
+    "baseline-browser-mapping": "^2.10.36",
     "convex-test": "^0.0.41",
     "happy-dom": "^20.5.0",
     "lint-staged": "^16.2.7",
