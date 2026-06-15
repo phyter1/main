@@ -1,22 +1,26 @@
 /**
- * Blog Listing Page Tests (T027)
+ * Blog Listing Tests (T027)
  *
- * Tests for the main blog listing page including:
- * - Page rendering with BlogCard grid
+ * Tests for the interactive blog listing UI. The listing page (`page.tsx`) is a
+ * server component that fetches data and delegates rendering to
+ * `BlogListingClient`, so the UI behavior is exercised against that client
+ * component here:
+ * - Rendering with BlogCard grid
  * - Featured posts section
  * - BlogSidebar integration
  * - BlogSearch component
  * - Pagination functionality
  * - Category filtering
  * - Responsive layout
- * - Loading states
+ * - Server-preloaded fallback while live data loads
  */
 
 import { render, waitFor } from "@testing-library/react";
 import { useQuery } from "convex/react";
 import { useSearchParams } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import BlogPage from "./page";
+import type { BlogPost } from "@/types/blog";
+import BlogListingClient from "./BlogListingClient";
 
 // Mock Convex client
 vi.mock("convex/react", () => ({
@@ -32,6 +36,11 @@ vi.mock("next/navigation", () => ({
     push: vi.fn(() => {}),
     replace: vi.fn(() => {}),
   })),
+}));
+
+// Mock posthog-js (analytics is a no-op in tests)
+vi.mock("posthog-js", () => ({
+  default: { capture: vi.fn() },
 }));
 
 // Mock framer-motion for reduced motion tests
@@ -185,7 +194,17 @@ const mockCategories = [
   },
 ];
 
-describe("BlogPage", () => {
+// Server-preloaded props passed by the server component. Defaults are empty so
+// the live Convex queries (mocked above) drive what renders; individual tests
+// override these to exercise the server-rendered fallback path.
+const defaultListingProps = {
+  initialFeaturedPosts: [] as BlogPost[],
+  initialPosts: [] as BlogPost[],
+  initialTotalPosts: 0,
+  initialHasMore: false,
+};
+
+describe("Blog Listing", () => {
   beforeEach(() => {
     // Default mock implementations
     vi.mocked(useQuery).mockImplementation((queryName: string) => {
@@ -212,7 +231,9 @@ describe("BlogPage", () => {
 
   describe("Page Rendering", () => {
     it("should render blog page with main components", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         expect(
@@ -225,7 +246,9 @@ describe("BlogPage", () => {
     });
 
     it("should render page title", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const heading = container.querySelector("h1");
@@ -234,7 +257,9 @@ describe("BlogPage", () => {
     });
 
     it("should render category filter dropdown", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const filterText = container.textContent;
@@ -245,7 +270,9 @@ describe("BlogPage", () => {
 
   describe("Featured Posts Section", () => {
     it("should render featured posts section when featured posts exist", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const content = container.textContent || "";
@@ -272,7 +299,9 @@ describe("BlogPage", () => {
         return undefined;
       });
 
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const content = container.textContent || "";
@@ -283,7 +312,9 @@ describe("BlogPage", () => {
 
   describe("Blog Post Grid", () => {
     it("should render blog cards for all posts", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         // 1 featured card + 2 regular posts = 3 total cards
@@ -295,7 +326,10 @@ describe("BlogPage", () => {
       });
     });
 
-    it("should display loading state when posts are loading", async () => {
+    it("should show server-preloaded posts while live query is still loading", async () => {
+      // listPosts returns undefined (live query not yet resolved). The server
+      // component preloads data for SEO, so the client should render that
+      // initial data instead of a loading state.
       vi.mocked(useQuery).mockImplementation((queryName: string) => {
         if (queryName === "getFeaturedPosts") {
           return [];
@@ -304,16 +338,27 @@ describe("BlogPage", () => {
           return mockCategories;
         }
         if (queryName === "listPosts") {
-          return undefined; // Loading state
+          return undefined; // Live query still loading
         }
         return undefined;
       });
 
-      const { container } = render(<BlogPage />);
+      const preloadedPosts = [
+        { _id: "preloaded-1", title: "Preloaded Post" },
+      ] as unknown as BlogPost[];
+
+      const { container } = render(
+        <BlogListingClient
+          {...defaultListingProps}
+          initialPosts={preloadedPosts}
+          initialTotalPosts={1}
+        />,
+      );
 
       await waitFor(() => {
         const content = container.textContent || "";
-        expect(content).toContain("Loading posts");
+        expect(content).toContain("Preloaded Post");
+        expect(content).not.toContain("No posts found");
       });
     });
 
@@ -335,7 +380,9 @@ describe("BlogPage", () => {
         return undefined;
       });
 
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const content = container.textContent || "";
@@ -363,7 +410,9 @@ describe("BlogPage", () => {
         return undefined;
       });
 
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const content = container.textContent || "";
@@ -390,7 +439,9 @@ describe("BlogPage", () => {
         return undefined;
       });
 
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const content = container.textContent || "";
@@ -399,7 +450,9 @@ describe("BlogPage", () => {
     });
 
     it("should not render Previous button on first page", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const content = container.textContent || "";
@@ -410,7 +463,9 @@ describe("BlogPage", () => {
 
   describe("Category Filtering", () => {
     it("should render category filter with all categories", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         const content = container.textContent || "";
@@ -424,7 +479,7 @@ describe("BlogPage", () => {
         get: (_key: string) => (_key === "category" ? "technology" : null),
       });
 
-      render(<BlogPage />);
+      render(<BlogListingClient {...defaultListingProps} />);
 
       await waitFor(() => {
         // Verify listPosts was called with category filter
@@ -435,7 +490,9 @@ describe("BlogPage", () => {
 
   describe("Search Integration", () => {
     it("should render BlogSearch component", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         expect(
@@ -447,7 +504,9 @@ describe("BlogPage", () => {
 
   describe("Sidebar Integration", () => {
     it("should render BlogSidebar component", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         expect(
@@ -459,7 +518,9 @@ describe("BlogPage", () => {
 
   describe("Responsive Layout", () => {
     it("should render with responsive grid classes", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         // Check for responsive grid container
@@ -473,7 +534,9 @@ describe("BlogPage", () => {
 
   describe("SEO Metadata", () => {
     it("should have appropriate semantic HTML structure", async () => {
-      const { container } = render(<BlogPage />);
+      const { container } = render(
+        <BlogListingClient {...defaultListingProps} />,
+      );
 
       await waitFor(() => {
         // Check for main content area

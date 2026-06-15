@@ -24,22 +24,23 @@ function extractRevalidateValue(content: string): number | null {
 }
 
 describe("Blog Page Revalidate Exports", () => {
-  describe("Blog Listing Page (Client Component)", () => {
-    it("should NOT export revalidate (client component with real-time data)", () => {
+  describe("Blog Listing Page (Server Component)", () => {
+    it("should export revalidate = 60 (server-rendered for SEO with ISR)", () => {
       const content = readPageFile("../page.tsx");
       const revalidate = extractRevalidateValue(content);
 
-      // Client components cannot use revalidate - uses Convex real-time queries
-      expect(revalidate).toBeNull();
-      expect(content).toContain('"use client"');
+      // Listing page is server-rendered so posts are crawlable; ISR revalidates
+      // every 60 seconds and the client hydrates with live Convex data.
+      expect(revalidate).toBe(60);
+      expect(content).not.toContain('"use client"');
     });
 
-    it("should use Convex real-time queries instead of ISR", () => {
+    it("should fetch data server-side and delegate to BlogListingClient", () => {
       const content = readPageFile("../page.tsx");
 
-      // Should use useQuery for real-time updates
-      expect(content).toContain("useQuery");
-      expect(content).toContain("convex/react");
+      // Server-side fetch via Convex HTTP client (not client useQuery)
+      expect(content).toContain("ConvexHttpClient");
+      expect(content).toContain("BlogListingClient");
     });
   });
 
