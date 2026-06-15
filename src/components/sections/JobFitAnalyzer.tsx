@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import posthog from "posthog-js";
 import { useId, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -185,6 +186,10 @@ export function JobFitAnalyzer() {
       return;
     }
 
+    posthog.capture("fit_assessment_started", {
+      description_length: state.jobDescription.trim().length,
+    });
+
     // Clear previous results and errors
     setState((prev) => ({
       ...prev,
@@ -246,6 +251,11 @@ export function JobFitAnalyzer() {
 
       // Track fit assessment interaction (privacy-respecting - no job description tracked)
       trackFitAssessment();
+      posthog.capture("fit_assessment_completed", {
+        fit_level: result.fitLevel,
+        reasoning_count: result.reasoning.length,
+        recommendations_count: result.recommendations.length,
+      });
 
       setState((prev) => ({
         ...prev,

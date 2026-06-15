@@ -10,6 +10,7 @@ import {
   logSecurityEvent,
   validateChatMessage,
 } from "@/lib/input-sanitization";
+import { getPostHogClient } from "@/lib/posthog-server";
 import { getActiveVersion } from "@/lib/prompt-versioning";
 import type { GuardrailViolation } from "@/types/guardrails";
 
@@ -295,6 +296,18 @@ export async function POST(request: Request): Promise<Response> {
       model: openaiClient,
       messages: sanitizedMessages,
       system: systemPrompt,
+    });
+
+    // Track server-side chat request (distinct ID from header if available)
+    const posthogDistinctId =
+      request.headers.get("x-posthog-distinct-id") ?? clientIP;
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: posthogDistinctId,
+      event: "ai_chat_request_processed",
+      properties: {
+        message_count: sanitizedMessages.length,
+      },
     });
 
     // Return streaming response

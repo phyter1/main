@@ -50,3 +50,4 @@ TASKS/
 
 # Admin credentials (temporary, delete after saving to password manager)
 .admin-credentials.txt
+.env.local

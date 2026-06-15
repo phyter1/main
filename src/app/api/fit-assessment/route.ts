@@ -6,6 +6,7 @@ import {
   logSecurityEvent,
   validateJobDescription,
 } from "@/lib/input-sanitization";
+import { getPostHogClient } from "@/lib/posthog-server";
 import { getActiveVersion } from "@/lib/prompt-versioning";
 import type { GuardrailViolation } from "@/types/guardrails";
 
@@ -236,6 +237,16 @@ Provide a structured assessment with:
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
+    });
+
+    // Track server-side fit assessment request
+    const posthogDistinctId =
+      request.headers.get("x-posthog-distinct-id") ?? clientIP;
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: posthogDistinctId,
+      event: "fit_assessment_request_processed",
+      properties: { fit_level: result.object.fitLevel },
     });
 
     // Return structured response

@@ -68,6 +68,11 @@ vi.mock("framer-motion", () => ({
   },
 }));
 
+// Mock posthog-js (analytics is a no-op in tests)
+vi.mock("posthog-js", () => ({
+  default: { capture: vi.fn() },
+}));
+
 // Mock blog utility functions
 vi.mock("@/lib/blog-utils", () => ({
   formatDate: (timestamp: number) => new Date(timestamp).toLocaleDateString(),
@@ -518,8 +523,19 @@ describe("T036: Blog Workflows Integration Tests", () => {
         return undefined;
       });
 
-      const { default: BlogListingPage } = await import("@/app/blog/page");
-      render(<BlogListingPage />);
+      // The listing page is a server component; its interactive UI lives in
+      // BlogListingClient, which is what the public visitor actually sees.
+      const { default: BlogListingClient } = await import(
+        "@/app/blog/BlogListingClient"
+      );
+      render(
+        <BlogListingClient
+          initialFeaturedPosts={[]}
+          initialPosts={[]}
+          initialTotalPosts={0}
+          initialHasMore={false}
+        />,
+      );
 
       await waitFor(() => {
         const content = screen.getByText(/No posts found/i);
@@ -644,8 +660,19 @@ describe("T036: Blog Workflows Integration Tests", () => {
         return undefined;
       });
 
-      const { default: BlogListingPage } = await import("@/app/blog/page");
-      render(<BlogListingPage />);
+      // The listing page is a server component; its interactive UI lives in
+      // BlogListingClient, which is what the public visitor actually sees.
+      const { default: BlogListingClient } = await import(
+        "@/app/blog/BlogListingClient"
+      );
+      render(
+        <BlogListingClient
+          initialFeaturedPosts={[]}
+          initialPosts={[]}
+          initialTotalPosts={0}
+          initialHasMore={false}
+        />,
+      );
 
       await waitFor(() => {
         const cards = screen.getAllByTestId("blog-card");
@@ -706,8 +733,19 @@ describe("T036: Blog Workflows Integration Tests", () => {
         return undefined;
       });
 
-      const { default: BlogListingPage } = await import("@/app/blog/page");
-      render(<BlogListingPage />);
+      // The listing page is a server component; its interactive UI lives in
+      // BlogListingClient, which is what the public visitor actually sees.
+      const { default: BlogListingClient } = await import(
+        "@/app/blog/BlogListingClient"
+      );
+      render(
+        <BlogListingClient
+          initialFeaturedPosts={[]}
+          initialPosts={[]}
+          initialTotalPosts={0}
+          initialHasMore={false}
+        />,
+      );
 
       // Verify filtered posts are displayed
       await waitFor(() => {
@@ -755,8 +793,19 @@ describe("T036: Blog Workflows Integration Tests", () => {
         return undefined;
       });
 
-      const { default: BlogListingPage } = await import("@/app/blog/page");
-      render(<BlogListingPage />);
+      // The listing page is a server component; its interactive UI lives in
+      // BlogListingClient, which is what the public visitor actually sees.
+      const { default: BlogListingClient } = await import(
+        "@/app/blog/BlogListingClient"
+      );
+      render(
+        <BlogListingClient
+          initialFeaturedPosts={[]}
+          initialPosts={[]}
+          initialTotalPosts={0}
+          initialHasMore={false}
+        />,
+      );
 
       await waitFor(() => {
         const cards = screen.getAllByTestId("blog-card");

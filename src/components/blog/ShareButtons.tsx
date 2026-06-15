@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Link2, Linkedin, Mail, Twitter } from "lucide-react";
+import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -94,7 +95,8 @@ export function ShareButtons({
   /**
    * Open share URL in new window
    */
-  const handleShare = (url: string) => {
+  const handleShare = (url: string, platform: string) => {
+    posthog.capture("blog_post_shared", { platform, slug });
     if (typeof window !== "undefined") {
       window.open(url, "_blank", "noopener,noreferrer,width=600,height=600");
     }
@@ -112,6 +114,7 @@ export function ShareButtons({
       }
 
       await navigator.clipboard.writeText(postUrl);
+      posthog.capture("blog_post_shared", { platform: "copy_link", slug });
       setCopied(true);
       setCopyError(false);
 
@@ -130,6 +133,7 @@ export function ShareButtons({
    * Open email client with pre-filled content
    */
   const handleEmailShare = () => {
+    posthog.capture("blog_post_shared", { platform: "email", slug });
     if (typeof window !== "undefined") {
       window.location.assign(getEmailUrl());
     }
@@ -146,7 +150,7 @@ export function ShareButtons({
       <Button
         variant="outline"
         size="icon-sm"
-        onClick={() => handleShare(getTwitterUrl())}
+        onClick={() => handleShare(getTwitterUrl(), "twitter")}
         aria-label="Share on Twitter"
         title="Share on Twitter"
         data-url={getTwitterUrl()}
@@ -159,7 +163,7 @@ export function ShareButtons({
       <Button
         variant="outline"
         size="icon-sm"
-        onClick={() => handleShare(getLinkedInUrl())}
+        onClick={() => handleShare(getLinkedInUrl(), "linkedin")}
         aria-label="Share on LinkedIn"
         title="Share on LinkedIn"
         data-url={getLinkedInUrl()}

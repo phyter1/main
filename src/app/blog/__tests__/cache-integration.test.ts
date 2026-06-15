@@ -142,19 +142,19 @@ describe("Blog Caching Integration", () => {
       expect(tagRevalidate).toBe(60); // 1 minute
     });
 
-    it("should verify client components use Convex real-time", () => {
+    it("should server-render the listing and keep the category page real-time", () => {
       const listingContent = readFile("../page.tsx");
       const categoryContent = readFile("../category/[slug]/page.tsx");
 
       const listingRevalidate = extractRevalidateValue(listingContent);
       const categoryRevalidate = extractRevalidateValue(categoryContent);
 
-      // Client components should NOT have revalidate exports
-      expect(listingRevalidate).toBeNull();
-      expect(categoryRevalidate).toBeNull();
+      // Listing page is a server component (SEO) with ISR revalidation
+      expect(listingRevalidate).toBe(60);
+      expect(listingContent).toContain("ConvexHttpClient");
 
-      // Should use Convex real-time queries instead
-      expect(listingContent).toContain("useQuery");
+      // Category page remains a client component using Convex real-time queries
+      expect(categoryRevalidate).toBeNull();
       expect(categoryContent).toContain("useQuery");
     });
   });

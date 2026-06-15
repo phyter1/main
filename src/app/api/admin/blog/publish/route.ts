@@ -8,6 +8,7 @@ import { fetchMutation } from "convex/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifySessionToken } from "@/lib/auth";
+import { getPostHogClient } from "@/lib/posthog-server";
 import { api } from "../../../../../../convex/_generated/api";
 
 /**
@@ -55,6 +56,13 @@ export async function POST(request: NextRequest) {
     try {
       await fetchMutation(api.blog.publishPost, {
         id: id as any, // Convex ID type
+      });
+
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: "admin",
+        event: "blog_post_published",
+        properties: { post_id: id },
       });
 
       return NextResponse.json({

@@ -11,6 +11,7 @@ import { useQuery } from "convex/react";
 import type { Variants } from "framer-motion";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import posthog from "posthog-js";
 import { Suspense, useCallback, useMemo } from "react";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { BlogSearch } from "@/components/blog/BlogSearch";
@@ -121,6 +122,9 @@ function BlogListingContent({
   // Handler: Change category filter
   const handleCategoryChange = useCallback(
     (categorySlug: string) => {
+      posthog.capture("blog_category_filtered", {
+        category: categorySlug === "all" ? null : categorySlug,
+      });
       const params = new URLSearchParams();
       if (categorySlug !== "all") {
         params.set("category", categorySlug);
