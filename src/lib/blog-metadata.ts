@@ -62,6 +62,14 @@ export function generateBlogMetadata(post: BlogPost): Metadata {
   const image = post.seoMetadata?.ogImage || post.coverImage;
   const canonicalUrl = generateCanonicalUrl(post);
 
+  // Ensure image URL is absolute for LinkedIn/social sharing
+  // LinkedIn requires absolute URLs for og:image
+  const absoluteImageUrl = image
+    ? image.startsWith("http")
+      ? image
+      : `${SITE_URL}${image.startsWith("/") ? "" : "/"}${image}`
+    : undefined;
+
   // Convert timestamps to ISO 8601 strings
   const publishedTime = post.publishedAt
     ? new Date(post.publishedAt).toISOString()
@@ -83,7 +91,7 @@ export function generateBlogMetadata(post: BlogPost): Metadata {
       description,
       type: "article",
       url: canonicalUrl,
-      images: image ? [image] : [],
+      images: absoluteImageUrl ? [absoluteImageUrl] : [],
       publishedTime: publishedTime,
       modifiedTime: modifiedTime,
       authors: [post.author],
@@ -93,7 +101,7 @@ export function generateBlogMetadata(post: BlogPost): Metadata {
       card: "summary_large_image",
       title,
       description,
-      images: image ? [image] : [],
+      images: absoluteImageUrl ? [absoluteImageUrl] : [],
     },
   };
 }
